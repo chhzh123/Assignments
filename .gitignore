@@ -1,0 +1,16 @@
+# temporary files
+*.PWI
+*.DBK
+*.dmp
+*.txt
+*.xlsx
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.synctex.gz
+
+# c/c++
+*.exe
+*.dat

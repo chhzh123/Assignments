@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<config>
+    <source_groups>
+        <source_group_f591938d-db7a-497e-adab-3e585c2f6d5c>
+            <cross_compilation>
+                <target>
+                    <abi>unknown</abi>
+                    <arch>x86_64</arch>
+                    <sys>unknown</sys>
+                    <vendor>unknown</vendor>
+                </target>
+                <target_options_enabled>0</target_options_enabled>
+            </cross_compilation>
+            <exclude_filters>
+                <exclude_filter>C:/MinGW/include</exclude_filter>
+                <exclude_filter>C:/MinGW/lib</exclude_filter>
+            </exclude_filters>
+            <name>C++ Source Group</name>
+            <source_extensions>
+                <source_extension>.cpp</source_extension>
+                <source_extension>.cxx</source_extension>
+                <source_extension>.cc</source_extension>
+                <source_extension>.c</source_extension>
+                <source_extension>.hpp</source_extension>
+            </source_extensions>
+            <source_paths>
+                <source_path>C:/Users/chhzh/Desktop/Project_3</source_path>
+            </source_paths>
+            <standard>c++11</standard>
+            <status>enabled</status>
+            <type>C++ Source Group</type>
+        </source_group_f591938d-db7a-497e-adab-3e585c2f6d5c>
+    </source_groups>
+    <version>5</version>
+</config>

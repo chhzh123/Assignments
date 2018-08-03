@@ -1,0 +1,156 @@
+\documentclass[11pt,UTF8]{ctexart}
+\usepackage{titling}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{forest}
+\usepackage{bm}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage[unicode=true,%本行非常重要 支持中文目录hyperref CJKbookmarks对二级目录没用
+	colorlinks,
+	linkcolor=black,
+	anchorcolor=black,
+	citecolor=black,
+	CJKbookmarks=false]{hyperref}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{top=20mm,bottom=20mm,left=20mm,right=20mm}
+\pagestyle{plain}%删除页眉
+\CTEXsetup[format={\Large\bfseries}]{section}
+
+\setlength{\droptitle}{-50pt}%减少标题与页眉距离
+
+\title{Project 1 技术报告}
+\author{17341015 计一 陈鸿峥}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-50pt}%减少标题与正文距离
+
+\lstset{language=C++,escapechar=`}
+
+\section{需求分析}
+仓库管理系统的功能如下：
+\begin{enumerate}
+	\itemsep -3pt
+	\item 在仓库进货时，如果仓库中没有此商品，则为仓库增添新的商品项目
+	\item 在仓库进货时，如果仓库中已有此商品，则增加此商品的库存量
+	\item 在仓库出货时，减少对应商品的库存量
+	\item 在仓库出货时，如果这是货物是此商品的最后一批货（库存量为0），则删除仓库中此商品项目
+	\item 查询功能：可以随时查看当前仓库的库存，包括商品名和剩余量
+\end{enumerate}
+\par 且以上功能均需通过日志文件保存，以防丢失。
+
+
+\section{实现思路}
+\begin{center}
+\begin{forest}
+for tree = {grow=south}
+[仓库管理系统
+	[进货
+		[增加库存]
+		[新增商品]]
+	[出货
+		[减少库存]
+		[删除商品]]
+	[查询
+		[显示库存]
+		[查找商品]]]
+\end{forest}
+\end{center}
+\par 本仓库管理系统主要分为进货、出货、查询三大模块，分别对进货、出货、查询的操作进行管理。
+\begin{enumerate}
+	\item 进货模块\\
+	细分为增加库存和新增商品子功能。进货时，若此商品在仓库中没有库存，则在仓库库存条目中新增此商品项目；若已有此类商品，则根据进货量增加对应的库存量。
+	\item 出货模块\\
+	细分为减少库存和删除商品子功能。出货时，若此商品在仓库中没有库存，则报错显示出货失败；若此类商品库存充足，则根据出货量减少对应商品的数目；若出货成功并且库存恰好为$0$时，删除仓库目录中此商品项目。
+	\item 查询模块\\
+	细分为显示所有库存和查找某一商品子功能。
+\end{enumerate}
+\par 最后用文件流实现数据的读取及保存。
+
+
+\section{数据设计}
+\begin{lstlisting}
+class Warehouse
+{
+public:
+	Warehouse(){};
+	bool import_goods(string name, int count);
+	bool export_goods(string name, int count);
+	int find_goods(string name);
+	void show_goods();
+	void save();
+private:
+	map <string,int> data;
+	bool increase_count(string name, int count);
+	bool add_to_list(string name, int count);
+	bool decrease_count(string name, int count);
+	bool delete_from_list(string name);
+};
+\end{lstlisting}
+\par 所有商品数据都被存储在一个 \verb'Warehouse' 类中，且以 \verb'map' 形式存储，其中 \verb'map' 是由商品名字( \verb'string' 类型)到商品库存量( \verb'int' 类型)的映射。至于类方法，只有进货、出货、查询、保存是公有的，其他的方法均设置为私有。
+
+
+\section{函数设计}
+\par 详情请参见代码，这里仅仅给出每个函数的用途。
+\subsection{进货}
+\begin{enumerate}
+	\item 进货，对应进货模块，表示当前进货一批数量为count的name商品\\
+\verb'bool Warehouse::import_goods(string name, int count)'
+	\item 更新库存信息，对应增加库存子功能，对name商品新增count数量\\
+\verb'bool Warehouse::increase_count(string name, int count)'
+	\item 更新库存列表，对应新增商品子功能，新增name商品且初始数量为count\\
+\verb'bool Warehouse::add_to_list(string name, int count)'
+	\item 封装函数\\
+\verb'void import_process(Warehouse& house)'
+\end{enumerate}
+
+\subsection{出货}
+\begin{enumerate}
+	\item 出货，对应出货模块，表示当前出货一批数量为count的name商品\\
+\verb'bool Warehouse::export_goods(string name, int count)'
+	\item 更新库存信息，对应减少库存子功能，对name商品减少count数量\\
+\verb'bool Warehouse::decrease_count(string name, int count)'
+	\item 更新库存列表，对应删除商品子功能，删除商品列表中name商品\\
+\verb'bool Warehouse::delete_from_list(string name)'
+	\item 封装函数\\
+\verb'void export_process(Warehouse& house)'
+\end{enumerate}
+
+\subsection{查询}
+\begin{enumerate}
+	\item 显示当前库存列表，包括商品名及其库存量\\
+\verb'void Warehouse::show_goods()' 
+	\item 查看仓库中名为name的商品，若不存在返回$0$，否则返回该商品库存量\\
+\verb'int Warehouse::find_goods(string name)'
+	\item 封装函数\\
+\verb'void query_process(Warehouse& house)'
+\end{enumerate}
+
+\subsection{输入与输出}
+\begin{enumerate}
+	\item 从文档中读入数据\\
+\verb'void read_in_data(Warehouse& house)'
+	\item 保存数据入文档\\
+\verb'void Warehouse::save()'
+\end{enumerate}
+
+\subsection{其他}
+\begin{enumerate}
+	\item 交互界面\\
+\verb'void warehouse_interface()'
+	\item 显示菜单\\
+\verb'void show_manual()'
+	\item 商品名合法性测试\\
+\verb'bool validname_test(string x)'
+\end{enumerate}
+
+
+
+\end{document}
