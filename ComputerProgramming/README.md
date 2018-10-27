@@ -1,5 +1,4 @@
 ## Computer Programming (C++)
---------------------------------------
 
 This is the repository of chhzh123's projects of *Computer Programming (C++)* - Spring 2018 @ SYSU.
 

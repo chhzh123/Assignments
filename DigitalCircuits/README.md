@@ -1,5 +1,4 @@
 ## Digital Circuits and Logic Design (Laboratory)
---------------------------------------
 
 This is the repository of chhzh123's assignments of *Digital Circuits and Logic Design (Laboratory)* - Spring 2018 @ SYSU.
 
