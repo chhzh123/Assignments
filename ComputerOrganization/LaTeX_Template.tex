@@ -1,0 +1,118 @@
+\documentclass[12pt,UTF8]{ctexart}
+\usepackage{titling,setspace}
+\usepackage{enumerate}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{listings}
+\usepackage{comment}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{multicol,multirow}
+\usepackage{fancyhdr} % 页眉
+\usepackage{ctex,titlesec}
+\usepackage[export]{adjustbox} % 图片左对齐
+\usepackage[unicode=true,%本行非常重要 支持中文目录hyperref CJKbookmarks对二级目录没用
+	colorlinks,
+	linkcolor=black,
+	anchorcolor=black,
+	citecolor=black,
+	CJKbookmarks=false]{hyperref}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{top=25.4mm,bottom=25.4mm,left=31.8mm,right=31.8mm}
+\pagestyle{plain}%删除页眉
+\CTEXsetup[format={\large\bfseries}]{section}
+\renewcommand\maketitlehooka{\null\mbox{}\vfill} % 标题页
+\renewcommand\maketitlehookd{\vfill\null}
+
+\newcommand{\chuhao}{\fontsize{42.2pt}{\baselineskip}\selectfont}
+\newcommand{\xiaochu}{\fontsize{36.1pt}{\baselineskip}\selectfont}
+\newcommand{\yihao}{\fontsize{26.1pt}{\baselineskip}\selectfont}
+\newcommand{\xiaoyi}{\fontsize{24.1pt}{\baselineskip}\selectfont}
+\newcommand{\erhao}{\fontsize{22.1pt}{\baselineskip}\selectfont}
+\newcommand{\xiaoer}{\fontsize{18.1pt}{\baselineskip}\selectfont}
+\newcommand{\sanhao}{\fontsize{16.1pt}{\baselineskip}\selectfont}
+\newcommand{\xiaosan}{\fontsize{15.1pt}{\baselineskip}\selectfont}
+\newcommand{\sihao}{\fontsize{14.1pt}{\baselineskip}\selectfont}
+\newcommand{\xiaosi}{\fontsize{12.1pt}{\baselineskip}\selectfont}
+\newcommand{\wuhao}{\fontsize{10.5pt}{\baselineskip}\selectfont}
+\newcommand{\xiaowu}{\fontsize{9.0pt}{\baselineskip}\selectfont}
+\newcommand{\liuhao}{\fontsize{7.5pt}{\baselineskip}\selectfont}
+\newcommand{\xiaoliu}{\fontsize{6.5pt}{\baselineskip}\selectfont}
+\newcommand{\qihao}{\fontsize{5.5pt}{\baselineskip}\selectfont}
+\newcommand{\bahao}{\fontsize{5.0pt}{\baselineskip}\selectfont}
+\titleformat{\section}{\xiaosi\bfseries}{\chinese{section}、 }{0em}{}
+\titlespacing*{\section}{0pt}{3pt}{0pt}
+
+\lstset{language=c++,basicstyle=\small,escapechar=`}
+\setlength{\droptitle}{-100pt}%减少标题与页眉距离
+
+\title{
+\includegraphics[width=0.2\linewidth,left]{SYSU.png}~\\[1cm]
+\textbf{\yihao 《计算机组成原理实验》\\\chuhao实验报告\\\quad\\\xiaoyi（实验一）}
+}
+
+\vspace{100pt}
+
+\author{}
+\date{}
+
+\newcommand{\myuline}[1]{\begin{tabular}{c}#1\\\hline\end{tabular}}
+
+\begin{document}
+
+\clearpage\maketitle
+\thispagestyle{empty}
+
+\vspace{100pt}
+\begin{spacing}{1.5}
+\xiaoer
+\begin{center}
+\begin{tabular}{rc}
+\makebox[6.2em][s]{\textbf{学\hspace{\fill}院\hspace{\fill}名\hspace{\fill}称}} ： & 数据科学与计算机学院\\
+\cline{2-2}\makebox[6.2em][s]{\textbf{专业（班级）}} ： & 17级计科教务一班\\
+\cline{2-2}\makebox[6.2em][s]{\textbf{学\hspace{\fill}生\hspace{\fill}姓\hspace{\fill}名}} ：& 陈鸿峥\\
+\cline{2-2}\makebox[6.2em][s]{\textbf{学\hspace{\fill}号}} ： & 17341015\\
+\cline{2-2}\makebox[6.2em][s]{\textbf{时\hspace{\fill}间}} ： & 2018 年 10 月 8 日\\
+\cline{2-2}
+\end{tabular}
+\end{center}
+\end{spacing}
+
+\newpage
+\pagestyle{fancy}
+\lhead{}
+\rhead{\xiaowu\color{gray}{计算机组成原理实验}}
+\setcounter{page}{1}
+\quad\bigskip\bigskip
+\rightline{\erhao\textbf{\underline{成绩：\qquad\qquad}}}
+\vspace{20pt}
+\leftline{\erhao\textbf{\underline{实验一：MIPS汇编语言程序设计实验}}}
+\vspace{-10pt}
+
+\wuhao
+\section{实验目的}
+
+\section{实验内容}
+% 实验的具体内容与要求
+
+\section{实验器材}
+电脑一台，PCSpim仿真器软件一套
+
+\section{实验过程与结果}
+% 说明：根据需要书写相关内容，如：
+% 程序流程图、设计的思想与方法、分析、实验步骤和实验结果及分析等。
+
+\section{实验心得}
+% 体会和建议。（必须认真写，若过于简单，扣分！）
+% (所写内容，如实验的整个过程中，所碰到的问题、所思考的问题等，以及最后如何获得解决，从中得到什么?等等，当然，还可能存在未解决的问题，或有所建议等。整个来说，就是总结一下本实验的情况，温故而知新，这个道理显而易见。)
+
+\section{程序清单}
+\begin{lstlisting}
+int main()
+{
+	return 0;
+}
+\end{lstlisting}
+
+
+\end{document}
