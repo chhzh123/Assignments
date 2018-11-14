@@ -1,6 +1,6 @@
 set_property PACKAGE_PIN W5 [get_ports clk]
 set_property PACKAGE_PIN T17 [get_ports clk_cpu]
-set_property PACKAGE_PIN U1 [get_ports reset]
+set_property PACKAGE_PIN V17 [get_ports reset]
 set_property PACKAGE_PIN R2 [get_ports {SW_in[1]}]
 set_property PACKAGE_PIN T1 [get_ports {SW_in[0]}]
 set_property PACKAGE_PIN W4 [get_ports {out[3]}]
