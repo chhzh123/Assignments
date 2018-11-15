@@ -7,3 +7,5 @@ Detailed information can be found in each folder.
 * Project 1 - Train Scheduling System
 
 * Project 2 - Airport Management System
+
+* Project 3 - Genealogy Management System
