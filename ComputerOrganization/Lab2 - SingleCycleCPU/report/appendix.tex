@@ -181,11 +181,10 @@ module InstructionMemory (
 	output [31:0] dataOut
 	);
 	
-	reg [7:0] memory [0:255];
+	reg [7:0] memory [0:255]; // 8 bits (bandwidth) * #256 (address)
 
 	// initialization
 	initial $readmemb("D:/instruction.data",memory);
-	// $display("Read in data successfully!");
 
 	// output data (little endian)
 	assign dataOut = {memory[address + 3],
@@ -208,7 +207,7 @@ module PC (
 
     initial currPC = 0;
 
-    always @(posedge clk or negedge reset) begin
+    always @(posedge clk or posedge reset) begin
         if (reset == 0)
             currPC <= 0;
         else if (PCWrite == 1)
@@ -231,7 +230,7 @@ module Registers (
     output [31:0] d2 // read data 2
     );
     
-    reg [31:0] register [0:31];
+    reg [31:0] register [0:31]; // 32 bits (bandwidth) * #32 (address)
     
     // initialization
     integer i;
@@ -245,7 +244,7 @@ module Registers (
     assign d2 = (r2 == 0) ? 0 : register[r2];
 
     // write data
-    always @(posedge clk) begin
+    always @(negedge clk) begin
         if (wr != 0 && RegWrite == 1)
             register[wr] <= wd;
     end
@@ -263,20 +262,23 @@ module DataMemory (
     output [31:0] dataOut // read data
     );
     
-    reg [7:0] memory [0:255];
+    reg [7:0] memory [0:255]; // 8 bits (bandwidth) * #256 (address)
 
     // initialization
     integer i;
     initial begin
-        for (i = 0; i < 7; i = i + 1)
+        for (i = 0; i < 256; i = i + 1)
             memory[i] = 0;
     end
 
     // read data
-    assign dataOut = {memory[address + 3], memory[address + 2], memory[address + 1], memory[address]};
+    assign dataOut = {memory[address + 3],
+    				  memory[address + 2],
+    				  memory[address + 1],
+    				  memory[address]};
 
     // write data
-    always @(posedge clk) begin
+    always @(negedge clk) begin
         if (MemWrite == 1 && address >= 1 && address <= 255) begin
             // little endian
             memory[address + 3] <= dataIn[31:24];
@@ -417,7 +419,7 @@ module ALU (
         case (op)
             3'b000: res = A + B;
             3'b001: res = A - B;
-            3'b010: res = B << A;
+            3'b010: res = B << A; // B first!
             3'b011: res = A | B;
             3'b100: res = A & B;
             3'b101: res = (A < B) ? 8'h00000001 : 0;
@@ -545,7 +547,7 @@ module CPU_sim (
 		clk = 1;
 		reset = 0;
 		// wait for initialization
-		#80;
+		#30;
 		reset = 1;
 	end
 

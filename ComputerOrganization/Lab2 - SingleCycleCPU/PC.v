@@ -10,7 +10,7 @@ module PC (
 
     initial currPC = 0;
 
-    always @(posedge clk or negedge reset) begin
+    always @(posedge clk or posedge reset) begin
         if (reset == 0)
             currPC <= 0;
         else if (PCWrite == 1)

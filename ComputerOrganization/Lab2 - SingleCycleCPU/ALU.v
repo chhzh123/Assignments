@@ -16,7 +16,7 @@ module ALU (
         case (op)
             3'b000: res = A + B;
             3'b001: res = A - B;
-            3'b010: res = B << A;
+            3'b010: res = B << A; // B first!
             3'b011: res = A | B;
             3'b100: res = A & B;
             3'b101: res = (A < B) ? 8'h00000001 : 0;

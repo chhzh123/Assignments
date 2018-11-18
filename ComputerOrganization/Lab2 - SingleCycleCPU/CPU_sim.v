@@ -43,7 +43,7 @@ module CPU_sim (
 		clk = 1;
 		reset = 0;
 		// wait for initialization
-		#80;
+		#30;
 		reset = 1;
 	end
 

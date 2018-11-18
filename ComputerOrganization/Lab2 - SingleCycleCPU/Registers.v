@@ -11,7 +11,7 @@ module Registers (
     output [31:0] d2 // read data 2
     );
     
-    reg [31:0] register [0:31];
+    reg [31:0] register [0:31]; // 32 bits (bandwidth) * #32 (address)
     
     // initialization
     integer i;
@@ -25,7 +25,7 @@ module Registers (
     assign d2 = (r2 == 0) ? 0 : register[r2];
 
     // write data
-    always @(posedge clk) begin
+    always @(negedge clk) begin
         if (wr != 0 && RegWrite == 1)
             register[wr] <= wd;
     end
