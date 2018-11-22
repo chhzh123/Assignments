@@ -10,7 +10,8 @@ module CPU_sim (
 	output Branch, Jump, Zero,
 	output PCWrite,
 	output [31:0] currPC, nextPC, instruction, alu_res,
-	output wire [31:0] d1, d2
+	output [4:0] rs, rt,
+	output [31:0] d1, d2, rsData, rtData, dbData
 	);
 	
 	reg clk;
@@ -35,8 +36,13 @@ module CPU_sim (
 		.nextPC(nextPC),
 		.instruction(instruction),
 		.alu_res(alu_res),
+		.rs(rs),
+		.rt(rt),
 		.d1(d1),
-		.d2(d2)
+		.d2(d2),
+		.rsData(rsData),
+		.rtData(rtData),
+		.dbData(dbData)
 		);
 
 	initial begin

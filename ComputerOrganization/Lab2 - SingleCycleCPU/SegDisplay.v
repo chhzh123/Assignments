@@ -8,6 +8,7 @@ module SegDisplay (
 	always @(data)
 		case(data)
 			// 0: on    1: off
+			0: dispcode = 7'b000_0001; // remember!
 			1: dispcode = 7'b100_1111;
 			2: dispcode = 7'b001_0010;
 			3: dispcode = 7'b000_0110;

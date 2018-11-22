@@ -2,6 +2,7 @@
 
 module DataMemory (
     input clk,
+    input reset,
     input [31:0] address,
     input MemWrite,
     input [31:0] dataIn, // write data
@@ -18,14 +19,16 @@ module DataMemory (
     end
 
     // read data
-    assign dataOut = {memory[address + 3],
-    				  memory[address + 2],
-    				  memory[address + 1],
-    				  memory[address]};
+    assign dataOut = (address == 0) ? 0 : {memory[address + 3],
+                                           memory[address + 2],
+                                           memory[address + 1],
+                                           memory[address]};
 
     // write data
     always @(negedge clk) begin
-        if (MemWrite == 1 && address >= 1 && address <= 255) begin
+        if (reset == 0)
+            memory[0] <= 0;
+        else if (MemWrite == 1 && address != 0) begin // do not use <=255!!!
             // little endian
             memory[address + 3] <= dataIn[31:24];
             memory[address + 2] <= dataIn[23:16];

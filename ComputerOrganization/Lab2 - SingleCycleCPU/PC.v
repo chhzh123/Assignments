@@ -10,9 +10,9 @@ module PC (
 
     initial currPC = 0;
 
-    always @(posedge clk or posedge reset) begin
+    always @(posedge clk or negedge reset) begin
         if (reset == 0)
-            currPC <= 0;
+            currPC <= 32'hFFFFFFFC;
         else if (PCWrite == 1)
             currPC <= nextPC;
     end

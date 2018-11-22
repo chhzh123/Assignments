@@ -195,27 +195,27 @@
 \section{结果与分析}
 \subsection{仿真模拟}
 \qquad 设置时钟周期为100ns，初始30ns为准备时间，然后将Reset设为1使其开始工作。仿真结果见图\ref{fig:wave_1}到图\ref{fig:wave_5}，每条指令的说明均已附在波形图之下。可以看见仿真结果与预期结果相同。
-\begin{figure}
+\begin{figure}[H]
 \includegraphics[width=\linewidth,trim=0 260 0 0,clip]{fig/FullIns1.pdf}
 \caption{波形图1}
 \label{fig:wave_1}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
 \includegraphics[width=\linewidth,trim=0 50 0 0,clip]{fig/FullIns2.pdf}
 \caption{波形图2}
 \label{fig:wave_2}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
 \includegraphics[width=\linewidth,trim=0 130 0 0,clip]{fig/FullIns3.pdf}
 \caption{波形图3}
 \label{fig:wave_3}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
 \includegraphics[width=\linewidth,trim=0 120 0 0,clip]{fig/FullIns4.pdf}
 \caption{波形图4}
 \label{fig:wave_4}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
 \includegraphics[width=\linewidth,trim=0 100 0 0,clip]{fig/FullIns5.pdf}
 \caption{波形图5}
 \label{fig:wave_5}
@@ -290,7 +290,17 @@
     \end{tabular}
     \caption{0x30结果}
     \end{figure}
-    % \item 0x34: \verb'lw $9, 4($1)'
+    \item 0x34: \verb'lw $9, 4($1)'
+    \begin{figure}[H]
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=0.3\linewidth]{fig/Implementation/0x34_00.jpg}&
+    \includegraphics[width=0.3\linewidth]{fig/Implementation/0x34_01.jpg}\\
+    \includegraphics[width=0.3\linewidth]{fig/Implementation/0x34_10.jpg}&
+    \includegraphics[width=0.3\linewidth]{fig/Implementation/0x34_11.jpg}
+    \end{tabular}
+    \caption{0x34结果}
+    \end{figure}
 \end{enumerate}
 
 \section{实验心得}
@@ -305,18 +315,23 @@
     \item 在模块输入参数最后常常多了一个\verb','报错(\verb'ISE port connections mix')。
     \item \verb'always @'写时序逻辑确定好上升沿和下降沿通常没有问题，而组合逻辑常常忘记写部分输入参数，导致该输入改变了，但寄存器的值并没有改变。
     \item 要在每个模块合适的位置对寄存器进行初始化\verb'initial'，否则在仿真中会输出\verb'XXXX'。
-    \item 位宽[x:y]要记清楚，对应好模块接口，否则多的位宽在跑实施时会报错。
+    \item 位宽[x:y]要记清楚，对应好模块接口，否则多的位宽在跑实施时会报错。当然少了位宽没发现的话，调试起来也会很麻烦。
     \item 应在时钟下降沿才进行写入操作
+    \item \verb'case'要记得写\verb'default'条件，注意检查是否所有情况都已涵盖，要不然FPGA会以奇怪的方式对未符合的情况进行匹配。
+    \item vivado编译器对代码检查还是很不严格，比如在条件判断中写\verb'add >= 0 && add <= 255'，可能后者会被认为是赋值，导致结果错误。这是仿真不会出现但具体运行时会出现的问题。
+    \item 32位的二进制编码不要写成\verb'8''\verb'h00000000'的形式，会被提示位数少于预定值，可能出现不可预料的错误，这个在\verb'0x3C'这条指令处卡了很久。
 \end{enumerate}
 % Wire和Reg不能弄混，即assign只能对Wire使用，而在initial段和always段进行赋值操作的一定是Reg;
 \par Vivado模拟仿真上板阶段：
 \begin{enumerate}
     \item 由于本实验采用小端存储数据，在读入时也要小心。第一次测试时因为测试指令写入文件的顺序不对，导致读入的指令全部都是反的，进而没法正常执行。通过Python重新对指令文件处理后才正常执行。
     \item 前面提及的双时钟问题，折腾了非常久的时间。
+    \item 初始PC值要从$-4$开始否则第一条指令如果有写操作则无法写入
     \item 写限制文件时，漏了一个端口设置，导致到最后一步生成二进制位流才报错，又得重新跑实施综合，很费时间。
-    \item 可能是电脑驱动的问题，一直报\verb'No hardware target is open'，没法将程序写入FPGA板，只能连着电脑运行程序。这个问题最终也没有解决。
+    \item 可能是电脑驱动的问题，一直报\verb'No hardware target is open'，没法将程序写入FPGA板，只能连着电脑运行程序，这个问题最终也没有解决。只好用FAT32格式化的U盘，通过Basys3的J2-USB端口写入\verb'bit'文件。
 \end{enumerate}
-\par 总的来说，本次实验收获非常非常多，更加熟悉了Verilog的语法，熟悉Vivado的使用，同时也了解了硬件设计与软件设计的巨大区别。如FPGA要考虑指令之间是否存在依赖关系、是否可以并行等问题，而平时我们在程序设计课或数据结构课上写的算法或项目往往是不需要考虑并行的问题的，这一点在硬件设计时要考虑清楚。
+\par 总的来说，本次实验收获非常非常多。尽管仿真没有出现问题，但是一到上板就出现了很多不可预料的问题，这些地方卡了我几天时间，非常难受。要解决硬件的问题一定要冷静下来，认真分析每条语句出现的漏洞，并且查看vivado给出的warning提示。
+\par 好的方面是，我更加熟悉了Verilog的语法，熟悉Vivado的使用，同时也了解了硬件设计与软件设计的巨大区别。如FPGA要考虑指令之间是否存在依赖关系、是否可以并行等问题，而平时我们在程序设计课或数据结构课上写的算法或项目往往是不需要考虑并行的问题的，这一点在硬件设计时要考虑清楚。
 当然了，更好地了解硬件也能够让我们编写出更高质量的软件代码，这两者应该相辅相成相互促进。
 
 \input{appendix}

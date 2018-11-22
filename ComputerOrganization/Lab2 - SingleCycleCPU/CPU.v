@@ -11,8 +11,8 @@ module CPU (
 	output Branch, Jump, Zero,
 	output PCWrite,
 	output [31:0] currPC, nextPC, instruction, alu_res,
-	output wire [31:0] d1, d2, rsData, rtData,
-	output wire [4:0] rs, rt, rd, sa, dbData
+	output wire [31:0] d1, d2, rsData, rtData, dbData,
+	output wire [4:0] rs, rt, rd, sa
 	);
 
 	wire [5:0] opcode;
@@ -68,6 +68,7 @@ module CPU (
 	// execution (EXE)
 	Registers reg_file(
 		.clk(clk),
+		.reset(reset),
 		.r1(rs),
 		.r2(rt),
 		.wr(mux_regdst.res),
@@ -121,6 +122,7 @@ module CPU (
 	// access memory (MEM)
 	DataMemory dm(
 		.clk(clk),
+		.reset(reset),
 		.address(alu_res),
 		.MemWrite(MemWrite),
 		.dataIn(reg_file.d2)

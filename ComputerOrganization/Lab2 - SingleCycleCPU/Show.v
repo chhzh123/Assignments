@@ -2,32 +2,25 @@
 
 module Show(
 	input clk,
-	input clk_cpu,
+	input clk_cpu, // button
 	input reset,
 	input [1:0] SW_in,
 	output reg [6:0] dispcode,
 	output reg [3:0] out
 	);
 
-	// synchronize
-	reg in=1'b0;
-	always @(posedge clk) begin
-		in <= clk_cpu;
-	end
-	wire in_syn = in;
-
-	// reduce jitter
-	reg [15:0] inhistory = 16'h0000;
+	// synchronize and reduce jitter
 	reg in_detected = 1'b0;
+	reg [15:0] inhistory = 16'h0000;
 	always @(posedge clk) begin
-		inhistory <= { inhistory[14:0] , in_syn };
+		inhistory = {inhistory[15:0], clk_cpu};
 		if (inhistory == 16'b0011111111111111)
-		  in_detected <= 1'b1;
+			in_detected <= 1'b1;
 		else
-		  in_detected <= 1'b0;
+			in_detected <= 1'b0;
 	end
 
-	wire seg_num; // not reg!
+	wire [1:0] seg_num; // not reg!
 
 	Counter counter(
 		.clk(clk),

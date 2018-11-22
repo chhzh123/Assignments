@@ -2,6 +2,7 @@
 
 module Registers (
     input clk,
+    input reset,
     input [4:0] r1, // read reg #1 address
     input [4:0] r2, // read reg #2 address
     input [4:0] wr, // write reg address
@@ -26,7 +27,9 @@ module Registers (
 
     // write data
     always @(negedge clk) begin
-        if (wr != 0 && RegWrite == 1)
+        if (reset == 0)
+            register[0] <= 0;
+        else if (wr != 0 && RegWrite == 1)
             register[wr] <= wd;
     end
 
