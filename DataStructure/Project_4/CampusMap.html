@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <title>中山大学东校区校园导览</title>
+  <script
+    type="text/javascript"
+    src="http://api.map.baidu.com/api?v=3.0&ak=9pNy8EbehGPvE7tL1UKDFh5FlsZ4Rc6U"
+  ></script>
+  <style type="text/css">
+    body,
+    html,
+    #container {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      margin: 0;
+      font-family: "微软雅黑";
+    }
+  </style>
+  <style>
+    .ui-box {
+      z-index: 999;
+      position: fixed;
+      top: 30px;
+      left: 30px;
+      border-radius: 3px;
+      padding: 10px;
+      border-top: 5px #0088ff solid;
+      font-family: Arial, Helvetica, sans-serif;
+      width: 500px;
+      background-color: white;
+      box-shadow: 0px 3px 5px #555;
+      opacity: 0.8;
+    }
+    button {
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        from(#f5f5f5),
+        to(#f1f1f1)
+      );
+      background-image: -webkit-linear-gradient(top, #f5f5f5, #f1f1f1);
+      -webkit-border-radius: 2px;
+      -webkit-user-select: none;
+      background-color: #f2f2f2;
+      border: 1px solid #f2f2f2;
+      border-radius: 2px;
+      color: #757575;
+      cursor: default;
+      font-family: arial, sans-serif;
+      font-size: 13px;
+      font-weight: bold;
+      margin: 11px 4px;
+      min-width: 54px;
+      padding: 0 16px;
+      text-align: center;
+      height: 36px;
+      line-height: 27px;
+      cursor: pointer;
+    }
+
+    select {
+      height: 36px;
+      line-height: 27px;
+      min-width: 54px;
+      padding: 0 16px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="ui-box" onload="prepareList()">
+    <h3>路径导航</h3>
+    <h4>起点</h4>
+    <select name="start" id="start"> </select>
+    <h4>终点</h4>
+    <select name="end" id="end"> </select>
+    <h4>交通方式</h4>
+    <input type="radio" name="transportation" value="步行" id="walk" checked /> 步行
+	<input type="radio" name="transportation" value="驾车" id="drive" /> 驾车
+	<button id="query" onclick="search()">查询</button>
+    <div id="route"></div>
+  </div>
+  <div id="container"></div>
+</body>
+<script type="text/javascript">
+
+  var locNames = [
+    "1 数据学院",
+    "2 生科院",
+    "3 心理学系",
+    "4 牌坊",
+    "5 孙中山先生像",
+    "6 图书馆",
+    "7 体育馆",
+    "8 超算",
+    "9 公教楼C",
+    "10 明德园",
+    "11 格致园",
+    "12 慎思园",
+    "13 至善园",
+    "14 学生活动中心",
+    "15 假草",
+    "16 真草",
+    "17 篮球场",
+    "18 行政楼",
+    "19 一饭",
+    "20 北基础实验楼",
+    "21 南基础实验楼"
+  ];
+  var locDes = [
+    "数据学院地表最强！",
+    "生科院牛X！",
+    "心理学系很强！",
+    "牌坊有长久的历史！",
+    "孙中山先生是中国近代伟大的民主革命先行者！",
+    "图书馆又大又漂亮！",
+    "体育馆可以给人打羽！",
+    "超算华南第一！",
+    "公教楼是学生上课的地方！",
+    "这是明德园的简介！",
+    "这是格致园的简介！",
+    "这是慎思园的简介！",
+    "这是至善园的简介！",
+    "学生活动中心供人活动！",
+    "假草的草是假的！",
+    "真草的草是真的！",
+    "篮球场有很多！",
+    "行政楼用来行政！",
+    "一饭不好吃！",
+    "北基础实验楼在北边！",
+    "南基础实验楼在南边！"
+  ];
+  var locations = [
+    [113.399551, 23.077721], // 数据学院
+    [113.402117, 23.07713], // 生科院
+    [113.395656, 23.072479], // 心理学系
+    [113.398395, 23.077722], // 牌坊
+    [113.398358, 23.075345], // 孙中山先生像
+    [113.39806, 23.072989], // 图书馆
+    [113.39835, 23.07158], // 体育馆
+    [113.400928, 23.076526], // 超算
+    [113.399041, 23.074614], // 公教楼C
+    [113.396284, 23.068978], // 明德园
+    [113.394866, 23.06686], // 格致园
+    [113.397317, 23.064444], // 慎思园
+    [113.398162, 23.066507], // 至善园
+    [113.397646, 23.066022], // 学生活动中心
+    [113.395215, 23.070176], // 假草
+    [113.399904, 23.071838], // 真草
+    [113.397332, 23.071538], // 篮球场
+    [113.397595, 23.074886], // 行政楼
+    [113.397318, 23.067026], // 一饭
+    [113.393516, 23.072117], // 北基础实验楼
+    [113.394201, 23.071103] // 南基础实验楼
+  ];
+  var edge = [[],[],[]];
+  function dijkstra(){
+    var n = locations.length;
+    var d = new Array(n);
+    var v = new Array(n);
+    var INF = 0x3F3F3F3F;
+    // initialization
+    for (var i = 0; i < n; ++i){
+      d[i] = INF;
+      v[i] = false;
+    }
+
+    d[start] = 0;
+    for (var i = 0; i < n; ++i){
+      var temp;
+      var minx = INF;
+      for (var j = 0; j < n; ++j)
+      {
+        if (!v[j] && d[j] < minx)
+        {
+          temp = j;
+          minx = d[j];
+        }
+      }
+      v[temp] = true;
+      // refresh distance array
+      for (var k = 0; k < n; ++k)
+        if (d[temp] + edge[temp][k] < d[k]){
+          d[k] = d[temp] + edge[temp][k];
+          path[k] = temp; // record path
+        }
+    }
+    return dis;
+  }
+  function getAdjPoints(sa,sb,da,db) {
+    var a1 = Math.min(Number(sa),Number(da));
+    var a2 = Math.max(Number(sa),Number(da));
+    var b1 = Math.min(Number(sb),Number(db));
+    var b2 = Math.max(Number(sb),Number(db));
+    var res = "<b>路上的景点（简介）：</b><br/>";
+    for (var i = 0; i < locations.length; ++i)
+      if (a1 < locations[i][0] && locations[i][0] < a2 &&
+        b1 < locations[i][1] && locations[i][1] < b2 &&
+        i != document.getElementById("start").value &&
+        i != document.getElementById("end").value){
+          res += locNames[i] + ": " + locDes[i] + "<br/>";
+          var point = new BMap.Point(locations[i][0], locations[i][1]);
+          var marker = new BMap.Marker(point);
+          var label = new BMap.Label(locNames[i], { position: point });
+          map.addOverlay(marker);
+          map.addOverlay(label);
+        }
+    return res;
+  }
+
+	function prepareList() {
+		var startlist = document.getElementById("start");
+    var endlist = document.getElementById("end");
+    for (var i = 0; i < locNames.length; ++i) {
+        var op = document.createElement("option");
+        op.value = i;
+        op.innerHTML = locNames[i];
+        endlist.append(op);
+    }
+    for (var i = 0; i < locNames.length; ++i) {
+        var op = document.createElement("option");
+        op.value = i;
+        op.innerHTML = locNames[i];
+        startlist.append(op);
+    }
+	}
+  prepareList();
+  var map = new BMap.Map("container");
+  map.enableScrollWheelZoom(true);
+
+  var description = "";
+  map.clearOverlays();
+
+  var driving = new BMap.DrivingRoute(map, {
+    onSearchComplete: function(results) {
+      if (driving.getStatus() == BMAP_STATUS_SUCCESS) {
+        var plan = driving.getResults().getPlan(0); // 一条完整的路径
+        for (var j = 0; j < plan.getNumRoutes(); j++) {
+          var pts = plan.getRoute(j).getPath(); // 分段路径
+          var polyline = new BMap.Polyline(pts);
+          polyline.setStrokeColor("red");
+          polyline.setStrokeStyle("dashed");
+          map.addOverlay(polyline);
+        }
+        var s = driving.getResults().getStart().point;
+        var d = driving.getResults().getEnd().point;
+        var m1 = new BMap.Marker(s);
+        var m2 = new BMap.Marker(d);
+        var lab1 = new BMap.Label("起点", { position: s });
+        var lab2 = new BMap.Label("终点", { position: d });
+        map.addOverlay(m1);
+        map.addOverlay(m2);
+        map.addOverlay(lab1);
+        map.addOverlay(lab2);
+        var route = driving
+          .getResults()
+          .getPlan(0)
+          .getRoute(0);
+        var dis = route.getDistance(false);
+        description += "<b>距离：</b>" + dis + "米<br/>";
+        description += "具体路径详情还在开发中...</br>";
+        // for (var i = 0; i < route.getNumSteps(); ++i)
+        //   description += (i+1) + ": " + route.getStep(i).getDescription();
+        // description += getAdjPoints(s.lng,s.lat,d.lng,d.lat);
+		    document.getElementById("route").innerHTML = description;
+      }
+    },
+    renderOptions: {
+      map: map,
+      autoViewport: true
+    }
+  });
+
+  var walking = new BMap.WalkingRoute(map, {
+    onSearchComplete: function(results) {
+      if (walking.getStatus() == BMAP_STATUS_SUCCESS) {
+        var plan = walking.getResults().getPlan(0); // 一条完整的路径
+        for (var j = 0; j < plan.getNumRoutes(); j++) {
+          var pts = plan.getRoute(j).getPath(); // 分段路径
+          var polyline = new BMap.Polyline(pts);
+          polyline.setStrokeColor("red");
+          polyline.setStrokeStyle("dashed");
+          map.addOverlay(polyline);
+        }
+        var s = walking.getResults().getStart().point;
+        var d = walking.getResults().getEnd().point;
+        var m1 = new BMap.Marker(s);
+        var m2 = new BMap.Marker(d);
+        var lab1 = new BMap.Label("起点", { position: s });
+        var lab2 = new BMap.Label("终点", { position: d });
+        map.addOverlay(m1);
+        map.addOverlay(m2);
+        map.addOverlay(lab1);
+        map.addOverlay(lab2);
+        var route = walking
+          .getResults()
+          .getPlan(0)
+          .getRoute(0);
+        var dis = route.getDistance(false);
+        description += "<b>距离：</b>" + dis + "米<br/>";
+        description += getAdjPoints(s.lng,s.lat,d.lng,d.lat);
+        description += "<b>详细路径规划如下：</b><br/>";
+        for (var i = 0; i < route.getNumSteps(); ++i)
+          description += (i+1) + ": " + route.getStep(i).getDescription(false) + "<br/>";
+        document.getElementById("route").innerHTML = description;
+      }
+    },
+    renderOptions: {
+      map: map,
+      autoViewport: true
+    }
+  });
+
+function search() {
+	map.clearOverlays();
+	description = "";
+	var methodStr = document.getElementById("walk").checked ? "1" : "2";
+  var method = methodStr == "1" ? "步行" : "驾车";
+  var srcIndex = document.getElementById("start").value;
+  var dstIndex = document.getElementById("end").value;
+	var src = new BMap.Point(locations[srcIndex][0], locations[srcIndex][1]);
+  var dst = new BMap.Point(locations[dstIndex][0], locations[dstIndex][1]);
+  if (methodStr == "1")
+    walking.search(src, dst);
+  else
+    driving.search(src, dst);
+}
+</script>
