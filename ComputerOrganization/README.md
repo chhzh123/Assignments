@@ -6,8 +6,8 @@ This is the repository of chhzh123's assignments of *Computer Organization (Labo
 
 * The instruments used in the experiments are mostly provided by the school's laboratory, including the circuit board and the *Xilinx Basys 3* FPGA study board.
 
-* All the programs are written in *MIPS* (target CPU) or *Verilog* (target FPGA)
+* All the programs are written in *MIPS* (targetting CPU) or *Verilog* (targetting FPGA)
 
 * The programs targetting FPGA are synthesized by *Vivado 2018*.
 
-* Some of the graphs in the report are drawn using [draw.io](https://draw.io/) and stored in \*.xml files.
+* The photos in the reports are taken by my phone or directly screenshotted. Other graphs are drawn using [draw.io](https://draw.io/) and stored in \*.xml files.

@@ -1,0 +1,1081 @@
+% !TEX root = main.tex
+
+\newpage
+\begin{multicols}{2}
+\section{程序清单}
+\label{sec:appendix}
+\subsection{MIPS编译器(Python)}
+\begin{lstlisting}[language=python]
+import re
+
+opcode = {
+	"add":   "000000",
+	"sub":   "000001",
+	"addiu": "000010",
+	"and":   "010000",
+	"andi":  "010001",
+	"ori":   "010010",
+	"xori":  "010011",
+	"sll":   "011000",
+	"slti":  "100110",
+	"slt":   "100111",
+	"sw":    "110000",
+	"lw":    "110001",
+	"beq":   "110100",
+	"bne":   "110101",
+	"bltz":  "110110",
+	"j":     "111000",
+	"jr":    "111001",
+	"jal":   "111010",
+	"halt":  "111111"
+}
+
+def twos(x):
+	res = eval(x)
+	if res >= 0:
+		return str(bin(res)[2:]).zfill(16)
+	else:
+		return str(bin(2**16 + res)[2:]).zfill(16)
+
+def parse(ins):
+	res = ""
+	elems = list(filter(bool,re.split("\t| +#.*|, +| +",ins)))
+	op = elems[0]
+	res += opcode[op]
+	if op in ["add","sub","and","slt"]:
+		rd, rs, rt = elems[1][1:], elems[2][1:], elems[3][1:]
+		res += str(bin(eval(rs))[2:]).zfill(5)
+		res += str(bin(eval(rt))[2:]).zfill(5)
+		res += str(bin(eval(rd))[2:]).zfill(5)
+		res += "".zfill(11)
+	elif op in ["addiu","andi","ori","xori","slti"]:
+		rt, rs, imm = elems[1][1:], elems[2][1:], elems[3]
+		res += str(bin(eval(rs))[2:]).zfill(5)
+		res += str(bin(eval(rt))[2:]).zfill(5)
+		res += twos(imm)
+	elif op in ["sw","lw"]:
+		rt = elems[1][1:]
+		lst = list(filter(bool,re.split("\(\$|\)",elems[2])))
+		imm, rs = lst[0], lst[1]
+		res += str(bin(eval(rs))[2:]).zfill(5)
+		res += str(bin(eval(rt))[2:]).zfill(5)
+		res += twos(imm)
+	elif op in ["beq","bne"]:
+		rs, rt, imm = elems[1][1:], elems[2][1:], elems[3]
+		res += str(bin(eval(rs))[2:]).zfill(5)
+		res += str(bin(eval(rt))[2:]).zfill(5)
+		res += twos(imm)
+	elif op == "bltz":
+		rs, imm = elems[1][1:], elems[2]
+		res += str(bin(eval(rs))[2:]).zfill(5)
+		res += "".zfill(5)
+		res += twos(imm)
+	elif op in ["j","jal"]:
+		address = elems[1] # 0x...
+		res += str(bin(eval(address))[2:-2]).zfill(26)
+	elif op == "jr":
+		rs = elems[1][1:]
+		res += str(bin(eval(rs))[2:]).zfill(5)
+		res += "".zfill(21)
+	elif op == "sll":
+		rd, rt, sa = elems[1][1:], elems[2][1:], elems[3]
+		res += "".zfill(5)
+		res += str(bin(eval(rt))[2:]).zfill(5)
+		res += str(bin(eval(rd))[2:]).zfill(5)
+		res += str(bin(eval(sa))[2:]).zfill(5)
+		res += "".zfill(6)
+	else: # halt
+		res += "".zfill(26)
+	return res
+
+instructions = []
+infile = open("./test.asm","r")
+for line in infile:
+	if line[0] in [".","#","m","\n"]:
+		continue
+	else:
+		instructions.append(parse(line))
+
+for x in instructions:
+	print("0x" + hex(eval("0b" + x))[2:].zfill(8),end="    ")
+	print(x[:6],end=" ")
+	print(x[6:11],end=" ")
+	print(x[11:16],end=" ")
+	print(x[16:20],end=" ")
+	print(x[20:24],end=" ")
+	print(x[24:28],end=" ")
+	print(x[28:32],end="\n")
+
+outfile = open("./instruction.data","w")
+for (n,x) in enumerate(instructions):
+	# little endian!
+	outfile.write("// #%d\n" % n)
+	outfile.write(x[24:32])
+	outfile.write("\n")
+	outfile.write(x[16:24])
+	outfile.write("\n")
+	outfile.write(x[8:16])
+	outfile.write("\n")
+	outfile.write(x[:8])
+	outfile.write("\n")
+\end{lstlisting}
+
+\subsection{CPU主模块}
+\begin{lstlisting}
+timescale 1ns / 1ps
+
+module CPU (
+	input clk, reset,
+	output [2:0] state,
+	output [1:0] RegDst,
+	output ExtSel,
+	output RegWrite, MemWrite,
+	output ALUSrcA, ALUSrcB,
+	output [2:0] ALUOp,
+	output [1:0] PCSrc,
+	output DBSrc,
+	output WrRegSrc,
+	output Zero,
+	output PCWrite,
+	output [31:0] currPC, nextPC, instruction, alu_res,
+	output wire [31:0] d1, d2, rsData, rtData, dbData,
+	output wire [4:0] rs, rt, rd, sa
+	);
+
+	wire [5:0] opcode;
+	wire [15:0] imm;
+	wire [31:0] pc4;
+	wire [31:0] inst;
+
+	assign opcode = instruction[31:26];
+	assign rs = instruction[25:21];
+	assign rt = instruction[20:16];
+	assign rd = instruction[15:11];
+	assign sa = instruction[10:6];
+	assign imm = instruction[15:0];
+
+	PC pc(
+		.clk(clk),
+		.reset(reset),
+		.PCWrite(PCWrite),
+		.currPC(currPC),
+		.nextPC(nextPC)
+		);
+
+	Adder add_pc4(
+		.A(currPC),
+		.B({{29{1'b0}},3'b100}),
+		.res(pc4)
+		);
+	
+	// instruction fetch (IF)
+	InstructionMemory im(
+		.address(currPC),
+		.dataOut(inst)
+		);
+
+	Register ir(
+		.clk(clk),
+		.reset(reset),
+		.in(inst),
+		.out(instruction)
+		);
+
+	// instruction decode (ID)
+	ControlUnit control(
+		.clk(clk),
+		.reset(reset),
+		// input
+		.opcode(opcode),
+		.Zero(Zero),
+		// output
+		.state(state),
+		.RegDst(RegDst),
+		.ExtSel(ExtSel),
+		.RegWrite(RegWrite),
+		.ALUSrcA(ALUSrcA),
+		.ALUSrcB(ALUSrcB),
+		.ALUOp(ALUOp),
+		.DBSrc(DBSrc),
+		.WrRegSrc(WrRegSrc),
+		.MemWrite(MemWrite),
+		.PCSrc(PCSrc),
+		.PCWrite(PCWrite)
+		);
+
+	RegFile reg_file(
+		.clk(clk),
+		.reset(reset),
+		.r1(rs),
+		.r2(rt),
+		.wr(mux_regdst.res),
+		.RegWrite(RegWrite),
+		.wd(mux_wrreg.res)
+		// d1 -> adr / mux_pc.D
+		// d2 -> bdr
+		);
+
+	Register adr(
+		.clk(clk),
+		.reset(reset),
+		.in(reg_file.d1)
+		// out -> mux_srcA.A
+		);
+
+	Register bdr(
+		.clk(clk),
+		.reset(reset),
+		.in(reg_file.d2)
+		// out -> mux_srcB.A / dm.dataIn
+		);
+
+	assign d1 = mux_srcA.res;
+	assign d2 = mux_srcB.res;
+	assign rsData = reg_file.d1;
+	assign rtData = reg_file.d2;
+
+	// execution (EXE)
+	MUX5b mux_regdst(
+		.Sel(RegDst),
+		.A(rt),
+		.B(rd),
+		.C(5'b11111)
+		// res -> reg_file.wr
+		);
+
+	MUX mux_srcA(
+		.Sel(ALUSrcA),
+		.A(adr.out),
+		.B({{27{1'b0}},sa})
+		// res -> alu.A
+		);
+	
+	Extender extender(
+		.Sel(ExtSel),
+		.dataIn(imm)
+		// dataOut -> mux_srcB.B / sl_16
+		);
+
+	MUX mux_srcB(
+		.Sel(ALUSrcB),
+		.A(bdr.out),
+		.B(extender.dataOut)
+		// res -> alu.B
+		);
+
+	ALU alu(
+		.op(ALUOp),
+		.A(mux_srcA.res),
+		.B(mux_srcB.res),
+		// res -> aludr / mux_memToReg
+		.zero(Zero)
+		);
+
+	Register aludr(
+		.clk(clk),
+		.reset(reset),
+		.in(alu.res),
+		// res -> dm.address / mux_memToReg.A
+		.out(alu_res)
+		);
+
+	// access memory (MEM)
+	DataMemory dm(
+		.clk(clk),
+		.reset(reset),
+		.address(alu_res),
+		.MemWrite(MemWrite),
+		.dataIn(bdr.out)
+		// dataOut -> mux_memToReg
+		);
+
+	// write back (WB)
+	MUX mux_memToReg(
+		.Sel(DBSrc),
+		.A(alu.res), // not alu_res!
+		.B(dm.dataOut)
+		// res -> dbdr
+		);
+
+	Register dbdr(
+		.clk(clk),
+		.reset(reset),
+		.in(mux_memToReg.res)
+		// out -> mux_wrreg.B
+		);
+
+	MUX mux_wrreg(
+		.Sel(WrRegSrc),
+		.A(dbdr.out),
+		.B(pc4)
+		// res -> reg_file.wd
+		);
+
+	assign dbData = mux_memToReg.res;
+
+	// jump & branch
+	ShiftLeft sl(
+		.dataIn(extender.dataOut)
+		// dataOut -> add_target.B
+		);
+
+	Adder add_target(
+		.A(pc4),
+		.B(sl.dataOut)
+		// res -> mux_branch.B
+		);
+
+	MUX4 mux_pc(
+		.Sel(PCSrc),
+		.A(pc4),
+		.B({pc4[31:28],instruction[25:0],2'b00}),
+		.C(add_target.res),
+		.D(reg_file.d1),
+		.res(nextPC)
+		);
+
+endmodule
+\end{lstlisting}
+
+\subsection{指令存储器}
+\begin{lstlisting}
+module InstructionMemory (
+	input [31:0] address,
+	output [31:0] dataOut
+	);
+	
+	reg [7:0] memory [0:255]; // 8 bits (bandwidth) * #256 (address)
+
+	// initialization
+	initial $readmemb("D:/instruction.data",memory);
+
+	// output data (little endian)
+	assign dataOut = {memory[address + 3],
+					  memory[address + 2],
+					  memory[address + 1],
+					  memory[address]};
+
+endmodule
+\end{lstlisting}
+
+\subsection{程序计数器(PC)}
+\begin{lstlisting}
+module PC (
+    input clk,
+    input reset,
+    input PCWrite,
+    input [31:0] nextPC,
+    output reg [31:0] currPC
+    );
+
+    initial currPC = 0;
+
+    always @(posedge clk or negedge reset) begin
+        #5 // important!
+        if (reset == 0)
+            currPC <= 0;
+        else if (PCWrite == 1)
+            currPC <= nextPC;
+    end
+
+endmodule
+\end{lstlisting}
+
+\subsection{寄存器堆}
+\begin{lstlisting}
+module RegFile (
+    input clk,
+    input reset,
+    input [4:0] r1, // read reg #1 address
+    input [4:0] r2, // read reg #2 address
+    input [4:0] wr, // write reg address
+    input RegWrite,
+    input [31:0] wd, // write data
+    output [31:0] d1, // read data 1
+    output [31:0] d2 // read data 2
+    );
+    
+    reg [31:0] register [0:31]; // 32 bits (bandwidth) * #32 (address)
+    
+    // initialization
+    integer i;
+    initial begin
+        for (i = 0; i < 32; i = i + 1)
+            register[i] = 0;
+    end
+
+    // read data
+    assign d1 = (r1 == 0) ? 0 : register[r1];
+    assign d2 = (r2 == 0) ? 0 : register[r2];
+
+    // write data
+    always @(negedge clk) begin
+        if (reset == 0)
+            register[0] <= 0;
+        else if (wr != 0 && RegWrite == 1)
+            register[wr] <= wd;
+    end
+
+endmodule
+\end{lstlisting}
+
+\subsection{单个寄存器}
+\begin{lstlisting}
+module Register (
+    input clk,
+    input reset,
+    input [31:0] in,
+    output [31:0] out
+    );
+    
+    reg [31:0] data;
+
+    // initialization
+    initial data = 0;
+
+    // read data
+    assign out = data;
+
+    // write data
+    always @(negedge clk) begin
+        if (reset == 0)
+            data <= 0;
+        else
+            data <= in;
+    end
+
+endmodule
+\end{lstlisting}
+
+\subsection{数据存储器}
+\begin{lstlisting}
+module DataMemory (
+    input clk,
+    input reset,
+    input [31:0] address,
+    input MemWrite,
+    input [31:0] dataIn, // write data
+    output [31:0] dataOut // read data
+    );
+    
+    reg [7:0] memory [0:255]; // 8 bits (bandwidth) * #256 (address)
+
+    // initialization
+    integer i;
+    initial begin
+        for (i = 0; i < 256; i = i + 1)
+            memory[i] = 0;
+    end
+
+    // read data
+    assign dataOut = (address == 0) ? 0 : {memory[address + 3],
+                                           memory[address + 2],
+                                           memory[address + 1],
+                                           memory[address]};
+
+    // write data
+    always @(negedge clk) begin
+        if (reset == 0)
+            memory[0] <= 0;
+        else if (MemWrite == 1 && address != 0) begin // do not use <=255!!!
+            // little endian
+            memory[address + 3] <= dataIn[31:24];
+            memory[address + 2] <= dataIn[23:16];
+            memory[address + 1] <= dataIn[15:8];
+            memory[address] <= dataIn[7:0];
+        end
+    end
+
+endmodule
+\end{lstlisting}
+
+\subsection{控制单元}
+\begin{lstlisting}
+module ControlUnit (
+    input clk,
+    input reset,
+    input [5:0] opcode,
+    input Zero,
+    output reg [2:0] state,
+    output reg [1:0] RegDst,
+    output reg ExtSel,
+    output reg ALUSrcA,
+    output reg ALUSrcB,
+    output reg [2:0] ALUOp,
+    output reg [1:0] PCSrc,
+    output reg DBSrc,
+    output reg WrRegSrc,
+    output reg RegWrite,
+    output reg MemWrite,
+    output reg PCWrite
+    );
+
+    initial state = 3'b000;
+
+    // Finite State Machine (FSM)
+    always @ (posedge clk) begin
+        if (reset == 0)
+            state <= 3'b000;
+        else case (state)
+            3'b000: begin // IF
+                state <= 3'b001;
+            end
+            3'b001: begin // ID
+                if (opcode == 6'b110100 || opcode == 6'b110101 || opcode == 6'b110110) // beq bne bltz
+                    state <= 3'b101;
+                else if (opcode == 6'b110000 || opcode == 6'b110001) // sw & lw
+                    state <= 3'b010;
+                else if (opcode == 6'b111000 || opcode == 6'b111001 || opcode == 6'b111010 || opcode == 6'b111111) // j jr jal halt
+                    state <= 3'b000;
+                else
+                    state <= 3'b110;
+            end
+            3'b110: begin // EXE
+                state <= 3'b111;
+            end
+            3'b111: begin // WB
+                state <= 3'b000;
+            end
+            3'b101: begin // EXE
+                state <= 3'b000;
+            end
+            3'b010: begin // EXE
+                state <= 3'b011;
+            end
+            3'b011: begin // MEM
+                if (opcode == 6'b110001) // lw
+                    state <= 3'b100;
+                else // sw
+                    state <= 3'b000;
+            end
+            3'b100: begin // WB
+                state <= 3'b000;
+            end
+        endcase
+    end
+
+    // always @ (opcode or state or Zero) begin // Zero!
+    always @ (state or opcode) begin
+    	RegDst   <= 2'b00;
+		ExtSel   <= 0;
+        if (state == 3'b111 || state == 3'b100)
+		    RegWrite <= 1;
+        else
+            RegWrite <= 0;
+		ALUSrcA  <= 0;
+		ALUSrcB  <= 0;
+		ALUOp    <= 3'b000;
+		DBSrc <= 0;
+		MemWrite <= 0;
+        PCSrc    <= 2'b00;
+		WrRegSrc <= 0;
+        if (state == 3'b000)
+		    PCWrite <= 1;
+        else
+            PCWrite <= 0; // donot update PC if the state is not IF!
+    	case (opcode)
+    		6'b000000: begin // add rd, rs, rt
+    				RegDst <= 2'b01;
+    				end
+    		6'b000001: begin // sub rd, rs, rt
+    				RegDst <= 2'b01;
+    				ALUOp <= 3'b001;
+    				end
+    		6'b000010: begin // addiu rt, rs, imm
+                    ExtSel <= 1; // ???
+    				ALUSrcB <= 1;
+    				end
+            6'b010000: begin // and rd, rs, rt
+                    RegDst <= 2'b01;
+                    ALUOp <= 3'b100;
+                    end
+    		6'b010001: begin // andi rt, rs, imm
+    				ALUSrcB <= 1;
+    				ALUOp <= 3'b100;
+    				end
+    		6'b010010: begin // ori rt, rs, imm
+    				ALUSrcB <= 1;
+    				ALUOp <= 3'b011;
+    				end
+    		6'b010011: begin // xori rt, rs, imm
+                    ALUSrcB <= 1;
+                    ALUOp <= 3'b111;
+    				end
+    		6'b011000: begin // sll rd, rt, sa
+    				RegDst <= 2'b01;
+    				ALUSrcA <= 1;
+    				ALUOp <= 3'b010;
+    				end
+    		6'b100110: begin // slti rt, rs, imm
+                    ExtSel <= 1;
+                    ALUSrcB <= 1; // remember!
+    				ALUOp <= 3'b110;
+    				end
+            6'b100111: begin // slt rd, rs, rt
+                    RegDst <= 2'b01;
+                    ALUOp <= 3'b110;
+                    end
+    		6'b110000: begin // sw rt, imm(rs)
+    				ExtSel <= 1;
+    				RegWrite <= 0;
+    				ALUSrcB <= 1;
+                    if (state == 3'b011)
+    				    MemWrite <= 1;
+                    else
+                        MemWrite <= 0;
+    				end
+    		6'b110001: begin // lw rt, imm(rs)
+    				ExtSel <= 1;
+    				ALUSrcB <= 1;
+    				DBSrc <= 1;
+    				end
+    		6'b110100: begin // beq rs, rt, imm	
+					ExtSel <= 1;
+    				RegWrite <= 0;
+    				ALUOp <= 3'b001;
+                    if (Zero == 1)
+                        PCSrc <= 2'b10;
+                    else
+                        PCSrc <= 2'b00;
+					end
+			6'b110101: begin // bne rs, rt, imm	
+					ExtSel <= 1;
+    				RegWrite <= 0;
+    				ALUOp <= 3'b001;
+                    if (Zero == 0) // (rs - rt == 0) ? 1 : 0 Not equal!
+                        PCSrc <= 2'b10;
+                    else
+                        PCSrc <= 2'b00;
+					end
+			6'b110110: begin // bltz rs, imm
+					ExtSel <= 1;
+    				RegWrite <= 0;
+    				ALUOp <= 3'b110; // compare sign
+                    if (Zero == 0) // a < 0 ? 1 : 0
+                        PCSrc <= 2'b10;
+                    else
+                        PCSrc <= 2'b00;
+					end
+			6'b111000: begin // j addr
+    				RegWrite <= 0;
+    				PCSrc <= 2'b01;
+					end
+            6'b111001: begin // jr rs
+                    RegWrite <= 0;
+                    PCSrc <= 2'b11;
+                    end
+            6'b111010: begin // jal addr
+                    if (state == 3'b001)
+                        RegWrite <= 1;
+                    RegDst <= 2'b10;
+                    WrRegSrc <= 1;
+                    PCSrc <= 2'b01;
+                    end
+			6'b111111: begin // halt
+					PCWrite <= 0;
+					end
+		endcase
+	end
+    
+endmodule
+\end{lstlisting}
+
+\subsection{算术逻辑单元(ALU)}
+\begin{lstlisting}
+module ALU (
+    input [2:0] op,
+    input [31:0] A,
+    input [31:0] B,
+    output reg [31:0] res,
+    output zero
+    );
+    
+    initial begin
+        res = 0;
+    end
+    
+    always @(op or A or B) begin
+        case (op)
+            3'b000: res = A + B;
+            3'b001: res = A - B;
+            3'b010: res = B << A; // B first!
+            3'b011: res = A | B;
+            3'b100: res = A & B;
+            3'b101: res = (A < B) ? 1 : 0;
+            3'b110: res = ((A < B && A[31] == B[31]) // both pos/neg num
+                         || (A[31] == 1 && B[31] == 0)) // A neg B pos
+                         ? 1 : 0; // not 8'h0000001 !!!
+            3'b111: res = A ^ B;
+        endcase
+    end
+
+    assign zero = (res == 0) ? 1 : 0;
+
+endmodule
+\end{lstlisting}
+
+\subsection{多路选择器(MUX)}
+\begin{lstlisting}
+module MUX (
+    input Sel,
+    input [31:0] A,
+    input [31:0] B,
+    output reg [31:0] res
+    );
+    
+    always @(Sel or A or B) begin
+        res <= (Sel == 0) ? A : B;
+    end
+
+endmodule
+
+module MUX5b (
+    input [1:0] Sel,
+    input [4:0] A,
+    input [4:0] B,
+    input [4:0] C,
+    output reg [4:0] res
+    );
+    
+    always @(Sel or A or B or C) begin
+        case (Sel)
+            2'b00: res <= A;
+            2'b01: res <= B;
+            2'b10: res <= C;
+        endcase
+    end
+
+endmodule
+
+module MUX4 (
+    input [1:0] Sel,
+    input [31:0] A,
+    input [31:0] B,
+    input [31:0] C,
+    input [31:0] D,
+    output reg [31:0] res
+    );
+    
+    always @(Sel or A or B or C or D) begin
+        case (Sel)
+            2'b00: res <= A;
+            2'b01: res <= B;
+            2'b10: res <= C;
+            2'b11: res <= D;
+        endcase
+    end
+
+endmodule
+\end{lstlisting}
+
+\subsection{数据扩展器}
+\begin{lstlisting}
+module Extender (
+	input Sel,
+	input [15:0] dataIn,
+	output reg [31:0] dataOut
+	);
+
+	initial dataOut = 0;
+
+	always @(Sel or dataIn) begin // dataIn!!!
+		if (Sel == 0) // ZeroExt
+			dataOut = {{16{1'b0}},dataIn[15:0]};
+		else // SignExt
+			dataOut = {{16{dataIn[15]}},dataIn[15:0]};
+	end
+
+endmodule
+\end{lstlisting}
+
+\subsection{仿真代码}
+\begin{lstlisting}
+module CPU_sim (
+	output [2:0] state,
+	output [1:0] RegDst,
+	output ExtSel,
+	output RegWrite, MemWrite,
+	output ALUSrcA, ALUSrcB,
+	output [2:0] ALUOp,
+	output [1:0] PCSrc,
+	output DBSrc,
+	output WrRegSrc,
+	output Zero,
+	output PCWrite,
+	output [31:0] currPC, nextPC, instruction, alu_res,
+	output [4:0] rs, rt,
+	output [31:0] d1, d2, rsData, rtData, dbData
+	);
+	
+	reg clk;
+	reg reset;
+
+	CPU cpu(
+		.clk(clk),
+		.reset(reset),
+		.state(state),
+		.RegDst(RegDst),
+		.ExtSel(ExtSel),
+		.RegWrite(RegWrite),
+		.MemWrite(MemWrite),
+		.ALUSrcA(ALUSrcA),
+		.ALUSrcB(ALUSrcB),
+		.ALUOp(ALUOp),
+		.DBSrc(DBSrc),
+		.PCSrc(PCSrc),
+		.WrRegSrc(WrRegSrc),
+		.Zero(Zero),
+		.PCWrite(PCWrite),
+		.currPC(currPC),
+		.nextPC(nextPC),
+		.instruction(instruction),
+		.alu_res(alu_res),
+		.rs(rs),
+		.rt(rt),
+		.d1(d1),
+		.d2(d2),
+		.rsData(rsData),
+		.rtData(rtData),
+		.dbData(dbData)
+		);
+
+	initial begin
+		clk = 1;
+		reset = 0;
+		// wait for initialization
+		#30;
+		reset = 1;
+	end
+
+	always #50 clk = ~clk;
+
+endmodule
+\end{lstlisting}
+
+\subsection{分频计数器}
+\begin{lstlisting}
+module Counter(
+    input clr, // clear, say reset
+    input clk, // original clock
+    output reg [1:0] count_4,
+    output reg clk_seg
+    );
+    
+    // display 10kHz
+    reg [16:0] count_dis; // 26 bits to store count: 2^17 > 10^5
+    always @ (posedge clk or posedge clr)
+    begin
+        if (clr == 1) // reset
+        begin
+            clk_seg <= 0;
+            count_dis <= 0;
+        end
+        else if (count_dis == 50_000 - 1) // return 0
+        begin
+            clk_seg <= ~clk_seg;
+            count_dis <= 0;
+        end
+        else
+        begin
+            clk_seg <= clk_seg;
+            count_dis <= count_dis + 1;
+        end
+    end
+
+    always @ (posedge clk_seg or posedge clr)
+    begin
+        if (clr == 1 || count_4 == 4)
+            count_4 <= 0;
+        else
+            count_4 <= count_4 + 1;
+    end
+
+endmodule
+\end{lstlisting}
+
+\subsection{七段数码管}
+\begin{lstlisting}
+module SegDisplay (
+	input [3:0] data,
+	output reg [6:0] dispcode
+	);
+
+	always @(data)
+		case(data)
+			// 0: on    1: off
+			0: dispcode = 7'b000_0001; // remember!
+			1: dispcode = 7'b100_1111;
+			2: dispcode = 7'b001_0010;
+			3: dispcode = 7'b000_0110;
+			4: dispcode = 7'b100_1100;
+			5: dispcode = 7'b010_0100;
+			6: dispcode = 7'b010_0000;
+			7: dispcode = 7'b000_1111;
+			8: dispcode = 7'b000_0000;
+			9: dispcode = 7'b000_0100;
+			10: dispcode = 7'b000_1000; // A
+			11: dispcode = 7'b110_0000; // b
+			12: dispcode = 7'b011_0001; // C
+			13: dispcode = 7'b100_0010; // d
+			14: dispcode = 7'b001_0000; // e
+			15: dispcode = 7'b011_1000; // F
+		endcase
+
+endmodule
+\end{lstlisting}
+
+\subsection{写板电路}
+\begin{lstlisting}
+module Show(
+	input clk,
+	input clk_cpu, // button
+	input reset,
+	input [1:0] SW_in,
+	output reg [6:0] dispcode,
+	output reg [3:0] out
+	);
+
+	// synchronize and reduce jitter
+	reg in_detected = 1'b0;
+	reg [15:0] inhistory = 16'h0000;
+	always @(posedge clk) begin
+		inhistory = {inhistory[15:0], clk_cpu};
+		if (inhistory == 16'b0011111111111111)
+			in_detected <= 1'b1;
+		else
+			in_detected <= 1'b0;
+	end
+
+	wire [1:0] seg_num; // not reg!
+
+	Counter counter(
+		.clk(clk),
+		// output clock/counter
+		.count_4(seg_num)
+		);
+
+	reg [31:0] firstNum;
+	reg [31:0] secondNum;
+
+	initial firstNum = 0;
+	initial secondNum = 0;
+
+	wire [31:0] currPC, nextPC, rsData, rtData, dbData, alu_res;
+	wire [4:0] rs, rt;
+
+	CPU cpu(
+		// input
+		.clk(in_detected),
+		.reset(reset),
+		// output
+		.currPC(currPC),
+		.nextPC(nextPC),
+		.rs(rs),
+		.rt(rt),
+		.rsData(rsData),
+		.rtData(rtData),
+		.dbData(dbData),
+		.alu_res(alu_res)
+		);
+
+	always @(SW_in) begin
+		case (SW_in)
+			2'b00: begin
+				firstNum <= currPC;
+				secondNum <= nextPC;
+				end
+			2'b01: begin
+				firstNum <= {{27{1'b0}},rs};
+				secondNum <= rsData;
+				end
+			2'b10: begin
+				firstNum <= {{27{1'b0}},rt};
+				secondNum <= rtData;
+				end
+			2'b11: begin
+				firstNum <= alu_res;
+				secondNum <= dbData;
+				end
+		endcase
+	end
+
+	SegDisplay seg1(
+		.data(firstNum[7:4])
+		// .dispcode
+		);
+
+	SegDisplay seg2(
+		.data(firstNum[3:0])
+		// .dispcode
+		);
+
+	SegDisplay seg3(
+		.data(secondNum[7:4])
+		// .dispcode
+		);
+
+	SegDisplay seg4(
+		.data(secondNum[3:0])
+		// .dispcode
+		);
+
+	always @ (seg_num or firstNum or secondNum)
+		case (seg_num)
+			0: begin
+				out = 4'b1110;
+				dispcode = seg4.dispcode;
+				end
+			1: begin
+				out = 4'b1101;
+				dispcode = seg3.dispcode;
+				end
+			2: begin
+				out = 4'b1011;
+				dispcode = seg2.dispcode;
+				end
+			3: begin
+				out = 4'b0111;
+				dispcode = seg1.dispcode;
+				end
+		endcase
+
+endmodule
+\end{lstlisting}
+
+\subsection{限制文件(constraints.xdc)}
+\begin{lstlisting}
+set_property PACKAGE_PIN W5 [get_ports clk]
+set_property PACKAGE_PIN T17 [get_ports clk_cpu]
+set_property PACKAGE_PIN V17 [get_ports reset]
+set_property PACKAGE_PIN R2 [get_ports {SW_in[1]}]
+set_property PACKAGE_PIN T1 [get_ports {SW_in[0]}]
+set_property PACKAGE_PIN W4 [get_ports {out[3]}]
+set_property PACKAGE_PIN V4 [get_ports {out[2]}]
+set_property PACKAGE_PIN U4 [get_ports {out[1]}]
+set_property PACKAGE_PIN U2 [get_ports {out[0]}]
+set_property PACKAGE_PIN W7 [get_ports {dispcode[6]}]
+set_property PACKAGE_PIN W6 [get_ports {dispcode[5]}]
+set_property PACKAGE_PIN U8 [get_ports {dispcode[4]}]
+set_property PACKAGE_PIN V8 [get_ports {dispcode[3]}]
+set_property PACKAGE_PIN U5 [get_ports {dispcode[2]}]
+set_property PACKAGE_PIN V5 [get_ports {dispcode[1]}]
+set_property PACKAGE_PIN U7 [get_ports {dispcode[0]}]
+
+set_property IOSTANDARD LVCMOS33 [get_ports clk]
+set_property IOSTANDARD LVCMOS33 [get_ports clk_cpu]
+set_property IOSTANDARD LVCMOS33 [get_ports reset]
+set_property IOSTANDARD LVCMOS33 [get_ports {SW_in[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {SW_in[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {out[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {out[2]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {out[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {out[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {dispcode[6]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {dispcode[5]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {dispcode[4]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {dispcode[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {dispcode[2]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {dispcode[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {dispcode[0]}]
+\end{lstlisting}
+\end{multicols}
