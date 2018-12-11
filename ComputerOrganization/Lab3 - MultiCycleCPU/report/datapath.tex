@@ -2,6 +2,8 @@
 
 \subsection{各指令数据通路分析}
 \qquad公共的数据通路为取指和PC+4，见图\ref{fig:datapath_add}最左红色通路，下文将不再提及。
+\par 指令通路均用红色或蓝色折线标注出来，见图\ref{fig:datapath_add}到图\ref{fig:datapath_jr}。
+
 \subsubsection{算术逻辑运算}
 \begin{enumerate}
 	\item add/sub/and/or/slt指令均为R类型，数据通路相同，唯一不同为ALU操作码的选择。见图\ref{fig:datapath_add}，执行阶段从指令中读入rs、rt、rd三个寄存器的地址，然后从寄存器堆中读出rs和rt寄存器的内容，送至ALU进行运算，最后写回rd寄存器。
@@ -50,7 +52,7 @@
 为最大程度利用指令的每一位，跳转指令也是将高4位和低2位都省略掉了，读出时要补回。
 \begin{enumerate}
 	\item beq/bne/bltz为I类型。见图\ref{fig:datapath_beq}，执行阶段从指令中读入rs、rt寄存器的地址，利用ALU对rs、rt寄存器的内容进行相减(beq/bne)或有符号比较(bltz)，若结果为0，则Zero标志置1，否则置0；同时，立即数imm进行符号扩展，并左移两位，与原有的PC+4再相加，结合Zero的值得到是否执行分支跳转指令。
-	\item j/jal为j类型。j见图\ref{fig:datapath_j}，执行阶段直接对指令的低26位左移2位，补上PC+4的高4位，得到跳转地址，更新PC。
+	\item j/jal为J类型。j指令见图\ref{fig:datapath_j}，执行阶段直接对指令的低26位左移2位，补上PC+4的高4位，得到跳转地址，更新PC。
 	jal的情况类似，见图\ref{fig:datapath_jal}，但注意需要将原来的PC+4写入31号寄存器，以便函数调用后返回。
 	\item jr为R类型，常用于函数调用后返回，见图\ref{fig:datapath_jr}，需要读出rs寄存器的内容，并作为PC的跳转值
 \end{enumerate}

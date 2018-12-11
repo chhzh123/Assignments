@@ -5,6 +5,7 @@ module Show(
 	input clk_cpu, // button
 	input reset,
 	input [1:0] SW_in,
+	input State_in,
 	output reg [6:0] dispcode,
 	output reg [3:0] out
 	);
@@ -36,6 +37,7 @@ module Show(
 
 	wire [31:0] currPC, nextPC, rsData, rtData, dbData, alu_res;
 	wire [4:0] rs, rt;
+	wire [2:0] state;
 
 	CPU cpu(
 		// input
@@ -49,10 +51,12 @@ module Show(
 		.rsData(rsData),
 		.rtData(rtData),
 		.dbData(dbData),
-		.alu_res(alu_res)
+		.alu_res(alu_res),
+		.state(state)
 		);
 
-	always @(SW_in) begin
+	always @(SW_in or State_in) begin
+		if (State_in == 0)
 		case (SW_in)
 			2'b00: begin
 				firstNum <= currPC;
@@ -71,6 +75,10 @@ module Show(
 				secondNum <= dbData;
 				end
 		endcase
+		else begin
+			firstNum <= 0;
+			secondNum <= {{29{1'b0}},state[2:0]};
+		end
 	end
 
 	SegDisplay seg1(

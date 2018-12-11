@@ -11,10 +11,10 @@ module PC (
     initial currPC = 0;
 
     always @(posedge clk or negedge reset) begin
-        #5 // important!
+//        #20 // important!
         if (reset == 0)
-            currPC <= 0;
-            // currPC <= 32'hFFFFFFFC;
+            // currPC <= 0;
+            currPC <= 32'hFFFFFFFC;
         else if (PCWrite == 1)
             currPC <= nextPC;
     end

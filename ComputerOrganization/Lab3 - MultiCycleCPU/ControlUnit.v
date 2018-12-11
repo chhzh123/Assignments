@@ -19,52 +19,57 @@ module ControlUnit (
     output reg PCWrite
     );
 
-    initial state = 3'b000;
+    initial state = 3'b101;
+    reg [2:0] next_state = 3'b000;
 
     // Finite State Machine (FSM)
-    always @ (posedge clk) begin
+    always @ (posedge clk or negedge reset) begin
         if (reset == 0)
-            state <= 3'b000;
-        else case (state)
+            state <= 3'b101;
+        else
+            state <= next_state;
+    end
+
+    always @ (state) begin
+        case (state)
             3'b000: begin // IF
-                state <= 3'b001;
+                next_state = 3'b001;
             end
             3'b001: begin // ID
                 if (opcode == 6'b110100 || opcode == 6'b110101 || opcode == 6'b110110) // beq bne bltz
-                    state <= 3'b101;
+                    next_state = 3'b101;
                 else if (opcode == 6'b110000 || opcode == 6'b110001) // sw & lw
-                    state <= 3'b010;
+                    next_state = 3'b010;
                 else if (opcode == 6'b111000 || opcode == 6'b111001 || opcode == 6'b111010 || opcode == 6'b111111) // j jr jal halt
-                    state <= 3'b000;
+                    next_state = 3'b000;
                 else
-                    state <= 3'b110;
+                    next_state = 3'b110;
             end
             3'b110: begin // EXE
-                state <= 3'b111;
+                next_state = 3'b111;
             end
             3'b111: begin // WB
-                state <= 3'b000;
+                next_state = 3'b000;
             end
             3'b101: begin // EXE
-                state <= 3'b000;
+                next_state = 3'b000;
             end
             3'b010: begin // EXE
-                state <= 3'b011;
+                next_state = 3'b011;
             end
             3'b011: begin // MEM
                 if (opcode == 6'b110001) // lw
-                    state <= 3'b100;
+                    next_state = 3'b100;
                 else // sw
-                    state <= 3'b000;
+                    next_state = 3'b000;
             end
             3'b100: begin // WB
-                state <= 3'b000;
+                next_state = 3'b000;
             end
         endcase
     end
 
-    // always @ (opcode or state or Zero) begin // Zero!
-    always @ (state or opcode) begin
+    always @ (state) begin
     	RegDst   <= 2'b00;
 		ExtSel   <= 0;
         if (state == 3'b111 || state == 3'b100)
@@ -78,7 +83,7 @@ module ControlUnit (
 		MemWrite <= 0;
         PCSrc    <= 2'b00;
 		WrRegSrc <= 0;
-        if (state == 3'b000)
+        if (next_state == 3'b000)
 		    PCWrite <= 1;
         else
             PCWrite <= 0; // donot update PC if the state is not IF!

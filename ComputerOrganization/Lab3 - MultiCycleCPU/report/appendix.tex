@@ -371,9 +371,10 @@ module PC (
     initial currPC = 0;
 
     always @(posedge clk or negedge reset) begin
-        #5 // important!
+//        #20 // important!
         if (reset == 0)
-            currPC <= 0;
+            // currPC <= 0;
+            currPC <= 32'hFFFFFFFC;
         else if (PCWrite == 1)
             currPC <= nextPC;
     end
@@ -510,52 +511,57 @@ module ControlUnit (
     output reg PCWrite
     );
 
-    initial state = 3'b000;
+    initial state = 3'b101;
+    reg [2:0] next_state = 3'b000;
 
     // Finite State Machine (FSM)
-    always @ (posedge clk) begin
+    always @ (posedge clk or negedge reset) begin
         if (reset == 0)
-            state <= 3'b000;
-        else case (state)
+            state <= 3'b101;
+        else
+            state <= next_state;
+    end
+
+    always @ (state) begin
+        case (state)
             3'b000: begin // IF
-                state <= 3'b001;
+                next_state = 3'b001;
             end
             3'b001: begin // ID
                 if (opcode == 6'b110100 || opcode == 6'b110101 || opcode == 6'b110110) // beq bne bltz
-                    state <= 3'b101;
+                    next_state = 3'b101;
                 else if (opcode == 6'b110000 || opcode == 6'b110001) // sw & lw
-                    state <= 3'b010;
+                    next_state = 3'b010;
                 else if (opcode == 6'b111000 || opcode == 6'b111001 || opcode == 6'b111010 || opcode == 6'b111111) // j jr jal halt
-                    state <= 3'b000;
+                    next_state = 3'b000;
                 else
-                    state <= 3'b110;
+                    next_state = 3'b110;
             end
             3'b110: begin // EXE
-                state <= 3'b111;
+                next_state = 3'b111;
             end
             3'b111: begin // WB
-                state <= 3'b000;
+                next_state = 3'b000;
             end
             3'b101: begin // EXE
-                state <= 3'b000;
+                next_state = 3'b000;
             end
             3'b010: begin // EXE
-                state <= 3'b011;
+                next_state = 3'b011;
             end
             3'b011: begin // MEM
                 if (opcode == 6'b110001) // lw
-                    state <= 3'b100;
+                    next_state = 3'b100;
                 else // sw
-                    state <= 3'b000;
+                    next_state = 3'b000;
             end
             3'b100: begin // WB
-                state <= 3'b000;
+                next_state = 3'b000;
             end
         endcase
     end
 
-    // always @ (opcode or state or Zero) begin // Zero!
-    always @ (state or opcode) begin
+    always @ (state) begin
     	RegDst   <= 2'b00;
 		ExtSel   <= 0;
         if (state == 3'b111 || state == 3'b100)
@@ -569,7 +575,7 @@ module ControlUnit (
 		MemWrite <= 0;
         PCSrc    <= 2'b00;
 		WrRegSrc <= 0;
-        if (state == 3'b000)
+        if (next_state == 3'b000)
 		    PCWrite <= 1;
         else
             PCWrite <= 0; // donot update PC if the state is not IF!
@@ -931,6 +937,7 @@ module Show(
 	input clk_cpu, // button
 	input reset,
 	input [1:0] SW_in,
+	input State_in,
 	output reg [6:0] dispcode,
 	output reg [3:0] out
 	);
@@ -962,6 +969,7 @@ module Show(
 
 	wire [31:0] currPC, nextPC, rsData, rtData, dbData, alu_res;
 	wire [4:0] rs, rt;
+	wire [2:0] state;
 
 	CPU cpu(
 		// input
@@ -975,10 +983,12 @@ module Show(
 		.rsData(rsData),
 		.rtData(rtData),
 		.dbData(dbData),
-		.alu_res(alu_res)
+		.alu_res(alu_res),
+		.state(state)
 		);
 
-	always @(SW_in) begin
+	always @(SW_in or State_in) begin
+		if (State_in == 0)
 		case (SW_in)
 			2'b00: begin
 				firstNum <= currPC;
@@ -997,6 +1007,10 @@ module Show(
 				secondNum <= dbData;
 				end
 		endcase
+		else begin
+			firstNum <= 0;
+			secondNum <= {{29{1'b0}},state[2:0]};
+		end
 	end
 
 	SegDisplay seg1(
@@ -1049,6 +1063,7 @@ set_property PACKAGE_PIN T17 [get_ports clk_cpu]
 set_property PACKAGE_PIN V17 [get_ports reset]
 set_property PACKAGE_PIN R2 [get_ports {SW_in[1]}]
 set_property PACKAGE_PIN T1 [get_ports {SW_in[0]}]
+set_property PACKAGE_PIN U1 [get_ports {State_in}]
 set_property PACKAGE_PIN W4 [get_ports {out[3]}]
 set_property PACKAGE_PIN V4 [get_ports {out[2]}]
 set_property PACKAGE_PIN U4 [get_ports {out[1]}]
@@ -1066,6 +1081,7 @@ set_property IOSTANDARD LVCMOS33 [get_ports clk_cpu]
 set_property IOSTANDARD LVCMOS33 [get_ports reset]
 set_property IOSTANDARD LVCMOS33 [get_ports {SW_in[1]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {SW_in[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {State_in}]
 set_property IOSTANDARD LVCMOS33 [get_ports {out[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {out[2]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {out[1]}]
