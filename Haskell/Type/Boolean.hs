@@ -20,6 +20,7 @@ type Subst = [(Char, Bool)]
 
 -- Exer 1
 instance Show Prop where
+	show (Const x)     = show x
 	show (Var x)       = [x]
 	show (Not p)       = "~" ++ show p
 	show (And p1 p2)   = "(" ++ show p1 ++ "&&" ++ show p2 ++ ")"
@@ -37,6 +38,7 @@ p3 = Imply (Var 'A') (And (Var 'A') (Var 'B'))
 -- Exer 3
 eval :: Subst -> Prop -> Bool
 eval subst prop = case prop of
+	Const x     -> x
 	Var c       -> snd (head [item | item <- subst, fst item == c])
 	Not p       -> not (eval subst p)
 	And p1 p2   -> (eval subst p1) && (eval subst p2)
@@ -45,6 +47,7 @@ eval subst prop = case prop of
 
 -- Exer 4
 vars :: Prop -> [Char] -- Note that [Char] will become String
+vars (Const x) = []
 vars (Var c) = [c]
 vars (Not p) = vars p
 vars (And p1 p2)   = elems $ fromList (vars p1 ++ vars p2)
@@ -77,3 +80,15 @@ False
 > isTaut p4
 False
 -}
+
+eval' :: Subst -> Prop -> Maybe Bool
+eval' subst prop = if length [1 | var <- vars prop, length [var | c <- [fst c | c <- subst], var == c] == 0] /= 0
+	then Nothing
+	else case prop of
+		Const x     -> Just x
+		Var c       -> Just (snd (head [item | item <- subst, fst item == c]))
+		Not p       -> Just (not (eval subst p))
+		And p1 p2   -> Just ((eval subst p1) && (eval subst p2))
+		Or p1 p2    -> Just ((eval subst p1) || (eval subst p2))
+		Imply p1 p2 -> Just ((not (eval subst p1)) || (eval subst p2))
+ -- eval' [('x', True)] (Var 'y') = Nothing
