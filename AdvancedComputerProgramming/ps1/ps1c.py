@@ -1,4 +1,5 @@
-# Chen Hongzheng chenhzh37@mail2.sysu.edu.cn
+# Chen Hongzheng 17341015
+# chenhzh37@mail2.sysu.edu.cn
 
 # Part C: Finding the right amount to save away
 # Initialization

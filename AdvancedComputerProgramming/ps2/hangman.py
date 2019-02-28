@@ -1,5 +1,6 @@
 # Problem Set 2, hangman.py
-# Name: Chen Hongzheng chenhzh37@mail2.sysu.edu.cn
+# Name: Chen Hongzheng 17341015
+# E-mail: chenhzh37@mail2.sysu.edu.cn
 
 # Hangman Game
 # -----------------------------------
