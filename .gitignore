@@ -237,3 +237,7 @@ TSWLatexianTemp*
 # c/c++
 *.exe
 *.dat
+
+# python
+__pycache__/
+.ipynb_checkpoints
