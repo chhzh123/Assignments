@@ -6,6 +6,10 @@
 !*/
 ### Above combination will ignore all files without extension ###
 
+# binary files
+*.bin
+*.com
+
 # temporary files
 *.PWI
 *.DBK
