@@ -23,6 +23,7 @@
 % 4. 建立具有简单控制命令的批处理原型操作系统。
 \begin{itemize}
 	\item 实现一个最原始的操作系统，即一监控程序，用于调用执行用户程序
+    \item 了解\verb'.com'格式文件的结构与作用
 	\item 学会组织并存储监控程序和用户程序
 \end{itemize}
 
@@ -126,7 +127,15 @@ dd if=prg4.com of=mydisk.img seek=4 conv=notrunc
 \end{lstlisting}
 
 \section{实验结果}
-调用\verb'work.sh'生成虚拟软盘\verb'mydisk.img'后，将其加载入虚拟机运行。
+调用\verb'work.sh'生成虚拟软盘\verb'mydisk.img'，批处理程序执行截图如图\ref{fig:sh}所示。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/sh.PNG}
+\caption{Linux批处理程序}
+\label{fig:sh}
+\end{figure}
+
+将生成的\verb'mydisk.img'加载入虚拟机运行。
 
 首先进入的是监控程序，如图\ref{fig:monitor}所示。
 输入数字$1\thicksim 4$，可以选择不同的用户程序。
@@ -184,7 +193,7 @@ Windows环境默认换行采用两个字符，即\verb'\r\n'，而Linux环境则
 
 为了增强程序的鲁棒性，在本次实验中我也添加了一些异常处理机制，如在读取用户输入过程中，判断用户输入是否有效，如果无效则另用户重新输入，有效才开始执行下一步操作。
 
-总的来说，本次实验自己实现了一个最为简单的操作系统，实现调取执行用户程序的功能，更加深刻明白了\verb'org'的含义，以及x86汇编的编写。
+总的来说，本次实验自己实现了一个最为简单的操作系统，实现调取执行用户程序的功能，了解\verb'.com'格式文件的组织和作用，更加深刻明白了\verb'org'的含义，以及x86汇编的编写。
 感受颇深，也非常兴奋，希望通过这样子不断地训练，最终真的可以写出一个完整的操作系统出来。
 
 \section{参考资料}
@@ -195,6 +204,8 @@ Windows环境默认换行采用两个字符，即\verb'\r\n'，而Linux环境则
 	\item INT 16 - Keyboard Scan Codes, \url{http://stanislavs.org/helppc/scan_codes.html}
 	\item \verb'iret', \url{https://www.felixcloutier.com/x86/iret:iretd}
 	\item (x86 Assembly) Changing Interrupt Vector Table, \url{http://devdocs.inightmare.org/tutorials/x86-assembly-changing-interrupt-vector-table.html}
+    \item org指令的作用，\url{https://blog.csdn.net/mirage1993/article/details/29908929}
+    % \item Sublime settings, \url{https://blog.csdn.net/fanlying/article/details/79743178}
 \end{enumerate}
 
 \appendix
