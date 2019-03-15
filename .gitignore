@@ -6,6 +6,9 @@
 !*/
 ### Above combination will ignore all files without extension ###
 
+# Unignore makefile
+!Makefile
+
 # binary files
 *.bin
 *.com
