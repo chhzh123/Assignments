@@ -32,13 +32,19 @@ int main(int argc, char *argv[])
     // 返回：要监听套接字的描述符或INVALID_SOCKET
     sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+    printf("正在连接服务器...\n");
     memset(&sin, 0, sizeof(sin));                     // 从&sin开始的长度为sizeof(sin)的内存清0
     sin.sin_family = AF_INET;                         // 因特网地址簇
     sin.sin_addr.s_addr = inet_addr(host);            // 设置服务器IP地址(32位)
     sin.sin_port = htons((u_short)atoi(service));     // 设置服务器端口号
-    // 连接到服务器，第二个参数指向存放服务器地址的结构，第三个参数为该结构的大小，返回值为0时表示无错误发生，
-    // 返回SOCKET_ERROR表示出错，应用程序可通过WSAGetLastError()获取相应错误代码。
+    // 连接到服务器，第二个参数指向存放服务器地址的结构，第三个参数为该结构的大小，返回值为0时表示无错误发生
     int ret = connect(sock, (struct sockaddr *)&sin, sizeof(sin));
+    if (ret == 0)
+        printf("连接成功！\n\n");
+    else {
+        perror("Error: 连接失败！\n");
+        abort();
+    }
 
     pthread_t pt;
     pthread_create(&pt,NULL,receive,&sock);

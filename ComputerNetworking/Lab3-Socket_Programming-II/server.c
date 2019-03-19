@@ -82,7 +82,14 @@ void generateEnterMsg(char* buffer, int index, unsigned char *bytes, u_short por
     printf("%s", buf2);
     strcat(buf, buf2);
 
+    printf("\n");
     strcpy(buffer,buf);
+}
+
+void generateExitMsg(char* buf, int* ssock, int index)
+{
+    sprintf(buf,"客户端%d离开!\n",index);
+    printf("%s\n", buf);
 }
 
 void sendToAll(int* ssock, char* buf){
@@ -184,8 +191,7 @@ void* serve(void* arg)
         int cc = recv(ssock[index], buf, BUF_LEN, 0);
         if (cc <= 0){ // error or closed
             if (sdata->mode >= 4){
-                sprintf(buf,"客户端%d离开!\n",index);
-                printf("%s", buf);
+                generateExitMsg(buf,ssock,index);
                 sendToAll(ssock,buf);
             }
             ssock[index] = -1; // set null
