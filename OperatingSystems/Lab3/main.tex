@@ -1,0 +1,108 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+
+\title{操作系统原理实验报告}
+\subtitle{实验三：开发独立内核的操作系统}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{操作系统原理实验报告}
+\authorremark{本实验报告用\LaTeX撰写，创建时间：\builddate\today}
+
+
+\begin{document}
+
+\maketitle
+
+\section{实验目的}
+% 牵引车（实验一）->火车头（实验三）->车厢（实验二）
+\begin{itemize}
+    \item 掌握C语言与汇编混合编程的方法
+    \item 分离引导程序和内核，学会用引导程序引导系统内核
+    \item 为操作系统提供批处理能力
+\end{itemize}
+
+\section{实验要求}
+% 实验目的和实验要求由老师提供实验项目文档中获取
+\begin{itemize}
+    \item 将实验二的原型操作系统分离为引导程序和MYOS内核，由引导程序加载内核，用C和汇编实现操作系统内核
+    \item 扩展内核汇编代码，增加一些有用的输入输出函数，供C模块中调用
+    \item 提供用户程序返回内核的一种解决方案
+    \item 在内核的C模块中实现增加批处理能力
+    \begin{itemize}
+        \item 在磁盘上建立一个表，记录用户程序的存储安排
+        \item 可以在控制台命令查到用户程序的信息，如程序名、字节数、在磁盘映像文件中的位置等
+        \item 设计一种命令，命令中可加载多个用户程序，依次执行，并能在控制台发出命令
+        \item 在引导系统前，将一组命令存放在磁盘映像中，系统可以解释执行
+    \end{itemize}
+\end{itemize}
+
+\section{实验环境}
+% 包括：硬件或虚拟机配置方法、软件工具与作用、方案的思想、相关原理、程序流程、算法和数据结构、程序关键模块，结合代码与程序中的位置位置进行解释。不得抄袭，否则按作弊处理。
+% 实验方案包括相关基础原理、实验工具和环境、程序流程和算法思想、数据结构与程序模块功能说明，代码文档组成说明等
+具体环境选择原因已在实验一报告中说明。
+\begin{itemize}
+	\item Windows 10系统 + Ubuntu 18.04(LTS)子系统
+	\item gcc 7.3.0 + nasm 2.13.02 + gdb
+	\item Oracle VM VirtualBox 5.2.8
+	\item Sublime Text 3
+\end{itemize}
+
+虚拟机配置：内存4M，无硬盘，1.44M虚拟软盘引导。
+
+\section{实验方案}
+% 包括：主要工具安装使用过程及截图结果、程序过程中的操作步骤、测试数据、输入及输出说明、遇到的问题及解决情况、关键功能或操作的截图结果。不得抄袭，否则按作弊处理。
+
+
+\section{实验结果}
+
+
+\section{实验总结}
+% 每人必需写一段，文字不少于500字，可以写心得体会、问题讨论与思考、新的设想、感言总结或提出建议等等。不得抄袭，否则按作弊处理。
+
+
+
+\section{参考资料}
+\begin{enumerate}
+	\item 李忠，王晓波，余洁，《x86汇编语言-从实模式到保护模式》，电子工业出版社，2013
+\end{enumerate}
+
+\appendix
+\appendixconfig
+\section{程序清单}
+\label{sec:code}
+
+\begin{lstlisting}[language={[x86masm]Assembler}]
+
+\end{lstlisting}
+
+\section{附件文件说明}
+\begin{center}
+\begin{tabular}{|c|l|l|}\hline
+序号 & 文件 & 描述 \\\hline
+\end{tabular}
+\end{center}
+
+\end{document}
+
+% 实验提交内容
+% 实验报告：电子版（Word2003的DOC格式或PDF格式）
+% 原程序文件及可执行代码程序文件
+% 测试输入数据文件和输出数据文件
+% 虚拟机软盘映像文件
+
+% 基础实验项目5个和扩展实验7个
+% 实验项目，迟交影响成绩评价！
+% 工具与环境可由选择，开发新型工具或优化一套开发环境都可加分！
+% 一系列基础实验项目必须连续完成，当前项目只能在前一个项目的基础上进行，体现出前后的进化关系，否则要被约谈，证明没有抄袭行为！
+% 一个项目可提交多个改进的版本，实现新功能和个性化特征都有利于提高相应项目的成绩。
+% 实验项目提交内容用winrar工具整体压缩打包，统一格式命名为：
+%    <学号>+<姓名>+<实验项目号>+<版本号>.rar
+%    姓名(学号)实验NvX.zip
+%    实验报告、项目文件夹、映像文件
+%    ftp://172.18.216.232 sysuac 下周六23:59
+
+% 免考
+% 条件：实验1~6全部评价AAAAB+B+或相当
+% 最终成绩可能范围：75分以上
