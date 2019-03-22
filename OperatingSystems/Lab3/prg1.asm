@@ -59,7 +59,12 @@ mainloop:
 	OneChar px, py, drt, char, color
 	call showinfo
 	int 20h                 ; INTERRUPT!!!
-	jmp mainloop
+	mov ax, [cnt]
+	dec ax
+	mov [cnt], ax
+	cmp ax, 0
+	jne mainloop
+	int 21h
 
 showinfo:
 	mov esi, msg            ; move msg's address into si (GPR)
@@ -201,3 +206,5 @@ datadef:
 
 	msg db 'This is Prg1!'
 	msglen equ ($-msg)
+
+	cnt db 50               ; maximum iteration

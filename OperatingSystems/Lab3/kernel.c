@@ -5,15 +5,10 @@
 
 /****** kernel.c ******/
 
-#include "sysio.h"
-
-const char* PROMPT_INFO = "chzos> ";
-const char* HELLO_WORLD = "Hello,world!";
+#include "terminal.h"
 
 uint16_t main(){
-	clear();
-	show_string(PROMPT_INFO);
-	set_color(WHITE,BLACK);
-	show_string(HELLO_WORLD);
+	initialize();
+	terminal();
 	return 0;
 }

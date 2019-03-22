@@ -1,7 +1,8 @@
 CC = gcc
 CCFLAGS := -c -march=i386 -nostdlib -ffreestanding -Wall -Wextra
-CCFLAGS += -Iinclude -lgcc -shared -fno-PIE -nostartfiles
-CCFLAGS += -m16 -mpreferred-stack-boundary=2 -masm=intel
+CCFLAGS += -Iinclude -lgcc -fno-PIE -nostartfiles
+CCFLAGS += -m16 -masm=intel -mpreferred-stack-boundary=2
+# CCFLAGS += -m32 -masm=intel
 
 AS = nasm
 ASFLAGS = -felf32
@@ -19,21 +20,21 @@ all: programs
 	-rm -f $(IMG)
 	/sbin/mkfs.msdos -C $(IMG) 1440
 	dd if=bootloader.bin of=$(IMG) conv=notrunc
-	dd if=kernel.bin of=$(IMG) seek=1 conv=notrunc
-	dd if=prg1.com of=$(IMG) seek=22 conv=notrunc
-	dd if=prg2.com of=$(IMG) seek=23 conv=notrunc
-	dd if=prg3.com of=$(IMG) seek=24 conv=notrunc
-	dd if=prg4.com of=$(IMG) seek=25 conv=notrunc
+	dd if=kernel.bin of=$(IMG) seek=1 conv=notrunc # 2nd sector
+	dd if=prg1.com of=$(IMG) seek=18 conv=notrunc # 1st side
+	dd if=prg2.com of=$(IMG) seek=19 conv=notrunc
+	dd if=prg3.com of=$(IMG) seek=20 conv=notrunc
+	dd if=prg4.com of=$(IMG) seek=21 conv=notrunc
 
 programs: $(KERNEL) $(PROGS) $(DEBUG)
 
 bootloader.bin: bootloader.asm
 	$(AS) -fbin $< -o $@
 
-# kernel.bin: os.o kernel.o
-# 	$(LD) $(LDFLAGS) -Ttext 0x7e00 $^ -o $@
 kernel.bin: os.o kernel.o
-	$(LD) $(LDFLAGS) -T link.ld $^ -o $@
+	$(LD) $(LDFLAGS) -Ttext 0x7e00 $^ -o $@
+# kernel.bin: os.o kernel.o
+# 	$(LD) $(LDFLAGS) -T link.ld $^ -o $@
 
 %.o : %.asm
 	$(AS) $(ASFLAGS) $< -o $@
