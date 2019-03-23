@@ -43,7 +43,7 @@ loadOS:                      ; load [es:bx]
     mov es, ax               ; set segment
     mov bx, OSOffset         ; user program address
     mov ah, 2                ; (BIOS) function code
-    mov al, 20               ; (BIOS) # of sector that program used
+    mov al, 17               ; (BIOS) # of sector that program used
     mov dl, 0                ; (BIOS) driver: floppy disk (0)
     mov dh, 0                ; (BIOS) magnetic head
     mov ch, 0                ; (BIOS) cylinder

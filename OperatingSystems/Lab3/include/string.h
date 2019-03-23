@@ -52,6 +52,15 @@ char* strncpy(char *dest, const char *src, size_t n)
 	return dest;
 }
 
+char* strcat(char* desy, const char* src)
+{
+	char* ptr = desy + strlen(desy);
+	while (*src != '\0')
+		*ptr++ = *src++;
+	*ptr = '\0';
+	return desy;
+}
+
 int atoi(const char *str) 
 { 
 	int res = 0;

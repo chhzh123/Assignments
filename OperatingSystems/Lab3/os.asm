@@ -97,7 +97,7 @@ INT20H:                      ; get click and return
 
 INT21H:                      ; directly return
     call clear
-    ret                 ; return back to kernel
+    jmp main                 ; return back to kernel
     iret
 
 clear:

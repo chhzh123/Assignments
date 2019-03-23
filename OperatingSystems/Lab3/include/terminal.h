@@ -26,6 +26,7 @@ const char* HELP_STR = "help";
 const char* SHOW_STR = "show";
 const char* EXE_STR = "exec";
 const char* EXIT_STR = "exit";
+const char* CMD_NOT_FOUND = ": command not found";
 
 void initialize()
 {
@@ -33,6 +34,16 @@ void initialize()
 	set_color(CYAN,BLACK);
 	show_string(HELLO_INFO);
 	set_color(WHITE,BLACK);
+}
+
+void command_not_found(char* str)
+{
+	char* newline = "\n";
+	if (strcmp(str,newline) == 0 || strlen(str) == 0)
+		return;
+	strcat(str,CMD_NOT_FOUND);
+	show_string(str);
+	show_string(newline);
 }
 
 void terminal()
@@ -56,8 +67,10 @@ void terminal()
 						execute(i+'0'); // batch execution
 				} else
 					execute(str[5]);
-			}
-		}
+			} else
+				command_not_found(str);
+		} else
+			command_not_found(str);
 	}
 }
 

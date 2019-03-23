@@ -15,7 +15,7 @@ typedef struct Program{
 	char name[8];
 	size_os space;
 	char pos[8];
-	char description[32];
+	char description[50];
 } Program;
 
 #define PRG_NUM 4
@@ -43,12 +43,12 @@ static inline void set_prg_info()
 {
 	char* name = "1", *pos = "/", *buf = "Quadrant 1: Flying single char";
 	set_one_prg_info(0,name,434,pos,buf);
-	name = "2"; pos = "/"; buf = "Quadrant 2: Flying two chars - V shape";
-	set_one_prg_info(1,name,508,pos,buf);
-	name = "3"; pos = "/"; buf = "Quadrant 3: Flying two chars - OS";
-	set_one_prg_info(2,name,458,pos,buf);
-	name = "4"; pos = "/"; buf = "Quadrant 4: Flying two chars - parallelogram";
-	set_one_prg_info(3,name,508,pos,buf);
+	name = "2"; pos = "/"; char* buf2 = "Quadrant 2: Flying two chars - V shape";
+	set_one_prg_info(1,name,508,pos,buf2);
+	name = "3"; pos = "/"; char* buf3 = "Quadrant 3: Flying two chars - OS";
+	set_one_prg_info(2,name,458,pos,buf3);
+	name = "4"; pos = "/"; char* buf4 = "Quadrant 4: Flying two chars - parallelogram";
+	set_one_prg_info(3,name,508,pos,buf4);
 }
 
 static inline void show_prg_info()
