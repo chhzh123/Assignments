@@ -12,6 +12,7 @@
 # binary files
 *.bin
 *.com
+*.o
 
 # temporary files
 *.PWI
