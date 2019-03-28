@@ -17,7 +17,7 @@ typedef struct Program{
 	char description[50];
 } Program;
 
-#define PRG_NUM 5
+#define PRG_NUM 6
 #define PrgSectorOffset 0
 Program prgs[PRG_NUM];
 
@@ -76,11 +76,13 @@ static inline void execute(char c)
 {
 	int num = c - '0';
 	if (num > 0 && num < PRG_NUM+1)
-		load_program(num + PrgSectorOffset);
+		// load_program(num + PrgSectorOffset);
+		load_program((num + PrgSectorOffset)*2-1);
 	else{
 		char* err = "Error: No this program!\n";
 		put_error(err);
 	}
+	clear();
 }
 
 #endif // USERPRG_H

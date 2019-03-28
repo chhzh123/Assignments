@@ -10,39 +10,45 @@ ASFLAGS = -felf32
 LD = ld
 LDFLAGS = -m elf_i386 -N --oformat binary
 
+BUILD = build
+
 IMG = mydisk.img
 KERNEL = bootloader.bin kernel.bin
-PROGS = prg1.com prg2.com prg3.com prg4.com prg5.com
+PROGS = prg1.com prg2.com prg3.com prg4.com prg5.com prg6.com
 
 DEBUG = kernel.s
 
-all: programs
+all: build programs
 	-rm -f $(IMG)
 	/sbin/mkfs.msdos -C $(IMG) 1440
-	dd if=bootloader.bin of=$(IMG) conv=notrunc
-	dd if=kernel.bin of=$(IMG) seek=1 conv=notrunc # 2nd sector
-	dd if=prg1.com of=$(IMG) seek=18 conv=notrunc # 1st side
-	dd if=prg2.com of=$(IMG) seek=19 conv=notrunc
-	dd if=prg3.com of=$(IMG) seek=20 conv=notrunc
-	dd if=prg4.com of=$(IMG) seek=21 conv=notrunc
-	dd if=prg5.com of=$(IMG) seek=22 conv=notrunc
+	dd if=$(BUILD)/bootloader.bin of=$(IMG) conv=notrunc
+	dd if=$(BUILD)/kernel.bin of=$(IMG) seek=1 conv=notrunc # 2nd sector
+	dd if=$(BUILD)/prg1.com of=$(IMG) seek=18 conv=notrunc # 1st side
+	dd if=$(BUILD)/prg2.com of=$(IMG) seek=20 conv=notrunc
+	dd if=$(BUILD)/prg3.com of=$(IMG) seek=22 conv=notrunc
+	dd if=$(BUILD)/prg4.com of=$(IMG) seek=24 conv=notrunc
+	dd if=$(BUILD)/prg5.com of=$(IMG) seek=26 conv=notrunc
+	dd if=$(BUILD)/prg6.com of=$(IMG) seek=28 conv=notrunc
+
+build:
+	-mkdir $(BUILD)
 
 programs: $(KERNEL) $(PROGS) $(DEBUG)
 
 bootloader.bin: bootloader.asm
-	$(AS) -fbin $< -o $@
+	$(AS) -fbin $< -o $(BUILD)/$@
 
 kernel.bin: os.o kernel.o
-	$(LD) $(LDFLAGS) -Ttext 0x7e00 $^ -o $@
+	$(LD) $(LDFLAGS) -Ttext 0x7e00 $(BUILD)/os.o $(BUILD)/kernel.o -o $(BUILD)/$@
 # kernel.bin: os.o kernel.o
 # 	$(LD) $(LDFLAGS) -T link.ld $^ -o $@
 
 %.o : %.asm
-	$(AS) $(ASFLAGS) $< -o $@
+	$(AS) $(ASFLAGS) $< -o $(BUILD)/$@
 %.o : %.c
-	$(CC) $(CCFLAGS) $< -o $@
+	$(CC) $(CCFLAGS) $< -o $(BUILD)/$@
 %.com : %.asm
-	$(AS) $< -o $@
+	$(AS) $< -o $(BUILD)/$@
 
 # debug
 %.s : %.c
@@ -50,4 +56,5 @@ kernel.bin: os.o kernel.o
 
 .PHONY : clean
 clean :
+	-rm -rf $(BUILD)
 	-rm -f *.o *.bin *.com *.elf *.s $(IMG) $(PROGS)

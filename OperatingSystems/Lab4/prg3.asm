@@ -64,7 +64,12 @@ mainloop:
 	OneChar px, py, drt, char, color
 	call showinfo
 	int 20h                 ; INTERRUPT!!!
-	jmp mainloop
+	mov ax, [cnt]
+	dec ax
+	mov [cnt], ax
+	cmp ax, 0
+	jne mainloop
+	ret
 
 showinfo:
 	mov esi, msg            ; move msg's address into si (GPR)
@@ -183,6 +188,14 @@ dl2ul:
 
 ;;;;; Show words ;;;;;
 show:
+	push eax
+	push ebx
+	push ecx
+	push edx
+	push esi
+	push gs
+	push bp
+
 	xor ax, ax              ; Compute memory address, ax = 0
 	mov ax, word[py]        ; ax = y
 	mov bx, 80              ; bx = 80
@@ -203,6 +216,14 @@ showallchar:
 	add bp, 2
 	inc edx
 loop showallchar
+
+	pop bp
+	pop gs
+	pop esi
+	pop edx
+	pop ecx
+	pop ebx
+	pop eax
 	jmp onemoveret
 
 ;;;;; Data Segment ;;;;;
@@ -216,3 +237,5 @@ datadef:
 
 	msg db 'This is prg3!'
 	msglen equ ($-msg)
+
+	cnt db 30

@@ -3,6 +3,8 @@
 
 ; Graphic memory: 25*80 Text Mode
 
+bits 16
+
 ; Constants
 Dn_Rt equ 1     ; D-Down, U-Up, R-right, L-Left
 Up_Rt equ 2
@@ -63,7 +65,8 @@ mainloop:
 	mov [cnt], ax
 	cmp ax, 0
 	jne mainloop
-	int 21h
+	ret
+	; int 21h
 
 showinfo:
 	mov esi, msg            ; move msg's address into si (GPR)
@@ -182,17 +185,27 @@ dl2ul:
 
 ;;;;; Show words ;;;;;
 show:
+	push ax
+	push bx
+	push gs
+	push bp
+	
 	xor ax, ax              ; Compute memory address, ax = 0
-	mov ax, word[py]        ; ax = y
+	mov ax, word [py]       ; ax = y
 	mov bx, 80              ; bx = 80
 	mul bx                  ; dstop: ax = 80*y, srcop: parameter (bx)
-	add ax, word[px]        ; ax = 80*y + x
+	add ax, word [px]       ; ax = 80*y + x
 	mov bx, 2               ; bx = 2
 	mul bx                  ; ax = (80*y + x) * 2
 	mov bp, ax              ; bp = ax, position
 	mov ah, [color]         ; AH = char property, 0000：Black, 1111：White, high bits
-	mov al, byte[char]      ; AL = char value (default 20h=space), low bits
-	mov word[gs:bp], ax     ; AX = (AH,AL)
+	mov al, byte [char]     ; AL = char value (default 20h=space), low bits
+	mov word [gs:bp], ax    ; AX = (AH,AL)
+	
+	pop bp
+	pop gs
+	pop bx
+	pop ax
 	jmp onemoveret
 
 ;;;;; Data Segment ;;;;;
@@ -206,4 +219,4 @@ datadef:
 	msg db 'This is Prg1!'
 	msglen equ ($-msg)
 
-	cnt db 50               ; maximum iteration
+	cnt db 20               ; maximum iteration

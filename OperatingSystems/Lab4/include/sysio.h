@@ -15,6 +15,7 @@ static const size_wd WD_HEIGHT = 25; // window height
 
 #define VGA_ADDRESS ((volatile uint16_t *) 0xB8000)
 #define NEWLINE "\n"
+#define PAGE_UP_CONST 2
 
 const char* TEST = "Hello,world!";
 
@@ -51,8 +52,7 @@ size_wd get_cursor(){
 	// DH = row
 	// DL = column
 	size_wd p;
-	asm volatile(
-				"int 0x10\n\t"
+	asm volatile("int 0x10\n\t"
 				:"=d"(p)
 				:"a"(0x0300), "b"(0)
 				);
@@ -64,10 +64,20 @@ void set_cursor(size_wd row, size_wd col){
 	// BH = display page (usually, if not always 0)
 	// DH = row
 	// DL = column
-	asm volatile(
-				"int 0x10\n\t"
+	asm volatile("int 0x10\n\t"
 				:
 				:"a"(0x0200), "b"(0), "d"((row << 8) | col)
+				);
+}
+
+void page_up(){
+	// ah=06h page up
+	// al= page up lines
+	// dx= row & col
+	size_wd p = 1536 + PAGE_UP_CONST; // 0x0602
+	asm volatile("int 0x10\n\t"
+				:
+				:"a"(p), "c"(0x0000), "d"(0x184F)
 				);
 }
 
@@ -138,8 +148,9 @@ void putchar(char c)
 {
 	if (c == '\r' || c == '\n') { // newline
 		if (++terminal_row == WD_HEIGHT){
-			clear();
-			terminal_row = 0;
+			// clear();
+			page_up();
+			terminal_row -= PAGE_UP_CONST;
 		}
 		terminal_col = 0;
 		return;
@@ -147,9 +158,10 @@ void putchar(char c)
 	draw_char(c, terminal_row, terminal_col, color_code);
 	if (++terminal_col == WD_WIDTH) { // newline
 		terminal_col = 0;
-		if (++terminal_row == WD_HEIGHT){ // roll back{
-			clear();
-			terminal_row = 0;
+		if (++terminal_row == WD_HEIGHT){ // roll back
+			// clear();
+			page_up();
+			terminal_row -= PAGE_UP_CONST;
 		}
 	}
 }
@@ -180,6 +192,24 @@ void getline(char* res)
 	int i = 0;
 	while(1){
 		char ch = getchar();
+		if (ch == '\b'){
+			if (i == 0)
+				continue;
+			res[--i] = '\0';
+			if (terminal_col == 0){
+				terminal_col = WD_WIDTH-1;
+				terminal_row--;
+			} else
+				terminal_col--;
+			putchar(' ');
+			if (terminal_col == 0){
+				terminal_col = WD_WIDTH-1;
+				terminal_row--;
+			} else
+				terminal_col--;
+			set_cursor(terminal_row,terminal_col);
+			continue;
+		}
 		res[i++] = ch;
 		putchar(ch);
 		if (ch == '\r' || ch == '\n'){
