@@ -106,7 +106,7 @@
     mov ch, 0                ; (BIOS) cylinder
     mov cl, %1               ; start sector
     int 13H                  ; (BIOS) 13h: read disk
-    call clear
+    ; call clear
     call UserPrgOffset        ; X.com has been loaded into memory
     ; jmp UserPrgOffset        ; X.com has been loaded into memory
 
@@ -120,7 +120,7 @@
 %endmacro
 
 _start:
-    writeIVT 08h, Timer        ; Programmable Timer
+    ; writeIVT 08h, Timer        ; Programmable Timer
     writeIVT 20h, INT20H       ; Ctrl+C return
     writeIVT 21h, INT21H       ; directly return
     writeIVT 33h, INT33H       ; load user prg1
@@ -128,7 +128,7 @@ _start:
     writeIVT 35h, INT35H       ; load user prg3
     writeIVT 36h, INT36H       ; load user prg4
 
-    ; call dword main
+    call dword main
 
 end:
     call clear
@@ -244,7 +244,7 @@ datadef:
     msgOuch db 'OUCH! OUCH!'
     msgOuchlen equ ($-msgOuch)
 
-    delay equ 10
+    delay equ 1
     count db delay
 
     bar db '|'

@@ -10,6 +10,9 @@
     MIN_Y equ 0
     DEFAULT_COLOR equ 0007h
 
+    in_delay equ 6000 ; control the speed
+    out_delay equ 6000  ; outer loop
+
 	org 0A100h              ; ORG (origin) is used to set the assembler location counter
 
 %macro showchar 4
@@ -38,9 +41,8 @@
 %endmacro
 
 start:
-    dec word [count]
+    call delayloop
     int 20h
-    jnz start
 draw_box:
     push ax
     push bx
@@ -79,7 +81,6 @@ no_change_back_color:
     pop cx
     pop bx
     pop ax
-    mov word [count], COUNT
     jmp start
     ret
 
@@ -112,13 +113,20 @@ deal_du:
     mov cl, 'A'
     jmp draw_box_finished
 
+delayloop:
+    mov ecx, out_delay
+    outloop:
+        mov eax, in_delay
+        inloop:
+            dec eax
+            jg inloop
+    loop outloop
+    ret
+
 end:
 	jmp $
 
 datadef:
-    COUNT equ 50000
-    count dw COUNT
-
     posx dw 0
     posy dw 0
     char db 'A'

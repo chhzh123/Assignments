@@ -50,6 +50,8 @@ static inline void set_prg_info()
 	set_one_prg_info(3,name,508,pos,buf4);
 	name = "5"; pos = "/"; char* buf5 = "Interrupt test program";
 	set_one_prg_info(4,name,512,pos,buf5);
+	name = "6"; pos = "/"; char* buf6 = "Draw the box";
+	set_one_prg_info(5,name,512,pos,buf6);
 }
 
 static inline void show_prg_info()
@@ -82,7 +84,7 @@ static inline void execute(char c)
 		char* err = "Error: No this program!\n";
 		put_error(err);
 	}
-	clear();
+	// clear();
 }
 
 #endif // USERPRG_H

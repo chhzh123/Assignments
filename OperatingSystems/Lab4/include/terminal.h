@@ -20,10 +20,12 @@ These shell commands are defined internally. Type 'help' to see this list.\n\
  show       -- Show existing programs\n\
  exec       -- Execute all the user programs\n\
  exec [num] -- Execute the num-th program\n\
+ clr        -- Clear the screen\n\
  exit       -- Exit OS\n";
 const char* HELP_STR = "help";
 const char* SHOW_STR = "show";
 const char* EXE_STR = "exec";
+const char* CLR_STR = "clr";
 const char* EXIT_STR = "exit";
 const char* CMD_NOT_FOUND = ": command not found";
 
@@ -47,6 +49,8 @@ void command_not_found(char* str)
 
 void terminal()
 {
+	// put_info(PROMPT_INFO);
+	// while(1){}
 	while (1){
 		put_info(PROMPT_INFO);
 		char str[MAX_BUF_LEN];
@@ -57,15 +61,22 @@ void terminal()
 			show_prg_info();
 		else if (strcmp(str,EXIT_STR) == 0)
 			break;
+		else if (strcmp(str,CLR_STR) == 0)
+			clear();
 		else if (strlen(str) >= 4){
 			char cpystr[MAX_BUF_LEN];
 			strncpy(cpystr,str,4);
 			if (strcmp(cpystr,EXE_STR) == 0){
 				if (strlen(str) == 4){
+					clear();
 					for (size_os i = 1; i < 5; ++i)
 						execute(i+'0'); // batch execution
-				} else
+					clear();
+				} else{
+					clear();
 					execute(str[5]);
+					clear();
+				}
 			} else
 				command_not_found(str);
 		} else

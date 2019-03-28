@@ -137,9 +137,11 @@ void clear()
 
 char getchar(){
 	char ch;
-	asm volatile("int 0x16\n\t"
+	asm volatile("mov ah, 0x00\n\t"
+				"int 0x16\n\t"
+				"xor ah, ah\n\t"
 				:"=a"(ch)
-				:"a"(0x1000)
+				:
 				);
 	return ch;
 }
