@@ -72,8 +72,25 @@
     pop ax
 %endmacro
 
+%macro saveIVT 3             ; save interrupt vector table (IVT)
+    ; num, function address, offset
+    mov ax, 0000h            ; physical address
+    mov es, ax
+    mov ax, %1
+    mov bx, 4
+    mul bx                   ; calculate the IVT address (ax*4)
+    mov si, ax
+    mov %2, word [es:si]     ; write segment
+    add si, 2
+    mov %3, word [es:si]     ; write offset
+%endmacro
+
 %macro writeIVT 2            ; write interrupt vector table (IVT)
     ; num, function address
+    push es
+    push ds
+    push si
+    pusha
     mov ax, 0000h            ; physical address
     mov es, ax
     mov ax, %1
@@ -85,6 +102,10 @@
     add si, 2
     mov ax, cs
     mov [es:si], ax          ; write offset
+    popa
+    pop si
+    pop ds
+    pop es
 %endmacro
 
 %macro loadPrg 1
@@ -120,6 +141,7 @@
 %endmacro
 
 _start:
+    ; saveIVT 16h, [IVTseg], [IVToffset]
     ; writeIVT 08h, Timer        ; Programmable Timer
     writeIVT 20h, INT20H       ; Ctrl+C return
     writeIVT 21h, INT21H       ; directly return
@@ -140,6 +162,8 @@ load_program:                ; load [es:bx]
     ret
 
 Timer:
+    cli
+    pusha
     dec byte [count]
     jnz TimerRet
     call draw_slash
@@ -155,6 +179,8 @@ TimerRet:
     out 20h, al              ; master PIC
     out 0A0h, al             ; slave PIC
     pop eax
+    popa
+    sti
     iret
 
 draw_slash:
@@ -253,3 +279,6 @@ datadef:
     pos_slash_y dw 24
 
     color db 07h
+
+    IVTseg dw 0
+    IVToffset dw 0

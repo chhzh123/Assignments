@@ -110,10 +110,14 @@ INT33H:
 
 \section{实验结果}
 无敌风火轮`|'、`/'和`\verb'\''，见图\ref{fig:wheel}右下角所示。
-注意这里没有办法截取动画过程，故这里只给出了中间一帧作为样例。
+注意这里没有办法截取动画过程，故这里只给出了代表性的三帧作为样例。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/wheel.PNG}
+\begin{tabular}{cc}
+\includegraphics[width=0.5\linewidth]{fig/wheel_1.PNG}&
+\includegraphics[width=0.5\linewidth]{fig/wheel_2.PNG}\\
+\includegraphics[width=0.5\linewidth]{fig/wheel_3.PNG}&
+\end{tabular}
 \caption{无敌风火轮}
 \label{fig:wheel}
 \end{figure}
@@ -127,7 +131,7 @@ INT33H:
 \end{figure}
 
 连续依次调用\verb'int 33h'、\verb'int 34'、\verb'int 35'和\verb'int 36'中断，这里为了显示方便，没有添加清屏指令，结果如图\ref{fig:int_4}所示。
-注意这几条指令都是顺序执行的，即中断调用可正常返回父程序，并进入下一行执行，所以才有办法保持原程序产生的结果不发生改变。
+注意这几条指令都是顺序执行的，即中断调用可\textbf{正常返回父程序}，并进入下一行执行，所以才有办法保持原程序产生的结果不发生改变。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/int_4.PNG}
@@ -200,7 +204,7 @@ INT33H:
 6 & \verb'bochsrc.bxrc' & bochs调试文件\\\hline
 7 & \verb'mydisk.img' & 核心虚拟软盘\\\hline
 8$\thicksim$13 & \verb'prgX.asm' & 用户程序\\\hline
-14$\thicksim$ & \verb'/include' & 内核头文件\\\hline
+14$\thicksim$18 & \verb'/include' & 内核头文件\\\hline
 \end{tabular}
 \end{center}
 
