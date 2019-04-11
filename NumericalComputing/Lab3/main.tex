@@ -1,0 +1,101 @@
+\documentclass[reportComp]{thesis}
+\usepackage[cpp,linenum]{mypackage}
+
+\title{数值计算方法实验报告}
+\subtitle{实验三：迭代法解线性方程组}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{数值计算方法实验报告}
+
+\begin{document}
+
+\maketitle
+
+\section{实验题目}
+试用SOR迭代计算线性方程组
+\[\begin{cases}
+-55x_1  -5x_2  +12x_3 & =41\\
+21x_1  +36x_2  -13x_3 & =52\\
+24x_1  +7x_2  +47x_3 &=12
+\end{cases}\]
+取$\iter{\vx}{0}=(0,0,0)^\T$，松弛因子分别选取为$\omega=0.1t,t\in[1,19]$，要求达到精度$\norm{\iter{\vx}{k+1}-\iter{\vx}{k}}\leq 10^{-4}$。
+试通过数值计算得出不同的松弛因子所需要的迭代次数和收敛最快的松弛因子，并指出哪些松弛因子使得迭代发散。
+
+\section{实验目的}
+理解SOR迭代求解线性方程组的原理并实现。
+
+\section{实验原理与内容}
+% 若有推导的式子，写在这里
+% 重要代码和截图
+SOR迭代法的迭代格式为
+\[\iter{\vx}{k+1}=\iter{\vx}{k}+\omega\vD^{-1}(\vL\iter{\vx}{k+1}+\vU\iter{\vx}{k}-\vD\iter{\vx}{k}+\vb\]
+即
+\[\iter{\vx}{k+1}=(\vD-\omega\vL)^{-1}(\omega\vb+(1-\omega)\vD\iter{\vx}{k}+\omega\vU\iter{\vx}{k})\]
+
+下面为本次实验的Mathematica源代码，完整文件已在附件中\verb'SOR.nb'。
+\begin{lstlisting}[language=mathematica]
+ClearAll[A, b, Diag, L, U, x];
+A = ( {
+    {-55, -5, 12},
+    {21, 36, -13},
+    {24, 7, 47}
+   } );
+b = ( {
+    {41},
+    {52},
+    {12}
+   } );
+Diag = DiagonalMatrix[Diagonal[A]];
+L = Diag - LowerTriangularize[A];
+U = Diag - UpperTriangularize[A];
+Diag - L - U;
+For[t = 1, t <= 19,
+ \[Omega] = 0.1*t; cnt = 1;
+ x = ( {
+    {0},
+    {0},
+    {0}
+   } );
+ new = Inverse[(Diag - \[Omega]*L)].(\[Omega]*
+      b + ((1 - \[Omega])*Diag).x + (\[Omega]*U).x);
+ While[Norm[new - x] > 0.0001 && cnt <=  65536, x = new; 
+  new = Inverse[(Diag - \[Omega]*L)].(\[Omega]*
+       b + ((1 - \[Omega])*Diag).x + (\[Omega]*U).x); cnt++];
+ Print[cnt]; t++]
+\end{lstlisting}
+
+\section{实验结果与分析}
+% 对运行结果说明（图像截图，数据列成表）并分析
+$t$取不同值时，迭代次数如下表所示。
+\begin{center}
+\begin{tabular}{ccccccccccc}\hline\hline
+$t$ & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\\hline
+\# & 93 & 49 & 33 & 24 & 19 & 15 & 12 & 10 & 8 & 6\\\hline\hline
+$t$ & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 18 & 19 & \\\hline
+\# & 6 & 11 & 20 & 44 & 556 & $\infty$ & $\infty$ & $\infty$ & $\infty$ & \\\hline\hline
+\end{tabular}
+\end{center}
+
+可知$\omega=1.0$和$\omega=1.1$为收敛最快的松弛因子，均只需6次迭代，结果分别为
+\[\vx=(-0.851394,2.07847,0.380514)^\T\]
+和
+\[\vx=(-0.851424,2.07848,0.380538)^\T\]
+而对于$\omega\geq 1.6$的松弛因子，迭代发散。
+
+\section{实验总结和心得}
+实现了SOR迭代的算法，更加深刻理解了迭代法解线性方程组的内涵。
+
+\end{document}
+% 1024180018@qq.com
+% shuzhijisuan2017@163.com
+
+% ftp://172.18.216.222
+% shuzhi2019
+% 学号_姓名_weekX_vY
+
+% 上机作业要求
+% 建议使用C++/Matlab编程，注：不允许使用内置函数完成主要功能
+% 主题/文件名：班级+姓名（小组）+学号+第几次作业
+% 实验报告（运行结果）、源代码
