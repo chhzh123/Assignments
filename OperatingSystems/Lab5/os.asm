@@ -17,6 +17,8 @@
     MIN_Y equ 0
     DEFAULT_COLOR equ 0007h
     PrgSize equ 2
+    CylinderNum  equ 1
+    HeadNum equ 0
 
 %macro showchar 4
     ; x/col, y/row, char, property 
@@ -123,9 +125,9 @@
     mov ah, 2                ; (BIOS) function code
     mov al, PrgSize          ; (BIOS) # of sector that program used
     mov dl, 0                ; (BIOS) driver: floppy disk (0)
-    mov dh, 1                ; (BIOS) magnetic head
-    mov ch, 0                ; (BIOS) cylinder
-    mov cl, %1               ; start sector
+    mov dh, HeadNum          ; (BIOS) magnetic head
+    mov ch, CylinderNum      ; (BIOS) cylinder / side num
+    mov cl, %1               ; (BIOS) start sector num
     int 13H                  ; (BIOS) 13h: read disk
     ; call clear
     call UserPrgOffset        ; X.com has been loaded into memory
@@ -142,13 +144,9 @@
 
 _start:
     ; saveIVT 16h, [IVTseg], [IVToffset]
-    writeIVT 08h, Timer        ; Programmable Timer
+    ; writeIVT 08h, Timer        ; Programmable Timer
     writeIVT 20h, INT20H       ; Ctrl+C return
-    writeIVT 21h, INT21H       ; directly return
-    writeIVT 33h, INT33H       ; load user prg1
-    writeIVT 34h, INT34H       ; load user prg2
-    writeIVT 35h, INT35H       ; load user prg3
-    writeIVT 36h, INT36H       ; load user prg4
+    writeIVT 21h, INT21H       ; all the system interrupts
 
     call dword main
 
@@ -219,25 +217,38 @@ INT20H:                      ; get click and return
     showstring msgOuch, msgOuchlen, 12, 33, 0004h
     cmp ax, 2e03h            ; click Ctrl + C
     jne noclick
+    mov ax, 0
     int 21h
     noclick:
     iret                     ; interrupt return
 
-INT21H:                      ; directly return
+INT21H:
+    cmp ax, 0
+    je backtokernel
+    cmp ax, 1
+    je loadprg1
+    cmp ax, 2
+    je loadprg2
+    cmp ax, 3
+    je loadprg3
+    cmp ax, 4
+    je loadprg4
+    iret
+
+backtokernel:
     call clear
     jmp main                 ; return back to kernel
     iret
-
-INT33H:
+loadprg1:
     loadPrg 1
     iret
-INT34H:
+loadprg2:
     loadPrg 2
     iret
-INT35H:
+loadprg3:
     loadPrg 3
     iret
-INT36H:
+loadprg4:
     loadPrg 4
     iret
 
