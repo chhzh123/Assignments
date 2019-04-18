@@ -9,7 +9,7 @@
     global _start
     global load_program
 
-    UserPrgOffset equ 0A100h
+    UserPrgOffset equ 0F100h
 
     MAX_X equ 79
     MAX_Y equ 24

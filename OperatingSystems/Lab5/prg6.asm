@@ -13,7 +13,7 @@
     in_delay equ 6000 ; control the speed
     out_delay equ 6000  ; outer loop
 
-	org 0A100h              ; ORG (origin) is used to set the assembler location counter
+	org 0F100h              ; ORG (origin) is used to set the assembler location counter
 
 %macro showchar 4
     ; x/col, y/row, char, property 

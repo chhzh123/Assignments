@@ -3,7 +3,7 @@
 
 ; Disk Initialization
 ;;; ***** REMEMBER TO MODIFY ***** ;;;
-	org 0A100h              ; ORG (origin) is used to set the assembler location counter
+	org 0F100h              ; ORG (origin) is used to set the assembler location counter
 
 start:
 	mov ax, 1

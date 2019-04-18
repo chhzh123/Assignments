@@ -340,21 +340,58 @@ void sscanf(const char* s, const char* format, ...) {
 	va_end(valist);
 }
 
-// void scanf(const char* format, ...) {
-// 	int narg = 0;
-// 	int i = 0;
-// 	for (i = 0; format[i]; i++)
-// 		if (format[i] == '%')
-// 			narg++;
+void scanf(const char* format, ...) {
+	int narg = 0;
+	int i = 0;
+	for (i = 0; format[i]; i++)
+		if (format[i] == '%')
+			narg++;
 
-// 	va_list valist;
-// 	va_start(valist, narg);
+	va_list valist;
+	va_start(valist, format);
 
-// 	char* str;
-// 	getline(str);
-// 	sscanf(str,format,...);
+	char s[MAX_BUF_LEN];
+	getline(s);
 
-// 	va_end(valist);
-// }
+	i = 0;
+	int16_t s_i = 0;
+	int16_t offset;
+	for (i = 0; format[i]; ++i) {
+		if (format[i] == '%') {
+			if (format[i + 1] == 'c') {
+				char* pc = va_arg(valist, char*);
+				*pc = s[s_i];
+				offset = 1;
+			} else if (format[i + 1] == 'd') {
+				int32_t* pd = va_arg(valist, int32_t*);
+				offset = read_int(s+s_i, pd);
+			}
+			else if (format[i + 1] == 's') {
+				char* pstr = va_arg(valist, char*);
+				while (s[s_i] && !isspace(s[s_i])) {
+					*pstr = s[s_i];
+					pstr++;
+					s_i++;
+				}
+				offset = 0; // s_i has been changed
+				*pstr = '\0';
+			}
+			i += 1;
+			s_i += offset;
+		} else { // normal match
+			if (format[i] == ' ') {
+				while (isspace(s[s_i])) {
+					s_i++;
+				}
+			} else if (format[i] == s[s_i]) {
+				s_i++;
+			} else {
+				// printf("not same, %c and %c\n", format[i], s[s_i]);
+			}
+		}
+	}
+
+	va_end(valist);
+}
 
 #endif // SYSIO_H
