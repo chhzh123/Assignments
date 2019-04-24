@@ -122,17 +122,21 @@ def hangman(secret_word):
     
     Follows the other limitations detailed in the problem write-up.
     '''
+    # Initialization
     print("Welcome to the game Hangman!")
     print("I am thinking of a word that is {} letters long.".format(len(secret_word)))
-    cnt_all = 6
-    cnt = 6
+    cnt_all = 6 # constant: all lives
+    cnt = 6 # variable: user's lives
     warning = 3
     guessed = []
     print("You have {} warnings left.".format(warning))
+    
+    # Game begins
     while (cnt > 0):
         print("-------------")
         print("You have {} guesses left.".format(cnt))
         print("Available Letters: " + get_available_letters(guessed))
+        # Conditional judge
         c = input("Please guess a letter: ")
         if not c.isalpha():
             if warning > 0:
@@ -151,6 +155,7 @@ def hangman(secret_word):
                 cnt -= 1
                 print("Oops! You've already guessed that letter. You have no warnings left\nso you lose one guess: " + get_guessed_word(secret_word,guessed))
             continue
+        # Input is valid
         guessed += c
         if (c in secret_word):
             print("Good guess: " + get_guessed_word(secret_word,guessed))
@@ -159,12 +164,14 @@ def hangman(secret_word):
                 print("Congratulations, you won!")
                 print("Your total score for this game is: {}".format((cnt_all-cnt)*len(set(secret_word))))
                 return
-        else:
+        else: # Wrong guess
             if c in ['a','e','i','o','u']:
                 cnt -= 2
             else:
                 cnt -= 1
             print("Oops! That letter is not in my word: " + get_guessed_word(secret_word,guessed))
+
+    # Game finished
     print("-------------")
     print("Sorry, you ran out of guesses. The word was {}.".format(secret_word))
 
@@ -248,12 +255,15 @@ def hangman_with_hints(secret_word):
     
     Follows the other limitations detailed in the problem write-up.
     '''
+    # Initialization
     print("Welcome to the game Hangman!")
     print("I am thinking of a word that is {} letters long.".format(len(secret_word)))
     cnt = 6
     warning = 3
     guessed = []
     print("You have {} warnings left.".format(warning))
+
+    # Game begins
     while (cnt > 0):
         print("-------------")
         print("You have {} guesses left.".format(cnt))
@@ -265,6 +275,7 @@ def hangman_with_hints(secret_word):
             show_possible_matches(get_guessed_word(secret_word,guessed))
             continue
         ######
+        # Conditional judge
         if not c.isalpha():
             if warning > 0:
                 warning -= 1
@@ -282,6 +293,7 @@ def hangman_with_hints(secret_word):
                 cnt -= 1
                 print("Oops! You've already guessed that letter. You have no warnings left\nso you lose one guess: " + get_guessed_word(secret_word,guessed))
             continue
+        # Input is valid
         guessed += c
         if (c in secret_word):
             print("Good guess: " + get_guessed_word(secret_word,guessed))
@@ -296,6 +308,8 @@ def hangman_with_hints(secret_word):
             else:
                 cnt -= 1
             print("Oops! That letter is not in my word: " + get_guessed_word(secret_word,guessed))
+    
+    # Game ends
     print("-------------")
     print("Sorry, you ran out of guesses. The word was {}.".format(secret_word))
 
