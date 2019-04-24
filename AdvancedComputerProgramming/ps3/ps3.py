@@ -9,11 +9,12 @@
 import math
 import random
 import string
+import sys # used for command line
 
 VOWELS = 'aeiou'
 CONSONANTS = 'bcdfghjklmnpqrstvwxyz'
-WILDCARD = '*'
-HAND_SIZE = 7
+WILDCARD = '*' # Problem #4
+HAND_SIZE = 7 if len(sys.argv) == 1 else int(sys.argv[1]) # my implementation!
 
 SCRABBLE_LETTER_VALUES = {
     '*': 0,
@@ -140,12 +141,11 @@ def deal_hand(n):
     hand = {}
     num_vowels = int(math.ceil(n / 3))
 
-    # for i in range(num_vowels):
     for i in range(num_vowels - 1):
         x = random.choice(VOWELS)
         hand[x] = hand.get(x, 0) + 1
 
-    hand[WILDCARD] = 1
+    hand[WILDCARD] = 1 # Problem #4
     
     for i in range(num_vowels, n):    
         x = random.choice(CONSONANTS)
@@ -174,10 +174,13 @@ def update_hand(hand, word):
     hand: dictionary (string -> int)    
     returns: dictionary (string -> int)
     """
-    new_hand = hand.copy()
+    new_hand = hand.copy() # be careful!
     for c in word.lower():
         if new_hand.get(c,0) > 0:
             new_hand[c] -= 1
+            # remember to delete empty slot!
+            if new_hand[c] == 0:
+                new_hand.pop(c)
     return new_hand
 
 #
@@ -195,20 +198,24 @@ def is_valid_word(word, hand, word_list):
     returns: boolean
     """
     w = word.lower()
+    # add WILDCARD support for Problem #4
     if WILDCARD in w:
         index = w.find(WILDCARD)
-        cnt = 0
+        cnt = 0 # count if all the vowels are tested
         for v in VOWELS:
             new_word = w[:index] + v + w[index+1:]
             if new_word in word_list:
                 break
             else:
                 cnt += 1
+        # if all the vowels are tested but there exists no satisfying words
+        # then this is not a valid word!
         if cnt == len(VOWELS):
             return False
     else:
         if not (w in word_list):
             return False
+    # update hands
     new_hand = hand.copy()
     for c in w:
         if new_hand.get(c,0) > 0:
@@ -377,20 +384,21 @@ def play_game(word_list):
 
     word_list: list of lowercase strings
     """
+    # Initialization
     n_hands = int(input("Enter total number of hands: "))
     flag_sub, flag_replay = False, False
     total_score = 0
     i = 0
+
+    # Game begins
     while i < n_hands:
         i += 1
-        if (i != 1) and (not flag_replay) and (input("Would you like to replay the hand? ") == "yes"):
-            flag_replay = True
-            i -= 1
-        else:
+        if (not flag_replay):
             hand = deal_hand(HAND_SIZE)
             print("Current Hand: ",end='')
             display_hand(hand)
             print()
+            # substitute a letter
             if not flag_sub:
                 s = input("Would you like to substitute a letter? ")
                 if s == "yes":
@@ -401,6 +409,11 @@ def play_game(word_list):
         score = play_hand(hand,word_list)
         total_score += score
         print("-----------")
+        if (not flag_replay) and (input("Would you like to replay the hand? ") == "yes"):
+            flag_replay = True
+            i -= 1
+
+    # Game ends
     print("Total score over all hands: {}".format(total_score))
     return total_score
 
