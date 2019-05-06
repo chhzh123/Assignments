@@ -11,9 +11,12 @@ endif
 
 BENCHMARKS = gre saylr bus nos orsreg sherman orani bcsstk
 
-all: matmul
+all: matmul prod-cons
 
 matmul: matmul.cpp
+	$(CC) $(FLAGS) $(DEBUG_FLAG) $(NWORKER_FLAG) $< -o $@
+
+prod-cons: prod-cons.cpp
 	$(CC) $(FLAGS) $(DEBUG_FLAG) $(NWORKER_FLAG) $< -o $@
 
 run:
@@ -22,5 +25,8 @@ run:
 run2:
 	$(foreach num, 1 2 4 8, ./matmul benchmarks/bcsstk.mtx $(num);)
 
+run3:
+	./prod-cons
+
 clean:
-	-rm matmul
+	-rm matmul prod-cons

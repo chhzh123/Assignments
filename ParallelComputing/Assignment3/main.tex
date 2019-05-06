@@ -88,10 +88,48 @@ I also add other features into my program for high productivity.
 	\item Write a \verb'Makefile' for auto compiling and experimenting.
 \end{itemize}
 
+The program \verb'matmul.cpp' can be found in the attachment.
+
 \section{Problem 2}
 Implement a producer-consumer framework in OpenMP using \verb'sections' to create a single producer task and a single consumer task. Ensure appropriate synchronization using locks. Test your program for a varying number of producers and consumers.
 
 \bigskip
 
+\textit{Answer.}
+Similar to Project 1, we can emulate a queue by a fixed-size array, whose head and tail are connected as a ring.
+Two operations \verb'push' and \verb'pop' are implemented for the queue.
+In each operation. we leverage \verb'#pragma omp critical' to ensure the mutuality.
+
+Each producer produces one number and push it into the queue.
+The consumers pop the numbers from the queue and add them together.
+
+The producers and consumers are encapsulated in \verb'omp section'.
+All the sections are put in a large block \verb'omp parallel sections', which enables the sections to run in parallel.
+
+The experimental results are shown in Table~\ref{tab:results}.
+Due to time limitation, only several experiments are conducted here.
+
+\begin{table}[H]
+\centering
+\caption{Running time of the producer-consumer framework}
+\label{tab:results}
+\begin{tabular}{|c|c|c|}\hline
+\textbf{\# of producers} & \textbf{\# of consumers} & \textbf{Running time (ns)}\\\hline
+2 & 2 & 2499500 \\\hline
+2 & 6 & 3709500 \\\hline
+4 & 4 & 2148600 \\\hline
+6 & 2 & 1785100 \\\hline
+8 & 8 & 2210600 \\\hline
+\end{tabular}
+\end{table}
+
+From Table~\ref{tab:results}, we can see that more consumers lead to slower running time, which may result from the heavy conflicts of popping.
+Once the number is produced, it may immediately be consumed by the consumers.
+From these limited cases, we can also conclude that the more producers may be better for the performance.
+Since no larger cases are tested, the conclusion may be different when the input size scales.
+
+The program \verb'prod-cons.cpp' can be found in the attachment.
+Notice at this time, the number of producers and consumers cannot be set automatically.
+The default setting is two producers with two consumers.
 
 \end{document}
