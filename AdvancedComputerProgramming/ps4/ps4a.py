@@ -21,20 +21,22 @@ def get_permutations(sequence):
     Note: depending on your implementation, you may return the permutations in
     a different order than what is listed here.
     '''
+    # Base case
     if len(sequence) == 1:
         return [sequence]
+    # Recursive case
     head = sequence[0]
     tail = sequence[1:]
     res = []
     for word in get_permutations(tail):
         for i in range(0,len(word)+1):
-            if i == 0:
+            if i == 0: # append head to the front of the string
                 res.append(head + word)
-            elif i == len(word)+1:
+            elif i == len(word) + 1: # append head to the back of the string
                 res.append(word + head)
-            else:
+            else: # append head in the middle of the string
                 res.append(word[:i] + head + word[i:])
-    return sorted(res)
+    return sorted(res) # ensure the order
 
 if __name__ == '__main__':
 #    #EXAMPLE
