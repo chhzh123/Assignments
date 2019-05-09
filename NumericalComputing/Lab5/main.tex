@@ -1,0 +1,53 @@
+\documentclass[reportComp]{thesis}
+\usepackage[cpp,linenum]{mypackage}
+
+\title{数值计算方法实验报告}
+\subtitle{实验五：数值积分}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{数值计算方法实验报告}
+
+\begin{document}
+
+\maketitle
+
+\section{实验题目}
+在每一个离散节点$a=x_0<x_1<\cdots<x_n<x_{n+1}$上分别采用两点公式(5.50)和公式(5.51)求离散微分初值问题
+\[\begin{cases}
+y'=f(x,y) & x>a\\
+y(a)=y_0
+\end{cases}\]
+中的导数$y'$，从而推导出求解微分方程初值问题的两个不同的计算格式---显格式和隐格式，分别说明其计算步骤。
+
+\section{实验目的}
+理解并运用数值微分方法。
+
+\section{实验原理与内容}
+% 若有推导的式子，写在这里
+% 重要代码和截图
+由两点公式(5.50)有
+\[y'(x_i)=f(x_i,y_i)\approx\frac{y_{i+1}-y_i}{x_{i+1}-x_i}\]
+进而
+\[y_{i+1}\approx y_i+(x_{i+1}-x_i)f(x_i,y_i),i=0,1,2,\ldots,N-1\]
+上式右侧函数$f$内的变量下标均为$i$，为显格式。
+
+由两点公式(5.51)有
+\[y'(x_{i+1})=f(x_{i+1},y_{i+1})\approx\frac{y_{i+1}-y_i}{x_{i+1}-x_i}\]
+进而
+\[y_{i+1}\approx y_i+(x_{i+1}-x_i)f(x_{i+1},y_{i+1}),i=0,1,2,\ldots,N-1\]
+上式右侧函数$f$内的变量下标为$i+1$，为隐格式。
+
+\end{document}
+% 1024180018@qq.com
+% shuzhijisuan2017@163.com
+
+% ftp://172.18.216.222
+% shuzhi2019
+% 学号_姓名_weekX_vY
+
+% 上机作业要求
+% 建议使用C++/Matlab编程，注：不允许使用内置函数完成主要功能
+% 主题/文件名：班级+姓名（小组）+学号+第几次作业
+% 实验报告（运行结果）、源代码
