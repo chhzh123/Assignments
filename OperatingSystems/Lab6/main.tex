@@ -16,7 +16,9 @@
 
 \section{实验目的}
 \begin{itemize}
-	\item 
+	\item 理解二状态进程模型的工作原理
+	\item 深刻理解并实施进程管理，包括创建、切换、调度进程等
+	\item 在保证进程正常工作的前提下，不破坏原有的基础设施
 \end{itemize}
 
 \section{实验要求}
@@ -47,7 +49,41 @@
 % 包括：主要工具安装使用过程及截图结果、程序过程中的操作步骤、测试数据、输入及输出说明、遇到的问题及解决情况、关键功能或操作的截图结果。不得抄袭，否则按作弊处理。
 {\Large\textbf{\textcolor{red}{本次实验进入保护模式。}}}
 
-由于保护模式涵盖的内容非常多，下面将叙述在本次实验中完成的部分。
+目前保护模式完成的工作如下：
+\begin{itemize}
+	\item 32位保护模式基础设施支持
+	\begin{itemize}
+		\item 全局描述符表(GDT)的创建与管理
+		\item 中断描述符表(IDT)的创建与管理：其中也包括了异常(exception)的处理
+		\item 任务状态段(TSS)的创建与管理
+		\item 内核态(ring 0)与用户态(ring 3)的相互切换
+	\end{itemize}
+	\item 硬件抽象层(HAL)
+	\begin{itemize}
+		\item 利用集成驱动电子设施(IDE)进行硬盘读入
+		\item 可编程中断控制器(PIC)的初始化与使用
+		\item 可编程区间计时器(PIT)的初始化与使用
+		\item 键盘驱动
+	\end{itemize}
+	\item 交互界面(shell)
+	\begin{itemize}
+		\item 使用Video RAM的显示交互界面，支持键盘输入输出
+		\item 简易的命令行解释器
+	\end{itemize}
+	\item 用户程序（均运行在ring 3进行保护）
+	\begin{itemize}
+		\item 基本标准库的支持，如\verb'stdio'、\verb'string'等
+		\item 系统中断调用(0x80)
+	\end{itemize}
+	\item 进程控制
+	\begin{itemize}
+		\item 进程控制块(PCB)的创建与管理
+		\item 多进程环境下的进程调入与切出
+		\item 从磁盘加载程序、创建进程、调度及执行
+	\end{itemize}
+\end{itemize}
+
+由于保护模式涵盖的内容非常多，下面将尽可能简练又突出重点地叙述。
 
 \subsection{引导程序---由实模式到保护模式}
 本部分对应着\verb'bootloader.asm'文件。
@@ -87,10 +123,12 @@
 \end{itemize}
 
 全局描述符表作为保护模式的核心，关系着内存地址的访问与保护，需要十分熟悉。
-每个描述符共64位(8B)，如下图所示
+每个描述符共64位(8B)，如图\ref{fig:gdt}所示。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/gdt.png}
+\caption{全局描述符表(GDT)}
+\label{fig:gdt}
 \end{figure}
 
 其中
@@ -127,7 +165,7 @@ x86处理器除了状态寄存器\verb'eflags'、\verb'eip'，还有4个32位的
 	\item \verb'cr0'：包含6个预定义标志，其中\textbf{第0位}是我们需要关注的
 	\begin{center}
 	\begin{tabular}{|c|c|}\hline
-	标志位 & 含义\\\hline
+	\textbf{标志位} & \textbf{含义}\\\hline
 	0(PE) & \textbf{保护模式} \\\hline
 	1(MP) & 监控协处理器\\\hline
 	2(EM) & 仿真协处理器\\\hline
@@ -285,11 +323,13 @@ struct tss_entry {
 实模式中我们采用中断向量表(Interrupt Vector Table, IVT)给出中断处理程序的入口。
 而在保护模式中我们则采用中断描述符表(Interrupt Description Table, IDT)给出中断处理程序的入口。
 
-下图从Intel Developer's Manual Volume 3, Chapter 6中截取。
-% 如果DPL被设置为3，则可以在用户态中进行中断调用。
+图\ref{fig:idt}从Intel Developer's Manual Volume 3, Chapter 6中截取。
+如果DPL被设置为3，则该中断可以在用户态中被\verb'int'调用。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\linewidth]{fig/idt.PNG}
+\caption{中断描述符表(IDT)}
+\label{fig:idt}
 \end{figure}
 
 对应的，可以给出C的结构体
@@ -321,13 +361,15 @@ load_idt:
 \end{lstlisting}
 
 加载完IDT后就可以对一些常用的中断号进行设置。
-由于是面向x86处理器的操作系统，故采用Intel CPU给出的中断号，如下图所示。
+由于是面向x86处理器的操作系统，故采用Intel CPU给出的中断号，如图\ref{fig:exceptions}所示。
 \begin{figure}[H]
 \centering
 \begin{tabular}{c}
 \includegraphics[width=0.8\linewidth]{fig/exceptions1.PNG}\\
 \includegraphics[width=0.8\linewidth]{fig/exceptions2.PNG}
 \end{tabular}
+\caption{Intel CPU异常中断号}
+\label{fig:exceptions}
 \end{figure}
 
 在本操作系统中，没有对这些异常进行特别的处理，只是将出错的信息输出，并陷入死循环（见\verb'exception.h'）。
@@ -345,17 +387,21 @@ void default_handler () {
 8259A微控制器(microcontroller)/可编程中断控制器(Programmable Interrupt Controller, PIC)是CPU与外围设备交互的一个界面。
 通过提供中断处理例程(Interrupt Routine, IR)，我们就可以处理8259A发出的中断请求(Interrupt Request, IRQ)。
 
-通过\verb'int'指令调用的称为软件中断，而8259A产生的则是硬件中断，如下表所示。
+通过\verb'int'指令调用的称为软件中断，而8259A产生的则是硬件中断，如图\ref{fig:hardware_interrupt}所示。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\linewidth]{fig/hardware_interrupt.PNG}
+\includegraphics[width=0.8\linewidth]{fig/hardware_interrupt.PNG}
+\caption{8259A中断号}
+\label{fig:hardware_interrupt}
 \end{figure}
 
 处理器都会有自己内部的PIC微处理器，而每一个PIC只支持8个IRQ，因此大多主板(motherboard)都会包含一个二级(secondary)/从(slave)PIC微控制器。
-故现在大多计算机都有2个PIC，其连接方式如下图所示。
+故现在大多计算机都有2个PIC，其连接方式如图\ref{fig:8259A}所示。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.6\linewidth]{fig/8259A.png}
+\caption{8259A连接方式}
+\label{fig:8259A}
 \end{figure}
 
 在\verb'pic.h'中，我们可以将这些端口号进行抽象，更加方便编写程序。
@@ -476,7 +522,7 @@ char getchar()
 由于中断处理需要采用\verb'iret'返回，故实现时都提供了汇编入口，然后调用C的处理程序进行中断处理。
 注意在中断处理时应先关中断，然后再打开，如下面的例子所示。
 \begin{lstlisting}[language={[x86masm]Assembler}]
-; setvect(0x21,(unsigned long)keyboard_handler); // keyboard uses 33 interrupt
+; setvect(0x21,(unsigned long)keyboard_handler); // keyboard uses #33 interrupt
 keyboard_handler:
 	cli
 	call    keyboard_handler_main ; C function
@@ -505,7 +551,7 @@ void pit_start_counter (uint32_t freq, uint8_t counter, uint8_t mode)
 有了PIC的铺垫，PIT的编程就方便很多。
 类似于键盘的初始化，只需设置中断号和中断处理程序即可。
 \begin{lstlisting}
-setvect (32, (unsigned long)pit_handler); // pit uses 32 interrupt
+setvect (32, (unsigned long)pit_handler); // pit uses #32 interrupt
 \end{lstlisting}
 
 由于时间中断处理对于分时操作系统有着至关重要的作用，其涉及到进程的切换，故在\ref{sub:process}节才进行阐述。
@@ -575,10 +621,12 @@ test_function(arg1, arg2); // directly call
 
 在保护模式中，由于存在不同的段选择子，故\verb'call'和\verb'ret'都有远(far)和近(near)之分。
 在相同段内的调用/返回则是近的，在不同段间的调用/返回则是远的。
-其堆栈内容如下图\footnote{Intel Manual Volume 1, Chapter 6, Procedure Calls, Interrupts, and Exceptions}所示。
+其堆栈内容如图\ref{fig:call_stack}\footnote{Intel Manual Volume 1, Chapter 6, Procedure Calls, Interrupts, and Exceptions}所示。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\linewidth]{fig/call.PNG}
+\caption{函数调用堆栈}
+\label{fig:call_stack}
 \end{figure}
 
 \subsubsection{硬件中断与返回}
@@ -586,12 +634,14 @@ test_function(arg1, arg2); // directly call
 
 当产生中断/异常时，硬件会自动将\verb'eflags'、\verb'cs'和\verb'eip'进行堆栈，至于有没有\verb'error code'则要看情况。
 但对于保护模式来说，由于涉及特权级的切换，所以问题会多很多。
-如下图\footnote{Intel Manual Volume 3, Chapter 6, Interrupt and Exception Handling}所示，当中断处理程序和原程序特权级相同时，使用同一个堆栈。
+如图\ref{fig:interrupt-stack}\footnote{Intel Manual Volume 3, Chapter 6, Interrupt and Exception Handling}所示，当中断处理程序和原程序特权级相同时，使用同一个堆栈。
 而特权级不同时，则会发生堆栈切换，参数都会被堆到新的栈中。
 同时\verb'ss'和\verb'esp'会作为最开始的元素进入栈中，方便中断处理后的返回。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\linewidth]{fig/interrupt-stack.PNG}
+\caption{中断堆栈}
+\label{fig:interrupt-stack}
 \end{figure}
 
 \verb'iret'可谓是保护模式中最重要的一条指令了，它的功能如下
@@ -601,11 +651,29 @@ test_function(arg1, arg2); // directly call
 \item 如果发生特权级切换，还需弹出\verb'ss:eip'，恢复原来的栈
 \end{itemize}
 
+\subsection{系统调用}
+我采用与Linux系统调用相同的中断号，即\verb'0x80'，通过HAL的界面设置中断向量，同时设置特权级为ring 3，方便用户态程序调用。
+\begin{lstlisting}
+setvect_user (0x80, (unsigned long) sys_interrupt_handler);
+\end{lstlisting}
+
+功能号则通过\verb'eax'寄存器进行堆栈传递。
+目前为了演示仅实现了两个系统调用：
+\begin{center}
+\begin{tabular}{|c|c|}\hline
+\textbf{功能号} & \textbf{功能}\\\hline
+0 & 输出OS Logo\\\hline
+1 & 睡眠100ms\\\hline
+\end{tabular}
+\end{center}
+
+在用户程序\verb'sys_test.asm'中对这两个中断功能进行测试。
+
 \subsection{二状态进程模型}
 \label{sub:process}
 这是本次实验的核心内容。
 只用两个状态描述进程，即为执行和等待。
-在实施中我采用了active和sleep表达同样的意思。
+在实施中我采用了\textbf{active}和\textbf{sleep}表达同样的意思。
 每个进程都在这两个状态间不断变换，如下图所示。
 \begin{center}
 \begin{tikzcd}
@@ -722,13 +790,15 @@ process* proc_create(uint32_t cs, uint32_t ds, uintptr_t addr)
 进程切换是进程管理的重中之重，涉及到保护现场\verb'save'和恢复现场\verb'restart'两个步骤。
 \textcolor{red}{\textbf{本次进程切换保护现场和恢复现场的代码均为自己实现，未按照老师课件上的方法。}}
 
-由于目前的操作系统采用分时(time-sharing)方式，故进程切换总发生在时钟中断的时候。
+由于目前的操作系统采用\textbf{分时(time-sharing)}方式，故进程切换总发生在时钟中断的时候。
 
-流程图如下图所示，下面将逐步进行解释。
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.7\linewidth]
-% \end{figure}
+流程图如图\ref{fig:process-management}所示，下面将逐步进行解释。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/process-management.pdf}
+\caption{进程切换流程图}
+\label{fig:process-management}
+\end{figure}
 
 当时钟中断到来时，会通过IDT查找到中断处理程序\verb'pit_handler'。
 这是一个汇编入口，如下所示。
@@ -779,8 +849,8 @@ save_proc_entry:
  & ebx     & \\\cline{2-2}
  & esp     & \\\cline{2-2}
  & ebp     & \\\cline{2-2}
- & esi     & \\\cline{2-3}
- & edi     & \\\hline
+ & esi     & \\\cline{2-2}
+ & edi     & \\\cline{2-3}
  & ds      & \multirow{4}{*}{seg}\\\cline{2-2}
  & es      & \\\cline{2-2}
  esp+4 $\to$ & fs      & \\\cline{2-2}
@@ -856,7 +926,7 @@ void schedule_proc()
 }
 \end{lstlisting}
 
-这里的\verb'proc_pick'采用最简单的轮盘转(round-robin)方式进行进程的挑选/调度，然后将新的进程送到\verb'proc_switch'中进行进程切换。
+这里的\verb'proc_pick'采用最简单的\textbf{轮盘转(round-robin)}方式进行进程的挑选/调度，然后将新的进程送到\verb'proc_switch'中进行进程切换。
 \begin{lstlisting}
 void proc_switch(process* pp)
 {
@@ -928,11 +998,13 @@ proc_create(USER_CS,USER_DS,ADDR_USER_START);
 将这两者相或得到\verb'0x1b'，即为真正的\verb'USER_CS'。
 这会在\verb'iret'执行时，实施内核态到用户态的迁移。
 
-完整流程如下图所示。
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width]
-% \end{figure}
+完整流程如图\ref{fig:process-run}所示。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/process-run.pdf}
+\caption{进程创建与执行流程图}
+\label{fig:process-run}
+\end{figure}
 
 \begin{itemize}
 	\item Shell中解析到\verb'exec'指令后，调用\verb'create_user_proc'函数
@@ -944,32 +1016,156 @@ proc_create(USER_CS,USER_DS,ADDR_USER_START);
 \end{itemize}
 
 \section{实验结果}
-初始化界面
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width]
-% \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/help.PNG}
+\caption{Shell交互界面，左下角显示的是当前运行的时间(0.1s)，可以通过设置隐藏}
+\end{figure}
 
-多进程执行（2图）
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/show.PNG}
+\caption{滚屏、时钟计数、用户程序展示测试}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/show.PNG}
+\caption{滚屏、时钟计数、用户程序展示测试}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/read_disk.PNG}
+\caption{读虚拟硬盘测试}
+\end{figure}
+
+C内核中进程表的管理和进程的创建已在前文阐述，设置\verb'MAX_PROCESS'为4即可。
+\begin{figure}[H]
+\centering
+\begin{tabular}{c}
+\includegraphics[width=0.8\linewidth]{fig/multi-process-1.PNG}\\
+\includegraphics[width=0.8\linewidth]{fig/multi-process-2.PNG}
+\end{tabular}
+\caption{多进程切换执行，注意\textbf{每个程序的动态变化}，从\textbf{左下角的时钟计时}也可以看出这几个进程在同时运行}
+\end{figure}
+
+为测试\textbf{用户态ring 3}下的系统调用（\textbf{返回内核态ring 0}），我编写了测试程序\verb'sys_test.asm'，如下
+\begin{lstlisting}[language={[x86masm]Assembler}]
+main:
+	mov eax, 0
+	int 80h
+	mov eax, 1
+	int 80h
+	jmp $
+\end{lstlisting}
+
+对于该测试程序我同样创建了一个进程用于执行。
+\begin{lstlisting}
+create_one_proc(6); // the 6th program
+\end{lstlisting}
+
+测试结果如下图所示，可以看出中断调用正常工作。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/syscall.PNG}
+\caption{系统调用服务正常工作}
+\end{figure}
+
+对于未设置特权级别的中断，用户程序是无法调用的，否则会出现如下图所示的保护错误(GF)。
+测试样例是在前一个程序的基础上，添加了\verb'int 98h'在\verb'int 80h'后面，以说明\textbf{保护模式真的起到了保护！}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/syscall-GF.PNG}
+\caption{测试非系统调用中断0x98出现GF异常}
+\end{figure}
 
 \section{实验总结}
 % 每人必需写一段，文字不少于500字，可以写心得体会、问题讨论与思考、新的设想、感言总结或提出建议等等。不得抄袭，否则按作弊处理。
-耗费了大量精力，完全重构，也没有了之前的bug
+本次实验正式进入保护模式，果然如老师所说，保护模式的工程量远远大于实模式的工程量。
+一开始不以为意，认为只要在原来实模式的基础上稍作修改即进入保护模式。
+但查阅了大量资料之后，发现我错了。
+保护模式完全就是一个深不见底的巨坑，大量听都没听说过的名词向你涌来。
+保护模式重点就在于保护，所以在CPU中添加了大量基础设施来给予操作系统支持。
+各种中断门、调用门、描述符表、任务状态段等等，每一个名词都需要好好理解其深刻含义。
 
+从一开始的茫然无知，到后来了解了保护模式的各种名词含义，再到将这些概念具体实现出来，这其中的艰辛只有我自己知道。
+这一个月里，我每天每时每刻都在想着操作系统怎么做，图\ref{fig:web}可以清晰地反映出这一点。
+搜索了大量网页和资料，阅读了大量的操作系统源代码，甚至于Intel CPU近5000页的说明书也一页一页啃。
+各种资料的叙述方式、实现方式不同，也导致理解上的困难。
+有时尝试了多种方法，最终才确定一种真正可行的可以用在我的系统中的实现。
+从前文实验步骤看好像保护模式也没什么，但这些都是我经过深刻理解后凝聚出来的结晶啊！
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/web-history.PNG}
+\caption{网页搜索历史记录}
+\label{fig:web}
+\end{figure}
+
+操作系统真的是说与做之间存在巨大的鸿沟。
+要讲好操作系统中的那些概念很简单，但是要实现得好则非常考编程功底与技艺。
+相比起其他上层应用程序，操作系统直接与底层硬件打交道，需要对CPU的工作原理、操作系统中各种概念都理解得非常透彻，才能真正实现出相应的功能。
+否则某一条语句没有写，或者某几条语句顺序调换，都会导致系统崩溃。
+就如本次实验的进程切换保护和恢复现场是我用Bochs一行一行调试，尝试了上百次才调出来的正确的结果。
+一些很细微的错误如果没有注意到，那往往要调上几天都调不出来。
+
+正如前面所说，除了概念非常多，需要理解得很透彻外，操作系统难还难在它难以debug。
+操作系统不像上层应用，编译器在编译时会告诉你问题所在。
+而现在你是编译器以下系统软件的提供者，这些东西都需要你自己写时，就不再有人给你提供报错信息了。
+而且操作系统还具有实时性，出现问题往往难以复原，导致有时会出现bug，有时又不会，总是跟你捉迷藏。
+操作系统往往还牵一发而动全身，难以定位问题所在。
+有时添加了一个\verb'static inline'，都会导致原来跑得好好的代码无法运行。
+由于涉及底层硬件，影响的因素非常多，不同的机器/模拟器/虚拟机跑出来的结果还可能不一样，这更是使得调试雪上加霜。
+像图\ref{fig:break_down}所示的系统崩溃几乎天天都会出现。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/break_down.PNG}
+\caption{系统崩溃}
+\label{fig:break_down}
+\end{figure}
+
+下面列举出一些重大的问题及相应的解决方案，其中每一点都调试了很长时间。
 \begin{itemize}
-% \item virtualbox卸载出现蓝屏DRIVER_IRQL_NOT_LESS_OR_EQUAL nwifi.sys禁WiFi重装
-% \item virtualbox默认参数默认端口未给出，对开发者不友好
-% \item void* new_addr = (void*)0x20000地址不对
-\item 任务切换堆栈
-\item 不同任务地址相同都不行
-\item controller not ready for writing
-\item 开中断搞了两天 interrupt(0)
-\item 又忘记改org！！！
+\item 由于一开始想着新的系统新的环境，故想要升级我的工具。
+没想到出师未捷身先死，VirtualBox卸载/安装过程中每每出现蓝屏\verb'DRIVER_IRQL_NOT_LESS_OR_EQUAL'，使得卸载/安装无法完成。
+最后还是结合自己刚学的操作系统知识，发现是\verb'nwifi.sys'文件出了问题，通过禁用系统WiFi，重新卸载/安装VirtualBox就得以成功。
+\item VirtualBox默认参数默认端口未给出，对开发者不友好。
+这一点是在编写磁盘驱动时遇到的问题，调试时根本不知道错误是否是由于默认端口号而导致的。
+来来回回尝试了几种不同的方案，最终才确定使用IDE/ATA方式读硬盘（主要是因为只有这一种跑得通）。
+像Bochs这种，显式通过配置文件指定端口号的，对于操作系统开发就友好很多，但其GUI及模拟速度常常被人诟病。
+\item 指针指向的地址与存放指针的地址没有搞清楚，导致程序入口地址传入错误，用户程序无法正常运行。
+像在C程序中声明\verb'void* new_addr = (void*)0x20000'，若传入汇编的为参数\verb'new_addr'，则要注意此时它代表的是一个指针的地址，而不是指针指向的地址。
+故保险起见，应该显式地将地址传递入汇编程序中，避免不必要的指针转换。
+\item 任务切换堆栈的问题前面已经提到过，卡了好几天，问题极其难以定位，有时用VirtualBox可以运行Bochs又不行，有时用Bochs可以运行VirtualBox又不行。
+最终是靠不断在程序中的不同地方加\verb'jmp $'指令使其停止在该位置后，通过Bochs的\verb'print-stack'功能，查看堆栈，然后一行一行debug过来的。
+\item 有时为了调试，直接将Shell代码注释掉后将进程读入、创建函数放在程序入口，用VirtualBox运行会直接崩溃，但正常放在Shell中运行都是不会崩溃的（会详细报错）。
+查VirtualBox的log发现是\verb'controller not ready for writing'，这个问题的答案就呼之欲出了。
+由于硬盘还在初始化中，还未准备好，故直接读取硬盘肯定会出问题的。
+故解决方案就是在入口处用\verb'sleep'函数先等待一段时间，然后再进行进程创建。
+\item 进程状态经过\verb'proc_restart'函数正常恢复后却发现时钟中断无法正常运作，导致下一个进程无法切换。
+即使设置了\verb'eflags'的中断标志位\verb'0x200'也还是不行。
+这一点跟同学讨论后发现是我在时钟中断处理过程中，先关了中断，但在进用户程序之前没有发送\verb'interrupt(0)'指令告诉外围设备中断已经处理结束，导致新的中断无法正常到来。
+\item 单一进程管理全部没有问题后，上多个进程又是不行。
+一开始还以为是进程堆栈的问题，于是疯狂在内核中debug。
+后来才发现是自己又忘记改用户程序的\verb'org'，导致成功加载用户程序后却无法执行。
 \end{itemize}
 
-截图网页历史记录
+这一个月来经历过多少奇奇怪怪的问题，真的每遇到一个都尝试想要放弃，因为往往一个问题卡上几天是常有的事情。
+而且由于操作系统每个人的机器不一样、环境不一样、实现的方式不一样，导致别人的意见、方法都只能作为参考，而不能直接拿来用，真正要解决问题还是要靠自己。
+每次都告诉自己要冷静下来，思考问题所在，然后耐下性子来逐行逐行进行调试。
 
-Github代码提交
+从有想要做保护模式的想法，重新从实验一的内容做起，一直做到实验六，经过快一个月时间，终于终于把保护模式操作系统的原型实现。
+耗费了大量精力，完全重构，代码量5356行，最终所有的bug都被我修完，从Github仓库提交记录（见图\ref{fig:github}）可以看出这期间我经历了多少艰辛。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/github.PNG}
+\caption{Github提交记录}
+\label{fig:github}
+\end{figure}
+
+这绝对是一次可以被我铭记终生的系统实现，兴奋之时也要望向前路。
+这个学期还没有结束，保护模式操作系统这条路只是一个开端，后续的精彩还等着我继续去探索。
+
 
 \section{参考资料}
 \begin{enumerate}
@@ -986,10 +1182,6 @@ Github代码提交
 \appendix
 \appendixconfig
 \section{程序清单}
-\label{sec:code}
-由于程序太多，请直接见压缩文件。
-
-\section{附件文件说明}
 \subsection{内核核心代码}
 \begin{center}
 \begin{tabular}{|c|l|l|}\hline
@@ -1021,12 +1213,13 @@ Github代码提交
 6.5 & \verb'ide.h' & 硬盘读取\\\hline
 7 & \verb'io.h' & I/O编程\\\hline
 8 & \verb'exception.h' & 异常处理\\\hline
-9 & \verb'task.h' & 多进程设施\\\hline
-10 & \verb'user.h' & 用户程序处理\\\hline
-11 & \verb'terminal.h' & Shell\\\hline
-12 & \verb'scancode.h' & 扫描码\\\hline
-13 & \verb'stdio.h' & 标准输入输出\\\hline
-14 & \verb'string.h' & 字符串处理\\\hline
+9 & \verb'syscall.h' & 系统调用\\\hline
+10 & \verb'task.h' & 多进程设施\\\hline
+11 & \verb'user.h' & 用户程序处理\\\hline
+12 & \verb'terminal.h' & Shell\\\hline
+13 & \verb'scancode.h' & 扫描码\\\hline
+14 & \verb'stdio.h' & 标准输入输出\\\hline
+15 & \verb'string.h' & 字符串处理\\\hline
 \end{tabular}
 \end{center}
 
@@ -1037,6 +1230,7 @@ Github代码提交
 \textbf{序号} & \textbf{文件} & \textbf{描述} \\\hline
 1-4 & \verb'prgX.asm' & 飞翔字符用户程序\\\hline
 5 & \verb'box.asm' & 画框用户程序\\\hline
+6 & \verb'sys_test.asm' & 系统中断测试\\\hline
 \end{tabular}
 \end{center}
 
