@@ -8,22 +8,16 @@
 template <class intT>
 struct Vertex
 {
-    Vertex(intT* iN, intT* oN, intT id, intT od):
-        inNeighbors(iN), outNeighbors(oN), inDegree(id), outDegree(od){}
-    void setInDegree(intT _d) { inDegree = _d; }
+    Vertex(intT* oN, intT od):
+        outNeighbors(oN), outDegree(od){}
     void setOutDegree(intT _d) { outDegree = _d; }
-    intT getInDegree() { return inDegree; }
     intT getOutDegree() { return outDegree; }
-    intT *getInNeighbors() { return inNeighbors; }
     intT *getOutNeighbors() { return outNeighbors; }
-    intT getInNeighbor(intT j) { return inNeighbors[2 * j]; }
     intT getOutNeighbor(intT j) { return outNeighbors[2 * j]; }
-    intT getInWeight(intT j) { return inNeighbors[2 * j + 1]; }
     intT getOutWeight(intT j) { return outNeighbors[2 * j + 1]; }
-    void setInNeighbors(intT *_i) { inNeighbors = _i; }
     void setOutNeighbors(intT *_i) { outNeighbors = _i; }
-    intT inDegree, outDegree;
-    intT *inNeighbors, *outNeighbors; // the second position is used to store weights
+    intT outDegree;
+    intT *outNeighbors; // the second position is used to store weights
 };
 
 template <class intT>
@@ -52,6 +46,7 @@ struct graph {
     Vertex<intT> *V;
     intT n;
     intT m;
+    graph():V(NULL),n(0),m(0){}
     graph(Vertex<intT>* VV, intT nn, uintT mm) 
         : V(VV), n(nn), m(mm){}
 };

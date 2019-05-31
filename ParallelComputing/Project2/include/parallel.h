@@ -35,6 +35,13 @@
 
 #endif
 
+#ifdef TIME
+#include <ctime>
+#endif
+#ifdef MPIFLAG
+#include <mpi.h>
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
@@ -64,9 +71,6 @@ typedef unsigned int uintE;
 #define UINT_E_MAX UINT_MAX
 #endif
 
-// mpi
-// #include <mpi.h>
-
-#define UNDEFINED -1
+#define UNDEFINED_VERT -1
 
 #endif // PARALLEL_H
