@@ -15,8 +15,10 @@
 #include "IO.h"
 using namespace std;
 
-void dijstra(Vertex<uintT>* V, uintT n, uintT start, uintT end);
-void dijstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end);
+void dijkstra(Vertex<uintT>* V, uintT n, uintT start, uintT end);
+#ifdef MPIFLAG
+void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end);
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -57,9 +59,9 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef MPIFLAG
-	dijstra_mpi(G.V,numVert,0,numVert-1);
+	dijkstra_mpi(G.V,numVert,0,numVert-1);
 #else
-	dijstra(G.V,G.n,0,numVert-1);
+	dijkstra(G.V,G.n,0,numVert-1);
 #endif
 
 #ifdef TIME
@@ -69,7 +71,7 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void dijstra(Vertex<uintT>* V, uintT n, uintT start, uintT end)
+void dijkstra(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 {
 	// initialization
 	uintT* dist = newA(uintT,n);
@@ -112,14 +114,17 @@ void dijstra(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 	printf("<-%d\n",start);
 }
 
-void dijstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
+#ifdef MPIFLAG
+void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 {
 	// n & start need to be passed to each process
 	int rank, p;
 	MPI_Comm comm = MPI_COMM_WORLD;
 	MPI_Comm_rank(comm,&rank);
 	MPI_Comm_size(comm,&p);
+#ifdef DEBUG
 	printf("Rank: %d/%d\n", rank, p);
+#endif
 
 	uintT glb_min_src, glb_min_dist;
 	uintT* glb_dist = NULL;
@@ -137,30 +142,33 @@ void dijstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 	intT* loc_prev = newA(intT,loc_n);
 	bool* loc_flag = newA(bool,loc_n);
 	// data in [loc_start,loc_end)
-	int loc_start = rank * loc_n;
+	int loc_start = rank * (n/p);
 	int loc_end = (rank != p-1) ? ((rank+1) * loc_n) : n;
+#ifdef DEBUG
 	printf("n: %d start: %d end: %d\n", loc_n, loc_start, loc_end);
-	parallel_for(int i = loc_start; i < loc_end; ++i){
+#endif
+	parallel_for(int i = 0; i < loc_n; ++i){
 		loc_dist[i] = INT_T_MAX;
 		loc_prev[i] = UNDEFINED_VERT;
 		loc_flag[i] = 1; // in set Q
 	}
-	if (start >= loc_start && start < loc_end)
+	int plc_rank = start/(n/p);
+	if (rank == ((plc_rank < p) ? plc_rank : p-1))
 		loc_dist[start-loc_start] = 0;
 
+	// begin iteration
 	for (int t = 0; t < n-1; ++t){ // except for start
+		// find minimum
 		uintT loc_src = loc_start;
 		uintT loc_min_dist = INT_T_MAX;
-		for (int i = loc_start; i < loc_end; ++i)
+		for (int i = 0; i < loc_n; ++i)
 			if (loc_flag[i] && loc_dist[i] < loc_min_dist){
 				loc_min_dist = loc_dist[i];
-				loc_src = i;
+				loc_src = i + loc_start;
 			}
 		if (rank == 0){
 			glb_min_src_arr = newA(uintT,p);
 			glb_min_dist_arr = newA(uintT,p);
-			assert(glb_min_src_arr != NULL);
-			assert(glb_min_dist_arr != NULL);
 		}
 		MPI_Gather(&loc_src,1,MPI_UNSIGNED,glb_min_src_arr,1,MPI_UNSIGNED,0,comm);
 		MPI_Gather(&loc_min_dist,1,MPI_UNSIGNED,glb_min_dist_arr,1,MPI_UNSIGNED,0,comm);
@@ -170,43 +178,39 @@ void dijstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 					glb_min_src = glb_min_src_arr[i];
 					glb_min_dist = glb_min_dist_arr[i];
 				} else if (glb_min_dist_arr[i] < glb_min_dist){
-					glb_min_src = glb_min_src_arr[i] + i*p;
+					glb_min_src = glb_min_src_arr[i];
 					glb_min_dist = glb_min_dist_arr[i];
 				}
 		}
 		MPI_Bcast(&glb_min_src,1,MPI_UNSIGNED,0,comm);
 		MPI_Bcast(&glb_min_dist,1,MPI_UNSIGNED,0,comm);
+		// if (rank == 0)
+		// printf("%d(%d) ", glb_min_src,rank);
+		assert(glb_min_src < n);
 
-		if (rank == glb_min_src/(n/p))
+		// set glb_min_src out of set Q
+		plc_rank = glb_min_src/(n/p);
+		if (rank == ((plc_rank < p) ? plc_rank : p-1))
 			loc_flag[glb_min_src-loc_start] = 0;
 
+		// scatter neighbor array
 		uintT out_degree;
-		int* send_count;
-		int* displs;
-		if (rank == glb_min_src/(n/p)){
+		uintT* loc_ngh = NULL;
+		if (rank == 0){
 			out_degree = V[glb_min_src].getOutDegree();
-			send_count = newA(int,p);
-			displs = newA(int,p);
-			for (int i = 0; i < p-1; ++i){
-				send_count[i] = (out_degree/p)*2; // with weights
-				displs[i] = i*(out_degree/p)*2;
-			}
-			send_count[p-1] = out_degree*2-(out_degree/p*(p-1)*2);
-			displs[p-1] = out_degree/p*(p-1)*2;
-			// for (int i = 0; i < p; ++i)
-				// printf("Send: %d %d\n", send_count[i], displs[i]);
+			loc_ngh = V[glb_min_src].outNeighbors;
 		}
 		MPI_Bcast(&out_degree,1,MPI_UNSIGNED,0,comm);
+		if (rank != 0)
+			loc_ngh = newA(uintT,out_degree*2);
 
-		uintT* loc_ngh;
-		uintT loc_size = (rank != p - 1) ? (out_degree/p)*2 : (out_degree-(out_degree/p*(p-1)))*2;
-		// printf("Locsize:%d\n", loc_size);
-		loc_ngh = newA(uintT,loc_size);
-		MPI_Scatterv(V[glb_min_src].outNeighbors,send_count,displs,MPI_UNSIGNED,loc_ngh,loc_size,MPI_UNSIGNED,0,comm);
-		parallel_for(int os = 0; os < loc_size / 2; ++os){ // div 2!!!
+		// be careful of segment fault (V[glb_min_src].outNeighbors)
+		// not scatter!!!
+		MPI_Bcast(loc_ngh,out_degree*2,MPI_INT,0,comm);
+		parallel_for(int os = 0; os < out_degree; ++os){
 			uintT dst = loc_ngh[os*2];
+			// printf("Src: %d Dst: %d Rank: %d\n",glb_min_src,dst,rank);
 			if (dst >= loc_start && dst < loc_end){ // be careful!!!
-				// printf("Dst: %d Rank: %d\n",dst,rank);
 				uintT alt = glb_min_dist + loc_ngh[os*2+1];
 				if (alt < loc_dist[dst-loc_start]){
 					loc_dist[dst-loc_start] = alt;
@@ -215,10 +219,34 @@ void dijstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 			}
 		}
 		MPI_Barrier(comm);
+#ifdef DEBUG
+		printf("Res-rank %d:\n", rank);
+		for (int i = 0; i < loc_n; ++i)
+			printf("%d ", loc_dist[i]);
+		printf("\n");
+		for (int i = 0; i < loc_n; ++i)
+			printf("%d ", loc_prev[i]);
+		printf("\n");
+		for (int i = 0; i < loc_n; ++i)
+			printf("%d ", loc_flag[i]);
+		printf("\n");
+#endif
 	}
 
-	MPI_Gather(loc_dist,loc_n,MPI_UNSIGNED,glb_dist,loc_n,MPI_UNSIGNED,0,comm);
-	MPI_Gather(loc_prev,loc_n,MPI_INT,glb_prev,loc_n,MPI_INT,0,comm);
+	int* recvcounts = NULL;
+	int* displs = NULL;
+	if (rank == 0){
+		recvcounts = newA(int,p);
+		displs = newA(int,p);
+		for (int i = 0; i < p; ++i){
+			recvcounts[i] = n / p;
+			displs[i] = n/p * i;
+		}
+		recvcounts[p-1] = n - n/p*(p-1);
+		displs[p-1] = n/p*(p-1);
+	}
+	MPI_Gatherv(loc_dist,loc_n,MPI_UNSIGNED,glb_dist,recvcounts,displs,MPI_UNSIGNED,0,comm);
+	MPI_Gatherv(loc_prev,loc_n,MPI_INT,glb_prev,recvcounts,displs,MPI_INT,0,comm);
 
 	// output
 	if (rank == 0){
@@ -233,3 +261,4 @@ void dijstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 
 	MPI_Finalize();
 }
+#endif

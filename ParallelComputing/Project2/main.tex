@@ -1,5 +1,5 @@
 \documentclass[reportComp]{thesis}
-\usepackage[cpp,linenum,pseudo]{mypackage}
+\usepackage[cpp,pseudo]{mypackage}
 
 \title{并行分布式计算实验报告}
 \subtitle{项目二：最短路径}
@@ -38,6 +38,7 @@
 Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 \begin{algorithm}[H]
 \caption{Sequential Dijkstra SSSP}
+\label{alg:dijkstra}
 \begin{algorithmic}[1]
 \Procedure{Dijkstra}{Graph,Source}
 \State Create vertex set $\sQ$\Comment{Initialization}
@@ -63,15 +64,21 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 \end{algorithmic}
 \end{algorithm}
 
-实际上，对于两个\verb'for each'部分，就可以使用并行方法进行加速，因为在循环间都没有依赖关系。
+在本次实验中我采用了两种并行模型，一种是只使用OpenMP，另一种是OpenMP和MPI的结合。
+头文件都在\verb'include'文件夹中，并行操作都已封装在\verb'parallel.h'头文件中（如OpenMP的\verb'parallel_for'等），主函数位于\verb'sssp.cpp'中。
+
+\subsection{OpenMP}
+\label{sub:openmp}
+单机共享内存的并行方式比较简单。
+对于两个\verb'for each'部分，就可以使用并行方法进行加速，因为在循环间都没有依赖关系。
 还有一个可并行的地方则是在求解距离最小值的部分（伪代码第9行）。
 
 由于我现在的研究方向就是图计算，故本次作业直接复用了我今年以第一作者投稿于SC'19的部分代码，该代码是开源的\footnote{Krill: An Efficient Concurrent Graph Processing System, \url{https://github.com/chhzh123/Krill}}。
 
 简单来说，优化技术有以下几点。
 \begin{itemize}
-	\item 将输入文件以字符串形式完全读入内存后，才并行进行处理，包括并行的初始化、并行的\textbf{基数排序}、并行的赋值等。
-	\item 用\textbf{CSR(Compressed Sparse Row)格式}存储，见图\ref{fig:csr}
+	\item 将输入文件以字符串形式完全读入内存后，同一并行进行处理，包括并行的初始化、并行的\textbf{基数排序}、并行的赋值等。
+	\item 用\textbf{压缩稀疏行(Compressed Sparse Row, CSR)格式}存储，见图\ref{fig:csr}
 	\begin{figure}[H]
 	\centering
 	\includegraphics[width=0.8\linewidth]{fig/CSR.pdf}
@@ -82,12 +89,36 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 	以CSR格式存储，可以使程序具有良好的空间局部性。
 	当确定了源结点（当前迭代最小距离点）后，内层循环都是遍历源结点的邻居。
 	而在CSR格式中，邻居都是紧密存储的（包括边权），故这可以确保所需的数据都在Cache中，进而大大缩短访存时间。
+	当然了，以压缩形式存储，在分布式环境下，通信开销也会小很多。
 \end{itemize}
 
-头文件都在\verb'include'文件夹中，并行操作都已封装在\verb'parallel.h'头文件中（如OpenMP的\verb'parallel_for'等），主函数位于\verb'sssp.cpp'文件。
+注意，由于测试数据集较小，故这些优化技术很可能不起作用。
+
+\subsection{OpenMP$+$MPI}
+第二种方式则是结合共享内存的编程模型OpenMP和消息传递型的编程模型MPI。
+增添了MPI的并行Dijkstra代码量激增，几乎比单独的OpenMP代码增加了四倍。
+需要考虑的细节非常多，debug就debug了好几天。
+
+具体代码请见\verb'sssp.cpp'中\verb'dijkstra_mpi'函数，流程与算法\ref{alg:dijkstra}相同，这里只提及要点。
+\begin{itemize}
+	\item 主进程(\verb'rank0')读入数据，依然采用\ref{sub:openmp}节并行读入的方法。
+	\item 采用\textbf{数据并行}的方法将任务\textbf{均匀分配}到每一个进程上，尽可能确保负载均衡。
+	主要是对距离\verb'dist'、前驱\verb'prev'以及标记数组\verb'flag'进行划分，如总结点数为$n$，则每个进程拿到的距离向量元素数目为$n/p$，其中$p$为进程数目。
+	若不整除，则最后一个进程分配到的元素较多。
+	\item 寻找最小距离时，先在每一个进程上寻找最小元素，然后通过\verb'MPI_Gather'汇总到主进程，由主进程串行找出全局最小距离后，再用\verb'MPI_Bcast'传递回各个进程。
+	\item 将最小距离对应的源结点\verb'src'的邻居数组\verb'outNeighbors'传递到各个进程上，然后每个进程通过OpenMP并行对自己拥有的距离数组进行松弛操作，结束一轮循环。
+	\item 当所有结点距离更新完后，再将距离数组由各个进程通过\verb'MPI_Gatherv'传递回主进程，由主进程进行输出。
+\end{itemize}
 
 \section{实验结果}
-运行可直接键入\verb'make run'，结果如下（调用了Linux的\verb'time'函数进行计时）
+测试环境是实验室的服务器，配置如下。
+\begin{itemize}
+	\item 2 * Intel Xeon Gold 5118 CPU (2.30GHz) (2*12*2=48 core)
+	\item 12 * 64G memory (768G)
+	\item Ubuntu 18.04 (LTS) + gcc v7.3.0
+\end{itemize}
+
+运行可直接键入\verb'make run'，结果如下（调用了Linux的\verb'time'函数进行计时）。
 \begin{lstlisting}[language=bash]
 $time make run
 ./sssp 10001x10001GraphExamples.txt 20001
@@ -98,5 +129,22 @@ real    0m4.243s
 user    1m26.519s
 sys     0m19.259s
 \end{lstlisting}
+
+而OpenMP和MPI结合的测试结果如下（单机开3个进程）。
+\begin{lstlisting}
+$ time make run_mpi
+mpirun -n 3 ./sssp 10001x10001GraphExamples.txt 20001
+Dist: 2
+20000<-826<-0
+
+real    11m18.656s
+user    425m35.883s
+sys     0m10.670s
+\end{lstlisting}
+
+明显可以看出，当OpenMP和MPI两者结合时，会互相影响，且对最终性能的影响非常大。
+
+由于时间限制，没有继续进行优化，因此强烈建议采用单独OpenMP进行测评。
+编译运行方式请见\verb'README.md'。
 
 \end{document}

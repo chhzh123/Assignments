@@ -14,6 +14,10 @@ ifdef DEBUG
 DDEBUG = -DDEBUG -g
 endif
 
+ifdef DG
+GFLAG = -g
+endif
+
 TEST = 10001x10001GraphExamples.txt
 NUM_VERT = 20001
 
@@ -25,18 +29,27 @@ PCC = g++
 PCFLAGS = -fopenmp -O3 -DOPENMP -Iinclude
 endif
 
+MPIRUN = mpirun
+NUM_PROC = 3
+
 PRG = sssp
 
 all: $(PRG)
 
 % : %.cpp
-	$(PCC) $(PCFLAGS) $(INTT) $(INTE) $(DTIME) $(DDEBUG) $< -o $@
+	$(PCC) $(PCFLAGS) $(INTT) $(INTE) $(DTIME) $(DDEBUG) $(GFLAG) $< -o $@
 
 run:
 	./$(PRG) $(TEST) $(NUM_VERT)
 
+run_mpi:
+	$(MPIRUN) -n $(NUM_PROC) ./$(PRG) $(TEST) $(NUM_VERT)
+
 run_test:
 	./$(PRG) test.txt 6
+
+run_mpi_test:
+	$(MPIRUN) -n $(NUM_PROC) ./$(PRG) test.txt 6
 
 .PHONY: clean
 
