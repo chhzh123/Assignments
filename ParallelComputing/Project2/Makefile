@@ -23,10 +23,10 @@ NUM_VERT = 20001
 
 ifdef MPI
 PCC = mpic++
-PCFLAGS = -fopenmp -O3 -DOPENMP -Iinclude -DMPIFLAG
+PCFLAGS = -fopenmp -O3 -DOPENMP -Iinclude -DMPIFLAG -std=c++11
 else
 PCC = g++
-PCFLAGS = -fopenmp -O3 -DOPENMP -Iinclude
+PCFLAGS = -fopenmp -O3 -DOPENMP -Iinclude -std=c++11
 endif
 
 MPIRUN = mpirun

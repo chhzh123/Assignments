@@ -73,12 +73,12 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 对于两个\verb'for each'部分，就可以使用并行方法进行加速，因为在循环间都没有依赖关系。
 还有一个可并行的地方则是在求解距离最小值的部分（伪代码第9行）。
 
-由于我现在的研究方向就是图计算，故本次作业直接复用了我今年以第一作者投稿于SC'19的部分代码，该代码是开源的\footnote{Krill: An Efficient Concurrent Graph Processing System, \url{https://github.com/chhzh123/Krill}}。
+由于我现在的研究方向就是图计算，故本次作业直接复用了我今年以第一作者投稿于SC'19的部分代码（之前已上传过相关的介绍PPT），该代码是开源的\footnote{Krill: An Efficient Concurrent Graph Processing System, \url{https://github.com/chhzh123/Krill}}。
 
 简单来说，优化技术有以下几点。
 \begin{itemize}
 	\item 将输入文件以字符串形式完全读入内存后，同一并行进行处理，包括并行的初始化、并行的\textbf{基数排序}、并行的赋值等。
-	\item 用\textbf{压缩稀疏行(Compressed Sparse Row, CSR)格式}存储，见图\ref{fig:csr}
+	\item 图结构(graph structure\footnote{顶点间的即邻接关系})用\textbf{压缩稀疏行(Compressed Sparse Row, CSR)格式}存储，见图\ref{fig:csr}
 	\begin{figure}[H]
 	\centering
 	\includegraphics[width=0.8\linewidth]{fig/CSR.pdf}
@@ -90,7 +90,13 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 	当确定了源结点（当前迭代最小距离点）后，内层循环都是遍历源结点的邻居。
 	而在CSR格式中，邻居都是紧密存储的（包括边权），故这可以确保所需的数据都在Cache中，进而大大缩短访存时间。
 	当然了，以压缩形式存储，在分布式环境下，通信开销也会小很多。
+	\item 图性质(graph property)用一个结构体\verb'DistPack'打包，包含顶点标号\verb'i'、距离向量\verb'dist'、前驱\verb'prev'、访问标记\verb'flag'，这样存储同样使得同一个结点的图性质具有良好的局部性。
+	\item 注意到最小值函数具有交换律和结合律，故可以利用\textbf{前缀和}(prefix sum\footnote{\url{https://en.wikipedia.org/wiki/Prefix_sum}})进行并行优化，这在代码中体现为\verb'sequence::reduce'。
+	通过传入数组\verb'res'、元素个数\verb'n'及作用函数\verb'minPackF'，即可进行分组归并计算。
+	\item 由于本题只要求求0到20000的最短路径，故当最小路径值为20000对应的结点时，即可进行\textbf{剪枝}，提前退出循环。其正确性是由最短路径的最优子结构保证的。
 \end{itemize}
+
+可以算得在$p$个核的环境下，并行Dijkstra算法的时间复杂度为$O(n^2/p+\log p)$。
 
 注意，由于测试数据集较小，故这些优化技术很可能不起作用。
 
@@ -107,7 +113,7 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 	若不整除，则最后一个进程分配到的元素较多。
 	\item 寻找最小距离时，先在每一个进程上寻找最小元素，然后通过\verb'MPI_Gather'汇总到主进程，由主进程串行找出全局最小距离后，再用\verb'MPI_Bcast'传递回各个进程。
 	\item 将最小距离对应的源结点\verb'src'的邻居数组\verb'outNeighbors'传递到各个进程上，然后每个进程通过OpenMP并行对自己拥有的距离数组进行松弛操作，结束一轮循环。
-	\item 当所有结点距离更新完后，再将距离数组由各个进程通过\verb'MPI_Gatherv'传递回主进程，由主进程进行输出。
+	\item 当所有结点距离更新完后，再将距离数组由各个进程通过\verb'MPI_Gatherv'传递回主进程，由主进程进行输出。（这里是对问题一般化了，即结点数目不一定整除进程数目）
 \end{itemize}
 
 \section{实验结果}
@@ -118,31 +124,51 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 	\item Ubuntu 18.04 (LTS) + gcc v7.3.0
 \end{itemize}
 
-运行可直接键入\verb'make run'，结果如下（调用了Linux的\verb'time'函数进行计时）。
+编译可键入\verb'make'，运行可直接键入\verb'make run'，结果如下（调用了Linux的\verb'time'函数进行计时）。
 \begin{lstlisting}[language=bash]
 $time make run
 ./sssp 10001x10001GraphExamples.txt 20001
 Dist: 2
-20000<-826<-0
+20000<-17878<-0
 
-real    0m4.243s
-user    1m26.519s
-sys     0m19.259s
+real    0m3.204s
+user    0m39.740s
+sys     0m19.693s
 \end{lstlisting}
+% 未加剪枝
+% ./sssp 10001x10001GraphExamples.txt 20001
+% Dist: 2
+% 20000<-17878<-0
+
+% real    0m3.819s
+% user    1m11.062s
+% sys     0m18.338s
+
+% 在未加前缀和的优化下
+% ./sssp 10001x10001GraphExamples.txt 20001
+% Dist: 2
+% 20000<-826<-0
+
+% real    0m4.243s
+% user    1m26.519s
+% sys     0m19.259s
 
 而OpenMP和MPI结合的测试结果如下（单机开3个进程）。
+编译键入\verb'make MPI=1'，运行键入\verb'make run_mpi'。
 \begin{lstlisting}
 $ time make run_mpi
 mpirun -n 3 ./sssp 10001x10001GraphExamples.txt 20001
 Dist: 2
 20000<-826<-0
 
-real    11m18.656s
-user    425m35.883s
-sys     0m10.670s
+real    11m17.004s
+user    425m24.855s
+sys     0m10.998s
 \end{lstlisting}
 
 明显可以看出，当OpenMP和MPI两者结合时，会互相影响，且对最终性能的影响非常大。
+这也是可以理解的，在单机环境下，资源就那么多，还要分资源给不同进程用，并且以消息传递的形式，必然会造成巨大的内存带宽、资源压力。
+而这很有可能也是因为用了稀疏方式存储，导致任务不好划分，进而通信量大大上升。
 
 由于时间限制，没有继续进行优化，因此强烈建议采用单独OpenMP进行测评。
 编译运行方式请见\verb'README.md'。

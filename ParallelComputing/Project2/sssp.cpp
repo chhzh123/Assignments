@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 		edgeArray<uintT> E = readEdgeList<uintT>(iFile,numVert);
 		G = graphFromEdges(E);
 	}
-	MPI_Barrier(MPI_COMM_WORLD);
+	// MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
 #ifdef TIME
@@ -71,44 +71,64 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+struct DistPack
+{
+	int i;
+	uintT dist;
+	intT prev;
+	bool flag;
+	DistPack():
+		i(UNDEFINED_VERT),dist(INT_T_MAX),prev(UNDEFINED_VERT),flag(0){}
+};
+
+struct minPackF
+{
+	DistPack operator() (const DistPack& a, const DistPack& b) const {
+		if (a.flag && b.flag)
+			return (a.dist < b.dist) ? a : b;
+		else if (!a.flag && !b.flag)
+			return DistPack();
+		else if (!a.flag)
+			return b;
+		else
+			return a;
+	}
+};
+
 void dijkstra(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 {
 	// initialization
-	uintT* dist = newA(uintT,n);
-	intT* prev = newA(intT,n);
-	bool* flag = newA(bool,n);
+	DistPack* res = newA(DistPack,n);
 	parallel_for(int i = 0; i < n; ++i){
-		dist[i] = INT_T_MAX;
-		prev[i] = UNDEFINED_VERT;
-		flag[i] = 1; // in set Q
+		res[i].i = i;
+		res[i].dist = INT_T_MAX;
+		res[i].prev = UNDEFINED_VERT;
+		res[i].flag = 1; // in set Q
 	}
-	dist[start] = 0;
+	res[start].dist = 0;
 
 	for (int t = 0; t < n-1; ++t){ // except for start
-		uintT src = start;
-		uintT curr_min_dist = INT_T_MAX;
-		for (int i = 0; i < n; ++i)
-			if (flag[i] && dist[i] < curr_min_dist){
-				curr_min_dist = dist[i];
-				src = i;
-			}
-		flag[src] = 0;
+		DistPack min_pack = sequence::reduce(res,n,minPackF());
+		uintT src = min_pack.i;
+		res[src].flag = 0;
+		if (src == end) // early break
+			break;
 		Vertex<uintT> v_src = V[src];
 		parallel_for(int os = 0; os < v_src.getOutDegree(); ++os){
 			uintT dst = v_src.getOutNeighbor(os);
-			uintT alt = dist[src] + v_src.getOutWeight(os);
-			if (alt < dist[dst]){
-				dist[dst] = alt;
-				prev[dst] = src;
+			uintT alt = res[src].dist + v_src.getOutWeight(os);
+			if (alt < res[dst].dist){
+				res[dst].dist = alt;
+				res[dst].prev = src;
 			}
 		}
 	}
 
 	// output
-	printf("Dist: %d\n", dist[end]);
+	printf("Dist: %d\n", res[end].dist);
 	printf("%d", end);
-	if (prev[end] != UNDEFINED_VERT)
-		for (int i = prev[end]; prev[i] != UNDEFINED_VERT; i = prev[i]){
+	if (res[end].prev != UNDEFINED_VERT)
+		for (int i = res[end].prev; res[i].prev != UNDEFINED_VERT; i = res[i].prev){
 			printf("<-%d", i);
 		}
 	printf("<-%d\n",start);
@@ -158,6 +178,9 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 
 	// begin iteration
 	for (int t = 0; t < n-1; ++t){ // except for start
+#ifdef TIME
+	clock_t start_time = clock();
+#endif
 		// find minimum
 		uintT loc_src = loc_start;
 		uintT loc_min_dist = INT_T_MAX;
@@ -187,6 +210,8 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 		// if (rank == 0)
 		// printf("%d(%d) ", glb_min_src,rank);
 		assert(glb_min_src < n);
+		if (glb_min_src == end) // early break!
+			break;
 
 		// set glb_min_src out of set Q
 		plc_rank = glb_min_src/(n/p);
@@ -204,9 +229,9 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 		if (rank != 0)
 			loc_ngh = newA(uintT,out_degree*2);
 
-		// be careful of segment fault (V[glb_min_src].outNeighbors)
 		// not scatter!!!
 		MPI_Bcast(loc_ngh,out_degree*2,MPI_INT,0,comm);
+
 		parallel_for(int os = 0; os < out_degree; ++os){
 			uintT dst = loc_ngh[os*2];
 			// printf("Src: %d Dst: %d Rank: %d\n",glb_min_src,dst,rank);
@@ -218,7 +243,7 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 				}
 			}
 		}
-		MPI_Barrier(comm);
+		// MPI_Barrier(comm);
 #ifdef DEBUG
 		printf("Res-rank %d:\n", rank);
 		for (int i = 0; i < loc_n; ++i)
@@ -230,6 +255,10 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 		for (int i = 0; i < loc_n; ++i)
 			printf("%d ", loc_flag[i]);
 		printf("\n");
+#endif
+#ifdef TIME
+	clock_t end_time = clock();
+	printf("Iter %d time: %fs\n", t,((double)(end_time-start_time))/CLOCKS_PER_SEC);
 #endif
 	}
 
