@@ -167,7 +167,7 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 #ifdef DEBUG
 	printf("n: %d start: %d end: %d\n", loc_n, loc_start, loc_end);
 #endif
-	parallel_for(int i = 0; i < loc_n; ++i){
+	parallel_for_4_threads(int i = 0; i < loc_n; ++i){
 		loc_dist[i] = INT_T_MAX;
 		loc_prev[i] = UNDEFINED_VERT;
 		loc_flag[i] = 1; // in set Q
@@ -189,26 +189,12 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 				loc_min_dist = loc_dist[i];
 				loc_src = i + loc_start;
 			}
-		if (rank == 0){
-			glb_min_src_arr = newA(uintT,p);
-			glb_min_dist_arr = newA(uintT,p);
-		}
-		MPI_Gather(&loc_src,1,MPI_UNSIGNED,glb_min_src_arr,1,MPI_UNSIGNED,0,comm);
-		MPI_Gather(&loc_min_dist,1,MPI_UNSIGNED,glb_min_dist_arr,1,MPI_UNSIGNED,0,comm);
-		if (rank == 0){
-			for (int i = 0; i < p; ++i)
-				if (i == 0){
-					glb_min_src = glb_min_src_arr[i];
-					glb_min_dist = glb_min_dist_arr[i];
-				} else if (glb_min_dist_arr[i] < glb_min_dist){
-					glb_min_src = glb_min_src_arr[i];
-					glb_min_dist = glb_min_dist_arr[i];
-				}
-		}
-		MPI_Bcast(&glb_min_src,1,MPI_UNSIGNED,0,comm);
-		MPI_Bcast(&glb_min_dist,1,MPI_UNSIGNED,0,comm);
-		// if (rank == 0)
-		// printf("%d(%d) ", glb_min_src,rank);
+		int loc_min_pack[2], glb_min_pack[2];
+		loc_min_pack[0] = loc_min_dist;
+		loc_min_pack[1] = loc_src;
+		MPI_Allreduce(loc_min_pack,glb_min_pack,1,MPI_2INT,MPI_MINLOC,comm);
+		glb_min_dist = glb_min_pack[0];
+		glb_min_src = glb_min_pack[1];
 		assert(glb_min_src < n);
 		if (glb_min_src == end) // early break!
 			break;
@@ -232,7 +218,7 @@ void dijkstra_mpi(Vertex<uintT>* V, uintT n, uintT start, uintT end)
 		// not scatter!!!
 		MPI_Bcast(loc_ngh,out_degree*2,MPI_INT,0,comm);
 
-		parallel_for(int os = 0; os < out_degree; ++os){
+		parallel_for_4_threads(int os = 0; os < out_degree; ++os){
 			uintT dst = loc_ngh[os*2];
 			// printf("Src: %d Dst: %d Rank: %d\n",glb_min_src,dst,rank);
 			if (dst >= loc_start && dst < loc_end){ // be careful!!!

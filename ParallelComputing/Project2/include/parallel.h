@@ -20,6 +20,7 @@
 #define cilk_sync
 #define parallel_main main
 #define parallel_for _Pragma("omp parallel for") for
+#define parallel_for_4_threads _Pragma("omp parallel for num_threads(4)") for
 #define parallel_for_1 _Pragma("omp parallel for schedule (static,1)") for
 #define parallel_for_256 _Pragma("omp parallel for schedule (static,256)") for
 

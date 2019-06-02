@@ -111,7 +111,7 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 	\item 采用\textbf{数据并行}的方法将任务\textbf{均匀分配}到每一个进程上，尽可能确保负载均衡。
 	主要是对距离\verb'dist'、前驱\verb'prev'以及标记数组\verb'flag'进行划分，如总结点数为$n$，则每个进程拿到的距离向量元素数目为$n/p$，其中$p$为进程数目。
 	若不整除，则最后一个进程分配到的元素较多。
-	\item 寻找最小距离时，先在每一个进程上寻找最小元素，然后通过\verb'MPI_Gather'汇总到主进程，由主进程串行找出全局最小距离后，再用\verb'MPI_Bcast'传递回各个进程。
+	\item 寻找最小距离时，先在每一个进程上寻找最小元素，然后通过\verb'MPI_Allreduce'求出全局最小值后传递回各个进程。
 	\item 将最小距离对应的源结点\verb'src'的邻居数组\verb'outNeighbors'传递到各个进程上，然后每个进程通过OpenMP并行对自己拥有的距离数组进行松弛操作，结束一轮循环。
 	\item 当所有结点距离更新完后，再将距离数组由各个进程通过\verb'MPI_Gatherv'传递回主进程，由主进程进行输出。（这里是对问题一般化了，即结点数目不一定整除进程数目）
 \end{itemize}
@@ -126,7 +126,7 @@ Dijkstra算法是串行求解单源最短路径的常见算法，伪代码如下
 
 编译可键入\verb'make'，运行可直接键入\verb'make run'，结果如下（调用了Linux的\verb'time'函数进行计时）。
 \begin{lstlisting}[language=bash]
-$time make run
+$ time make run
 ./sssp 10001x10001GraphExamples.txt 20001
 Dist: 2
 20000<-17878<-0
@@ -161,16 +161,28 @@ mpirun -n 3 ./sssp 10001x10001GraphExamples.txt 20001
 Dist: 2
 20000<-826<-0
 
-real    11m17.004s
-user    425m24.855s
-sys     0m10.998s
+real    0m6.579s
+user    1m9.272s
+sys     0m9.633s
 \end{lstlisting}
+% mpirun -n 3 ./sssp 10001x10001GraphExamples.txt 20001
+% Dist: 2
+% 20000<-826<-0
+
+% real    11m17.004s
+% user    425m24.855s
+% sys     0m10.998s
 
 明显可以看出，当OpenMP和MPI两者结合时，会互相影响，且对最终性能的影响非常大。
 这也是可以理解的，在单机环境下，资源就那么多，还要分资源给不同进程用，并且以消息传递的形式，必然会造成巨大的内存带宽、资源压力。
 而这很有可能也是因为用了稀疏方式存储，导致任务不好划分，进而通信量大大上升。
 
-由于时间限制，没有继续进行优化，因此强烈建议采用单独OpenMP进行测评。
+这里还有一个有意思的小插曲，由于一开始没有限制OpenMP开的线程数目，导致和MPI的冲突极其严重，在超算3个结点上跑一个小时都跑不出结果(((
+
+经同学提醒才在头文件中设置了\verb'parallel_for_4_threads'的宏，瞬间速度就提上去了。
+
+不过由于时间限制，没有对MPI进一步进行优化。
+如果需要测评麻烦将两种方法都测一测，因为在不同机器上效果可能不尽相同。
 编译运行方式请见\verb'README.md'。
 
 \end{document}

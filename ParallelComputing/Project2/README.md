@@ -17,4 +17,4 @@ $ make run_mpi
 * `NUM_VERT`：测试集的顶点数目，默认为`20001`
 * `NUM_CORE`：进程数目，默认为`3`
 
-注意，单独使用OpenMP执行的效果要远胜于使用OpenMP和MPI的效果。
+注意，在单机上测试很可能OpenMP执行的效果要远胜于使用OpenMP和MPI的效果。
