@@ -1,0 +1,213 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo,optidef]{mypackage}
+\usepackage{cases,subeqnarray}
+
+\title{最优化理论期末报告}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{最优化理论期末报告}
+\lstset{language=python}
+
+\begin{document}
+
+\maketitle
+
+\section{问题一}
+\subsection{问题描述}
+考虑线性测量$\vb=A\vx+\ve$，其中$\vb$为$50$维的测量值，$A$为$50\times 100$维的测量矩阵，$\vx$为$100$维的未知稀疏向量且稀疏度为$5$，$\ve$为$50$维的测量噪声。
+从$\vb$与$A$中恢复$\vx$的一范数规范化，最小二乘模型如下：
+\[\min\lrp{\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vx}_1}\]
+其中$p$为非负的正则化参数。
+
+请设计下述算法求解该问题：
+\begin{enumerate}
+    \item 邻近点梯度下降法
+    \item 交替方向乘子法
+    \item 次梯度法
+\end{enumerate}
+
+在实验中，设$\vx$的真值中的非零元素服从均值为$0$方差为$1$的高斯分布，$A$中的元素服从均值为$0$方差为$1$的高斯分布，$\ve$中的元素服从均值为$0$方差为$0.1$的高斯分布。
+对于每种算法，请给出每步计算结果与真值的距离以及每步计算结果与最优解的距离。
+此外，请讨论正则化参数$p$对计算结果的影响。
+
+\subsection{算法设计}
+\subsubsection{邻近点梯度下降法}
+设
+\[\begin{cases}
+s(\vx):=\frac{1}{2}\norm{A\vx-\vb}_2^2\\
+r(\vx):=p\norm{\vx}_1
+\end{cases}\]
+其中，$A\in\rr^m\times\rn$，$\vx,\vb,\ve\in\rn$，则原式
+\[f(\vx):=\lrp{\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vx}_1}=s(\vx)+r(\vx)\]
+先求$r(\vx)$的邻近点投影
+\begin{equation}
+\label{equ:prox}
+\opprox \hat{\vx}=\argmin_\vx\lrp{p\norm{\vx}_1+\frac{1}{2\alpha}\norm{\vx-\hat{\vx}}^2}
+\end{equation}
+对\ref{equ:prox}式右侧展开有
+\begin{equation}
+\label{equ:prox2}
+\argmin_\vx\lrp{p\sum_{i=1}^n|x_i|+\frac{1}{2\alpha}\sum_{i=1}^n(x_i-\hat{x}_i)^2}
+\end{equation}
+注意到(\ref{equ:prox2})式对于下标$i$相互独立，故要求\ref{equ:prox2}的最小值，等价于对每一个下标$i$求最小值后求和，即
+\begin{equation}
+\label{equ:prox3}
+\argmin_{x_i}\lrp{p|x_i|+\frac{1}{2\alpha}(x_i-\hat{x}_i)^2},\;\forall i
+\end{equation}
+由不可微函数的极值判断条件有
+\begin{equation}
+0\in\partial_{x_i}p|x_i|+\frac{1}{\alpha}(x_i-\hat{x}_i)
+\end{equation}
+对$x_i$进行分类讨论
+\begin{itemize}
+	\item 若$x_i>0$，则$|x_i|$对于$|x_i|$可微，即$\partial_{x_i}|x_i|=1$，有
+	\[p+\frac{1}{\alpha}(x_i-\hat{x}_i)=0\]
+	整理得
+	\[x_i=\hat{x}_i-\alpha p\]
+	由于$x_i>0$，故$\hat{x}_i-\alpha p>0$，即$\hat{x}_i>\alpha p$
+	\item 若$x_i<0$，则$|x_i|$对于$|x_i|$可微，即$\partial_{x_i}|x_i|=-1$，有
+	\[-p+\frac{1}{\alpha}(x_i-\hat{x}_i)=0\]
+	整理得
+	\[x_i=\hat{x}_i+\alpha p\]
+	由于$x_i<0$，故$\hat{x}_i+\alpha p<0$，即$\hat{x}_i<-\alpha p$
+	\item 若$x_i=0$，则$|x_i|$对于$|x_i|$不可微，需要求次梯度，$\partial_{x_i}|x_i|=[-1,1]$，即
+	\[0\in\left[-p-\frac{\hat{x}_i}{\alpha},p-\frac{\hat{x}_i}{\alpha}\right]\]
+	那么，需要满足
+	\[\begin{cases}
+	p-\dfrac{\hat{x}_i}{\alpha}\geq 0\\
+	-p-\dfrac{\hat{x}_i}{\alpha}\leq 0
+	\end{cases}\]
+	推得
+	\[\hat{x}_i\in[-\alpha p,\alpha p]\]
+\end{itemize}
+综上，有
+\begin{equation}
+\label{equ:soft-thresholding}
+x_i=\begin{cases}
+\hat{x}_i+\alpha p & \hat{x}_i<-\alpha p\\
+0 & \hat{x}_i\in[-\alpha p,\alpha p]\\
+\hat{x}_i-\alpha p & \hat{x}_i>\alpha p
+\end{cases}
+\end{equation}
+可以得到图\ref{fig:soft-thresholding}的软门限图
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{fig/soft-thresholding.pdf}
+\caption{关于$x_i$与$\hat{x}_i$的软门限图}
+\label{fig:soft-thresholding}
+\end{figure}
+
+进一步，得到邻近点梯度下降法的迭代式如下
+\begin{equation}
+\begin{cases}
+\iter{\vx}{k+\frac{1}{2}}=\iter{\vx}{k}-\alpha\nabla s(\iter{\vx}{k})=\iter{\vx}{k}-\alpha A^T(A\iter{\vx}{k}-\vb)\\
+\iter{\vx}{k+1}=\opprox \iter{\vx}{k+\frac{1}{2}}=\argmin_\vx\lrp{p\norm{\vx}_1+\dfrac{1}{2\alpha}\norm{\vx-\iter{\vx}{k+\frac{1}{2}}}_2^2}
+\end{cases}
+\end{equation}
+其中，$\iter{x}{k+\frac{1}{2}}$可直接计算，$\iter{x}{k+1}$可由(\ref{equ:soft-thresholding})式求得。
+
+\subsubsection{交替方向乘子法}
+对原问题进行变形，等价于下述约束问题
+\begin{mini*}
+{}{\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vy}_1}{}{}
+\addConstraint{\vx-\vy}{=0}
+\end{mini*}
+
+构造增广拉格朗日函数
+\begin{equation}
+\label{equ:clagrange}
+L_c(\vx,\vy,\vv)=\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vy}_1+\vv^\T(\vx-\vy)+\frac{c}{2}\norm{\vx-\vy}_2^2
+\end{equation}
+
+可以得到交替方向乘子法的迭代格式
+\begin{equation}
+\label{equ:admm1}
+\begin{cases}
+\iter{\vx}{k+1}=\argmin_\vx L_c(\vx,\iter{\vy}{k},\iter{\vv}{k})\\
+\iter{\vy}{k+1}=\argmin_\vy L_c(\iter{\vx}{k+1},\vy,\iter{\vv}{k})\\
+\iter{\vv}{k+1}=\iter{\vv}{k}+c(\iter{\vx}{k+1}-\iter{\vy}{k+1})
+\end{cases}
+\end{equation}
+
+对$\iter{\vx}{k+1}$展开并配方，并将非主元项忽略，可求得(\ref{equ:admm1})与下面的式子等价
+\begin{subequations}
+\begin{numcases}{}
+\iter{\vx}{k+1}=\argmin_\vx \lrp{\frac{1}{2}\norm{A\vx-\vb}_2^2+\frac{c}{2}\norm{\vx-\iter{\vy}{k}+\frac{\iter{\vv}{k}}{c}}_2^2}\label{equ:admm21}\\
+\iter{\vy}{k+1}=\argmin_\vy \lrp{p\norm{\vy}_1+\frac{c}{2}\norm{\iter{\vx}{k+1}-\vy+\frac{\iter{\vv}{k}}{c}}_2^2}\label{equ:admm22}\\
+\iter{\vv}{k+1}=\iter{\vv}{k}+c(\iter{\vx}{k+1}-\iter{\vy}{k+1})\label{equ:admm23}
+\end{numcases}
+\end{subequations}
+
+对于(\ref{equ:admm21})式，可直接通过求梯度的方法得到显式解，即
+\[\iter{\vx}{k+1}=(A^\T A+cI)^{-1}(A^\T\vb+c\iter{\vy}{k}-\iter{\vv}{k})\]
+对于(\ref{equ:admm22})式，由于涉及一范数，故需要求次微分，类似(\ref{equ:soft-thresholding})式的方法，设$z_i=\iter{x}{k+1}_i+\dfrac{\iter{v}{k}_i}{c}$，可得到
+\[y_i=\begin{cases}
+z_i-\dfrac{p}{c} & z_i>\dfrac{p}{c}\\
+0 & z_i\in\lrs{-\dfrac{p}{c},\dfrac{p}{c}}\\
+z_i+\dfrac{p}{c} & z_i<-\dfrac{p}{c}
+\end{cases}\]
+
+进而可以通过(\ref{equ:admm21})(\ref{equ:admm22})(\ref{equ:admm23})式迭代求解。
+
+\subsubsection{次梯度法}
+对原式直接求次梯度有
+\begin{equation}
+\partial f(\vx)=A^\T(A\vx-\vb)+p\partial\norm{\vx}_1
+\end{equation}
+其中
+\[(\partial\norm{\vx}_1)_i=\partial|x_i|=
+\begin{cases}
+1 & x_i>0\\
+[-1,1] & x_i=0\\
+-1 & x_i<0
+\end{cases}\]
+
+进而可以直接得到次梯度法的迭代格式
+\begin{equation}
+\iter{\vx}{k+1}=\iter{\vx}{k}-\alpha\partial f(\iter{\vx}{k})
+\end{equation}
+
+\subsection{数值实验}
+% 精度10^{-8}
+代码如下，也以附在附件中。
+
+\subsection{结果分析}
+% 横轴迭代次数$k$，纵轴对数坐标，\norm{\iter{x}{k}-\iter{x}{t}}, \norm{\iter{x}{k}-x^\star}
+
+\section{问题二}
+\subsection{问题描述}
+请设计下述算法，求解MNIST数据集上的Logistic Regression问题：
+\begin{enumerate}
+    \item 梯度下降法
+    \item 随机梯度法
+\end{enumerate}
+
+对于每种算法，请给出每步计算结果与最优解的距离以及每步计算结果在测试集上所对应的分类精度。
+此外，请讨论随机梯度法中Mini Batch大小对计算结果的影响。
+
+可参考：\url{http://deeplearning.net/tutorial/logreg.html}
+
+
+\subsection{算法设计}
+\subsubsection{梯度下降法}
+
+
+\subsubsection{随机梯度法}
+
+
+\subsection{数值实验}
+代码如下，也以附在附件中。
+
+
+\subsection{结果分析}
+
+
+\end{document}
+
+% 实验要求：
+% 1、撰写并提交完整的实验报告，包括问题描述、算法设计、数值实验、结果分析。
+% 2、编写并提交完整的源代码，建议用 MATLAB 实现。
+% 3、2019 年 6 月 14 日（星期五）前提交至optimization_2019@163.com，要回信！

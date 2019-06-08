@@ -16,3 +16,4 @@ Details can be found in each folder.
 * Computer Networking - 2019 Spring
 * Parallel Computing - 2019 Spring
 * Numerical Computing - 2019 Spring
+* Convex Optimization - 2019 Spring
