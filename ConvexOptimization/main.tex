@@ -172,7 +172,7 @@ z_i+\dfrac{p}{c} & z_i<-\dfrac{p}{c}
 
 \subsection{数值实验}
 % 精度10^{-8}
-代码如下，也以附在附件中。
+代码如下，也已附在附件中。
 
 \subsection{结果分析}
 % 横轴迭代次数$k$，纵轴对数坐标，\norm{\iter{x}{k}-\iter{x}{t}}, \norm{\iter{x}{k}-x^\star}
@@ -192,18 +192,65 @@ z_i+\dfrac{p}{c} & z_i<-\dfrac{p}{c}
 
 
 \subsection{算法设计}
-\subsubsection{梯度下降法}
+由于MNIST数据集为多分类问题，故采用泛化的Logistic回归，即softmax回归进行求解。
 
+设训练集$\{(\vx_i,y_i)\}_{i=1}^M$，其中$M$为训练集数目，${|\mathcal{C}|}$为类别数目（在本例中${|\mathcal{C}|}=10$），$\vx_i\in\rr^n$为输入样本，$y_i\in\{1,2,\ldots,{|\mathcal{C}|}\}$为对应的标签\footnote{为方便起见，在手写体问题中，我们将数字$0$归到类别$10$中。}。
 
-\subsubsection{随机梯度法}
+输入$\vx$属于第$j$类的条件概率可用softmax函数进行计算
+\[p(y=j\mid \vx;W)=\frac{\ee^{\vw_j^\T\vx}}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw_j^\T\vx}}\]
+其中，
+\[W=\bmat{\vw_1^\T\\\vw_2^\T\\\vdots\\\vw_{|\mathcal{C}|}^\T}\in\rr^{{|\mathcal{C}|}\times n}\]
+为需要训练的参数，$\vw_i\in\rr^{n \times 1}$为每一个类别对应的权重向量。
 
+可以得到对应的假设函数为
+\[h_W(\vx)=\bmat{p(y=1\mid\vx;W)\\p(y=2\mid\vx;W)\\\vdots\\p(y={|\mathcal{C}|}\mid\vx;W)}=\frac{1}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw_j^\T\vx}}\bmat{\ee^{\vw_1^\T\vx}\\\ee^{\vw_2^\T\vx}\\\vdots\\\ee^{\vw_{|\mathcal{C}|}^\T\vx}}\]
+
+进而可以得到单一样本的似然函数为
+\[\mL(y_i\mid\vx_i;W)=\prod_{c=1}^{|\mathcal{C}|}\vone(y_i=c)p(y_i=j\mid\vx_i;W)\]
+其中，$\vone(\cdot)$为示性函数，当输入为真时返回$1$，否则返回$0$。
+
+从而得到数据集的似然函数为
+\[\mL(Y\mid X;W)=\prod_{i=1}^m\mL(y_i\mid\vx_i;W)\]
+对应的对数似然函数为
+\[\ln\mL(Y\mid X;W)=\sum_{i=1}^m\sum_{c=1}^{|\mathcal{C}|}\vone(y_i=j)\ln p(y_i=j\mid\vx;W)\]
+极大化对数似然函数，相当于极小化负对数似然函数，故得到最优化问题
+\begin{equation}
+\min_W \;\ell(W):=-\ln\mL(Y\mid X;W)
+\end{equation}
+
+对$\ln p(y=j\mid\vx;W)$求梯度，有
+\[\pd{\ln p(y=j\mid\vx;W)}{\vw_i}=
+\begin{cases}
+\vx(1-p(y=j\mid\vx;W)) & i=j\\
+\vx p(y=j\mid\vx;W) & i\ne j
+\end{cases}\]
+进而
+\begin{equation}
+\nabla_{\vw_i}\ell(W)=-\sum_{i=1}^m\sum_{j=0}^{|\mathcal{C}|}\lrs{\vx_i\lrp{\vone(y_i=j)-p(y_i=j\mid\vx_i;W)}}
+\end{equation}
+
+从而可以得到梯度下降的表达式
+\begin{equation}
+\label{equ:gd}
+\iter{\vw}{k+1}_i=\iter{\vw}{k}_i-\frac{\iter{\alpha}{k}}{m}\nabla_{\vw_i}\ell(W)
+\end{equation}
+其中，$m$为小批量大小。
+当$m$选取不同值时，(\ref{equ:gd})式为不同的优化方法：
+\begin{itemize}
+\item 当$m=M$时，梯度下降法，每次选取\textbf{所有样本}用于更新权重
+\item 当$m=1$时，随机梯度下降法，每次选取\textbf{一个样本}用于更新权重
+\item 当$m\in[2,M-1]$时，小批量梯度下降法，每次只选取\textbf{部分样本}用于更新权重
+\end{itemize}
 
 \subsection{数值实验}
-代码如下，也以附在附件中。
+代码如下，也已附在附件中。
 
 
 \subsection{结果分析}
 
+
+% \section{参考资料}
+% logistic回归，梯度下降法，牛顿法/IRLS算法 - RookieJ的文章 - 知乎 https://zhuanlan.zhihu.com/p/67842740
 
 \end{document}
 
