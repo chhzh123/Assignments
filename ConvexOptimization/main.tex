@@ -1,5 +1,5 @@
 \documentclass[logo,reportComp]{thesis}
-\usepackage[cpp,pseudo,optidef]{mypackage}
+\usepackage[cpp,pseudo,linenum,optidef]{mypackage}
 \usepackage{cases,subeqnarray}
 
 \title{最优化理论期末报告}
@@ -40,7 +40,7 @@
 s(\vx):=\frac{1}{2}\norm{A\vx-\vb}_2^2\\
 r(\vx):=p\norm{\vx}_1
 \end{cases}\]
-其中，$A\in\rr^m\times\rn$，$\vx,\vb,\ve\in\rn$，则原式
+其中，$A\in\rr^{m\times n}$，$\vx\in\rr^n$，$\vb,\ve\in\rr^m$（在本题中$m=50,n=100$），则原式
 \[f(\vx):=\lrp{\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vx}_1}=s(\vx)+r(\vx)\]
 先求$r(\vx)$的邻近点投影
 \begin{equation}
@@ -171,11 +171,107 @@ z_i+\dfrac{p}{c} & z_i<-\dfrac{p}{c}
 \end{equation}
 
 \subsection{数值实验}
-% 精度10^{-8}
-代码如下，也已附在附件中。
+采用Python进行编程\footnote{使用numpy进行数值计算，matplotlib进行画图}，对上述三种方法进行迭代计算，直到精度达到$10^{-8}$。
+
+完整代码请见\verb'p1.py'文件，这里只截取核心代码部分。
+
+邻近点梯度法如下，设超参数$\alpha=10^{-3}$。
+\begin{lstlisting}
+def soft_thresholding(x,offset):
+	if x < (-1)*offset:
+		return x + offset
+	elif x > offset:
+		return x - offset
+	else:
+		return 0
+
+def prox(xk_old,offset):
+	xk_new = np.zeros(xk_old.size)
+	for i in range(xk_old.size):
+		xk_new[i] = soft_thresholding(xk_old[i],offset)
+	return xk_new
+
+def proxgrad(x0):
+	t = 0
+	xk = x0.copy()
+	while True:
+		xhat = xk - alpha * np.dot(A.T, np.dot(A, xk) - b)
+		xk_new = prox(xhat, alpha * p)
+		if np.linalg.norm(xk_new - xk, ord=2) < acc:
+			break
+		xk = xk_new.copy()
+		t += 1
+	return xk
+\end{lstlisting}
+
+交替方向乘子法如下，设超参数$c=10^{-3}$。
+\begin{lstlisting}
+def admm(x0,y0,v0):
+	t = 0
+	xk = x0.copy()
+	yk = y0.copy()
+	vk = v0.copy()
+	while True:
+		xk_new = np.dot(
+			np.linalg.inv(np.dot(A.T, A) + c * np.eye(n,n)),
+			np.dot(A.T, b) + c * yk - vk)
+		yk_new = prox(xk_new + vk / c, p / c)
+		vk_new = vk + c * (xk_new - yk_new)
+		if np.linalg.norm(xk_new - xk, ord=2) < acc:
+			break
+		xk = xk_new.copy()
+		yk = yk_new.copy()
+		vk = vk_new.copy()
+		t += 1
+	return xk
+\end{lstlisting}
+
+次梯度法如下。
+\begin{lstlisting}
+def subgrad(x0):
+	xk = x0.copy()
+	t = 0
+	while True:
+		pdx = np.zeros(xk.size)
+		alphak = alpha / (t + 1) # remember to decay the step
+		for i in range(xk.size):
+			if xk[i] != 0:
+				pdx[i] = 1 if xk[i] > 0 else -1
+			else:
+				pdx[i] = 2 * np.random.random() - 1 # pick a random float from [-1,1]
+		pdf = np.dot(A.T, np.dot(A,xk) - b) + pdx
+		xk_new = xk - alphak * pdf
+		if np.linalg.norm(xk_new - xk, ord=2) < acc:
+			break
+		xk = xk_new.copy()
+		t += 1
+	return xk
+\end{lstlisting}
 
 \subsection{结果分析}
 % 横轴迭代次数$k$，纵轴对数坐标，\norm{\iter{x}{k}-\iter{x}{t}}, \norm{\iter{x}{k}-x^\star}
+记最优解$\vx^\star$为最后一次迭代获得的$\vx$值，真值为$\vx_{\text{true}}$。
+运行时间，交替方向乘子法最短，邻近点梯度下降法次之，次梯度法最长。
+邻近点梯度下降法需要226545轮迭代，交替方向乘子法需要16249轮迭代，次梯度法需要3047223轮迭代。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/proxgrad.eps}
+\caption{邻近点梯度下降法}
+\label{fig:proxgrad}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/admm.eps}
+\caption{交替方向乘子法}
+\label{fig:admm}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/subgrad.eps}
+\caption{次梯度法}
+\label{fig:subgrad}
+\end{figure}
 
 \section{问题二}
 \subsection{问题描述}
@@ -196,43 +292,38 @@ z_i+\dfrac{p}{c} & z_i<-\dfrac{p}{c}
 
 设训练集$\{(\vx_i,y_i)\}_{i=1}^M$，其中$M$为训练集数目，${|\mathcal{C}|}$为类别数目（在本例中${|\mathcal{C}|}=10$），$\vx_i\in\rr^n$为输入样本，$y_i\in\{1,2,\ldots,{|\mathcal{C}|}\}$为对应的标签\footnote{为方便起见，在手写体问题中，我们将数字$0$归到类别$10$中。}。
 
-输入$\vx$属于第$j$类的条件概率可用softmax函数进行计算
-\[p(y=j\mid \vx;W)=\frac{\ee^{\vw_j^\T\vx}}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw_j^\T\vx}}\]
+输入$\vx_i$属于第$y_i$类的条件概率可用softmax函数进行计算
+\begin{equation}
+p(y_i\mid \vx;W)=\frac{\ee^{\vw_{y_i}^\T\vx}}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw_c^\T\vx}}
+\end{equation}
 其中，
 \[W=\bmat{\vw_1^\T\\\vw_2^\T\\\vdots\\\vw_{|\mathcal{C}|}^\T}\in\rr^{{|\mathcal{C}|}\times n}\]
 为需要训练的参数，$\vw_i\in\rr^{n \times 1}$为每一个类别对应的权重向量。
 
-可以得到对应的假设函数为
-\[h_W(\vx)=\bmat{p(y=1\mid\vx;W)\\p(y=2\mid\vx;W)\\\vdots\\p(y={|\mathcal{C}|}\mid\vx;W)}=\frac{1}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw_j^\T\vx}}\bmat{\ee^{\vw_1^\T\vx}\\\ee^{\vw_2^\T\vx}\\\vdots\\\ee^{\vw_{|\mathcal{C}|}^\T\vx}}\]
-
-进而可以得到单一样本的似然函数为
-\[\mL(y_i\mid\vx_i;W)=\prod_{c=1}^{|\mathcal{C}|}\vone(y_i=c)p(y_i=j\mid\vx_i;W)\]
-其中，$\vone(\cdot)$为示性函数，当输入为真时返回$1$，否则返回$0$。
-
 从而得到数据集的似然函数为
-\[\mL(Y\mid X;W)=\prod_{i=1}^m\mL(y_i\mid\vx_i;W)\]
+\[\mL(Y\mid X;W)=\prod_{i=1}^m p(y_i\mid\vx_i;W)\]
 对应的对数似然函数为
-\[\ln\mL(Y\mid X;W)=\sum_{i=1}^m\sum_{c=1}^{|\mathcal{C}|}\vone(y_i=j)\ln p(y_i=j\mid\vx;W)\]
+\[\ln\mL(Y\mid X;W)=\sum_{i=1}^m\ln p(y_i\mid\vx_i;W)\]
 极大化对数似然函数，相当于极小化负对数似然函数，故得到最优化问题
 \begin{equation}
 \min_W \;\ell(W):=-\ln\mL(Y\mid X;W)
 \end{equation}
 
-对$\ln p(y=j\mid\vx;W)$求梯度，有
-\[\pd{\ln p(y=j\mid\vx;W)}{\vw_i}=
+对$\ln p(y_i\mid\vx_i;W)$求梯度，有
+\[\pd{\ln p(y_i\mid\vx_i;W)}{\vw_j}=
 \begin{cases}
-\vx(1-p(y=j\mid\vx;W)) & i=j\\
-\vx p(y=j\mid\vx;W) & i\ne j
-\end{cases}\]
+\vx(1-p(y_i\mid\vx_i;W)) & y_i=j\\
+\vx p(y_i\mid\vx_i;W) & y_i\ne j
+\end{cases},\;j\in\{1,\ldots,|\mathcal{C}|\}\]
 进而
 \begin{equation}
-\nabla_{\vw_i}\ell(W)=-\sum_{i=1}^m\sum_{j=0}^{|\mathcal{C}|}\lrs{\vx_i\lrp{\vone(y_i=j)-p(y_i=j\mid\vx_i;W)}}
+\nabla_{\vw_j}\ell(W)=-\sum_{i=1}^m\lrs{\vx_i\lrp{\vone(y_i=j)-p(y_i=j\mid\vx_i;W)}}
 \end{equation}
 
-从而可以得到梯度下降的表达式
+最终得到梯度下降的表达式
 \begin{equation}
 \label{equ:gd}
-\iter{\vw}{k+1}_i=\iter{\vw}{k}_i-\frac{\iter{\alpha}{k}}{m}\nabla_{\vw_i}\ell(W)
+\iter{\vw}{k+1}_j=\iter{\vw}{k}_j-\frac{\iter{\alpha}{k}}{m}\nabla_{\vw_j}\ell(W)
 \end{equation}
 其中，$m$为小批量大小。
 当$m$选取不同值时，(\ref{equ:gd})式为不同的优化方法：
