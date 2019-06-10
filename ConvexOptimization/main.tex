@@ -1,6 +1,5 @@
 \documentclass[logo,reportComp]{thesis}
 \usepackage[cpp,pseudo,linenum,optidef]{mypackage}
-\usepackage{cases,subeqnarray}
 
 \title{最优化理论期末报告}
 \subtitle{}
@@ -226,7 +225,7 @@ def admm(x0,y0,v0):
 	return xk
 \end{lstlisting}
 
-次梯度法如下。
+次梯度法如下，采用递减步长$\iter{\alpha}{k+1}=\dfrac{\iter{\alpha}{k}}{k+1}$。
 \begin{lstlisting}
 def subgrad(x0):
 	xk = x0.copy()
@@ -237,8 +236,8 @@ def subgrad(x0):
 		for i in range(xk.size):
 			if xk[i] != 0:
 				pdx[i] = 1 if xk[i] > 0 else -1
-			else:
-				pdx[i] = 2 * np.random.random() - 1 # pick a random float from [-1,1]
+			else: # pick a random float from [-1,1]
+				pdx[i] = 2 * np.random.random() - 1
 		pdf = np.dot(A.T, np.dot(A,xk) - b) + pdx
 		xk_new = xk - alphak * pdf
 		if np.linalg.norm(xk_new - xk, ord=2) < acc:
@@ -251,27 +250,36 @@ def subgrad(x0):
 \subsection{结果分析}
 % 横轴迭代次数$k$，纵轴对数坐标，\norm{\iter{x}{k}-\iter{x}{t}}, \norm{\iter{x}{k}-x^\star}
 记最优解$\vx^\star$为最后一次迭代获得的$\vx$值，真值为$\vx_{\text{true}}$。
-运行时间，交替方向乘子法最短，邻近点梯度下降法次之，次梯度法最长。
-邻近点梯度下降法需要226545轮迭代，交替方向乘子法需要16249轮迭代，次梯度法需要3047223轮迭代。
 
+运行结果如图\ref{fig:proxgrad}、图\ref{fig:admm}和图\ref{fig:subgrad}所示。
+
+\begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\linewidth]{fig/proxgrad.eps}
+\includegraphics[width=\linewidth]{fig/proxgrad.eps}
 \caption{邻近点梯度下降法}
 \label{fig:proxgrad}
 \end{figure}
+\end{minipage}
+\begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\linewidth]{fig/admm.eps}
+\includegraphics[width=\linewidth]{fig/admm.eps}
 \caption{交替方向乘子法}
 \label{fig:admm}
 \end{figure}
+\end{minipage}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\linewidth]{fig/subgrad.eps}
+\includegraphics[width=0.5\linewidth]{fig/subgrad.eps}
 \caption{次梯度法}
 \label{fig:subgrad}
 \end{figure}
+
+由实际的运行时间可以得出，交替方向乘子法达到目标精度需要的时间最短，邻近点梯度下降法次之，次梯度法所需的时间最长。
+从迭代的次数也可以看出，邻近点梯度下降法需要$226545$轮迭代，交替方向乘子法需要$16249$轮迭代，次梯度法需要$3047223$轮迭代。
+
+不仅如此，从上述三幅图中还可以看出，交替方向乘子法和邻近点梯度下降法都能达到很高的精度（即与真值相差不多），但次梯度法迭代次数多且精度非常低，是一种非常糟糕的算法。
 
 \section{问题二}
 \subsection{问题描述}
@@ -288,16 +296,16 @@ def subgrad(x0):
 
 
 \subsection{算法设计}
-由于MNIST数据集为多分类问题，故采用泛化的Logistic回归，即softmax回归进行求解。
+由于MNIST数据集为多分类问题，故采用泛化的logistic回归，即softmax回归进行求解。
 
-设训练集$\{(\vx_i,y_i)\}_{i=1}^M$，其中$M$为训练集数目，${|\mathcal{C}|}$为类别数目（在本例中${|\mathcal{C}|}=10$），$\vx_i\in\rr^n$为输入样本，$y_i\in\{1,2,\ldots,{|\mathcal{C}|}\}$为对应的标签\footnote{为方便起见，在手写体问题中，我们将数字$0$归到类别$10$中。}。
+设训练集$\{(\vx_i,y_i)\}_{i=1}^M$，其中$M$为训练集数目，${|\mathcal{C}|}$为类别数目（在本例中${|\mathcal{C}|}=10$），$\vx_i\in\rr^n$为输入样本，$y_i\in\{0,1,\ldots,|\mathcal{C}|-1\}$为对应的标签。
 
 输入$\vx_i$属于第$y_i$类的条件概率可用softmax函数进行计算
 \begin{equation}
-p(y_i\mid \vx;W)=\frac{\ee^{\vw_{y_i}^\T\vx}}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw_c^\T\vx}}
+p(y_i\mid \vx_i;W)=\frac{\ee^{\vw_{y_i}^\T\vx_i}}{\sum_{c=0}^{|\mathcal{C}|-1}\ee^{\vw_c^\T\vx_i}}
 \end{equation}
 其中，
-\[W=\bmat{\vw_1^\T\\\vw_2^\T\\\vdots\\\vw_{|\mathcal{C}|}^\T}\in\rr^{{|\mathcal{C}|}\times n}\]
+\[W=\bmat{\vw_0^\T\\\vw_1^\T\\\vdots\\\vw_{|\mathcal{C}|-1}^\T}\in\rr^{{|\mathcal{C}|}\times n}\]
 为需要训练的参数，$\vw_i\in\rr^{n \times 1}$为每一个类别对应的权重向量。
 
 从而得到数据集的似然函数为
@@ -314,11 +322,12 @@ p(y_i\mid \vx;W)=\frac{\ee^{\vw_{y_i}^\T\vx}}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw
 \begin{cases}
 \vx(1-p(y_i\mid\vx_i;W)) & y_i=j\\
 \vx p(y_i\mid\vx_i;W) & y_i\ne j
-\end{cases},\;j\in\{1,\ldots,|\mathcal{C}|\}\]
+\end{cases},\;j\in\{0,1,\ldots,|\mathcal{C}|-1\}\]
 进而
 \begin{equation}
-\nabla_{\vw_j}\ell(W)=-\sum_{i=1}^m\lrs{\vx_i\lrp{\vone(y_i=j)-p(y_i=j\mid\vx_i;W)}}
+\nabla_{\vw_j}\ell(W)=-\sum_{i=1}^m\lrs{\vx_i\lrp{\vone(y_i=j)-p(y_i\mid\vx_i;W)}}
 \end{equation}
+其中，$\vone(\cdot)$为示性函数，当输入为真时返回$1$，输入为假时返回$0$。
 
 最终得到梯度下降的表达式
 \begin{equation}
@@ -334,14 +343,18 @@ p(y_i\mid \vx;W)=\frac{\ee^{\vw_{y_i}^\T\vx}}{\sum_{c=1}^{|\mathcal{C}|}\ee^{\vw
 \end{itemize}
 
 \subsection{数值实验}
-代码如下，也已附在附件中。
+MNIST输入数据以numpy压缩格式存储，从\url{https://s3.amazonaws.com/img-datasets/mnist.npz}获取。
 
+核心代码如下，完整代码请见\verb'p2.py'。
+\begin{lstlisting}
+\end{lstlisting}
 
 \subsection{结果分析}
 
 
 % \section{参考资料}
 % logistic回归，梯度下降法，牛顿法/IRLS算法 - RookieJ的文章 - 知乎 https://zhuanlan.zhihu.com/p/67842740
+% http://yann.lecun.com/exdb/mnist/
 
 \end{document}
 

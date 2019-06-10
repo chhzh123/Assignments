@@ -54,7 +54,7 @@ def proxgrad(x0):
 	print(t)
 	return xk
 
-##### alternative direction multiplier method #####
+##### alternating direction method of multipliers #####
 
 def admm(x0,y0,v0):
 	t = 0
