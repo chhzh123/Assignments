@@ -176,93 +176,141 @@ z_i+\dfrac{p}{c} & z_i<-\dfrac{p}{c}
 
 邻近点梯度法如下，设超参数$\alpha=10^{-3}$。
 \begin{lstlisting}
-def soft_thresholding(x,offset):
-	if x < (-1)*offset:
-		return x + offset
-	elif x > offset:
-		return x - offset
-	else:
-		return 0
+class ProximalGradient():
 
-def prox(xk_old,offset):
-	xk_new = np.zeros(xk_old.size)
-	for i in range(xk_old.size):
-		xk_new[i] = soft_thresholding(xk_old[i],offset)
-	return xk_new
+	def __init__(self, alpha=1e-3):
+		self.name = "Proximal Gradient"
+		self.alpha = alpha
 
-def proxgrad(res):
-	t = 0
-	xk = np.zeros(n)
-	while True:
-		xhat = xk - alpha * np.dot(A.T, np.dot(A, xk) - b)
-		xk_new = prox(xhat, alpha * p)
-		if np.linalg.norm(xk_new - xk, ord=2) < acc:
-			break
-		res.append(xk_new)
-		xk = xk_new.copy()
-		t += 1
-	print(t)
-	return xk
+	def soft_thresholding(self, x, offset):
+		if x < (-1) * offset:
+			return x + offset
+		elif x > offset:
+			return x - offset
+		else:
+			return 0
+
+	def prox(self, xk_old, offset):
+		# v_soft_thresholding = np.vectorize(self.soft_thresholding)
+		# return v_soft_thresholding(xk_old,offset)
+		xk_new = np.zeros(xk_old.size)
+		for i in range(xk_old.size):
+			xk_new[i] = self.soft_thresholding(xk_old[i],offset)
+		return xk_new
+
+	def train(self,A,b,p):
+		_, self.n = A.shape
+		self.xk = np.zeros(self.n)
+
+		res = []
+		t = 0
+		while True:
+			xhat = self.xk - self.alpha * np.dot(A.T, np.dot(A, self.xk) - b)
+			xk_new = self.prox(xhat, self.alpha * p)
+			if np.linalg.norm(xk_new - self.xk, ord=2) < accuracy:
+				break
+			res.append(xk_new)
+			self.xk = xk_new.copy()
+			t += 1
+
+		print(t)
+		return self.xk, res
 \end{lstlisting}
 
 交替方向乘子法如下，设超参数$c=10^{-3}$。
 \begin{lstlisting}
-def admm(res):
-	t = 0
-	xk = np.zeros(n)
-	yk = np.zeros(n)
-	vk = np.zeros(n)
-	while True:
-		xk_new = np.dot(
-			np.linalg.inv(np.dot(A.T, A) + c * np.eye(n,n)),
-			np.dot(A.T, b) + c * yk - vk)
-		yk_new = prox(xk_new + vk / c, p / c)
-		vk_new = vk + c * (xk_new - yk_new)
-		if np.linalg.norm(xk_new - xk, ord=2) < acc:
-			break
-		res.append(xk_new)
-		xk = xk_new.copy()
-		yk = yk_new.copy()
-		vk = vk_new.copy()
-		t += 1
-	print(t)
-	return xk
+class ADMM():
+
+	def __init__(self, c=1e-3):
+		self.name = "ADMM"
+		self.c = c
+
+	def soft_thresholding(self, x, offset):
+		if x < (-1) * offset:
+			return x + offset
+		elif x > offset:
+			return x - offset
+		else:
+			return 0
+
+	def prox(self, xk_old, offset):
+		xk_new = np.zeros(xk_old.size)
+		for i in range(xk_old.size):
+			xk_new[i] = self.soft_thresholding(xk_old[i],offset)
+		return xk_new
+
+	def train(self,A,b,p):
+		_, self.n = A.shape
+		self.xk = np.zeros(self.n)
+		self.yk = np.zeros(self.n)
+		self.vk = np.zeros(self.n)
+
+		res = []
+		t = 0
+		while True:
+			xk_new = np.dot(
+				np.linalg.inv(np.dot(A.T, A) + self.c * np.eye(self.n,self.n)),
+				np.dot(A.T, b) + self.c * self.yk - self.vk)
+			self.yk = self.prox(xk_new + self.vk / self.c, p / self.c)
+			self.vk = self.vk + self.c * (xk_new - self.yk)
+			if np.linalg.norm(xk_new - self.xk, ord=2) < accuracy:
+				break
+			res.append(xk_new)
+			self.xk = xk_new.copy()
+			t += 1
+
+		print(t)
+		return self.xk, res
 \end{lstlisting}
 
-次梯度法如下，采用递减步长$\iter{\alpha}{k+1}=\dfrac{\iter{\alpha}{k}}{k+1}$。
+次梯度法如下，采用递减步长$\iter{\alpha}{k+1}=\iter{\alpha}{k}/(k+1)$，初始步长$\iter{\alpha}{0}=10^{-3}$。
 \begin{lstlisting}
-def subgrad(res):
-	xk = np.zeros(n)
-	t = 0
-	while True:
-		pdx = np.zeros(xk.size)
-		alphak = alpha / (t + 1) # remember to decay the step
-		for i in range(xk.size):
-			if xk[i] != 0:
-				pdx[i] = 1 if xk[i] > 0 else -1
+class Subgradient():
+
+	def __init__(self,alpha=1e-3):
+		self.name = "Subgradient"
+		self.alpha = alpha
+
+	def subgrad(self,x):
+		# subgradient of |x|
+		pdx = np.zeros(x.size)
+		for i in range(x.size):
+			if x[i] != 0:
+				pdx[i] = 1 if x[i] > 0 else -1
 			else: # pick a random float from [-1,1]
 				pdx[i] = 2 * np.random.random() - 1
-		pdf = np.dot(A.T, np.dot(A,xk) - b) + pdx
-		xk_new = xk - alphak * pdf
-		if np.linalg.norm(xk_new - xk, ord=2) < acc:
-			break
-		res.append(xk_new)
-		xk = xk_new.copy()
-		t += 1
-	print(t)
-	return xk
+		return pdx
+
+	def train(self,A,b,p):
+		_, self.n = A.shape
+		self.xk = np.zeros(self.n)
+
+		res = []
+		t = 0
+		while True:
+			alphak = self.alpha / (t + 1) # remember to decay the step
+			pdf = np.dot(A.T, np.dot(A, self.xk) - b) + self.subgrad(self.xk)
+			xk_new = self.xk - alphak * pdf
+			if np.linalg.norm(xk_new - self.xk, ord=2) < accuracy:
+				break
+			res.append(xk_new)
+			self.xk = xk_new.copy()
+			t += 1
+
+		print(t)
+		return self.xk, res
 \end{lstlisting}
 
 \subsection{结果分析}
 % 横轴迭代次数$k$，纵轴对数坐标，\norm{\iter{x}{k}-\iter{x}{t}}, \norm{\iter{x}{k}-x^\star}
 记最优解$\vx^\star$为最后一次迭代获得的$\vx$值，真值为$\vx_{\text{true}}$。
 
-运行结果如图\ref{fig:proxgrad}、图\ref{fig:admm}和图\ref{fig:subgrad}所示。
+运行结果如图\ref{fig:proxgrad}、图\ref{fig:admm}和图\ref{fig:subgrad}所示，该次实验$p=0.1$。
 
 \begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/proxgrad.eps}
+\includegraphics[width=\linewidth]{fig/proxgrad.pdf}
 \caption{邻近点梯度下降法}
 \label{fig:proxgrad}
 \end{figure}
@@ -270,48 +318,49 @@ def subgrad(res):
 \begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/admm.eps}
+\includegraphics[width=\linewidth]{fig/admm.pdf}
 \caption{交替方向乘子法}
 \label{fig:admm}
 \end{figure}
 \end{minipage}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.5\linewidth]{fig/subgrad.eps}
+\includegraphics[width=0.5\linewidth]{fig/subgrad.pdf}
 \caption{次梯度法}
 \label{fig:subgrad}
 \end{figure}
 
-由实际的运行时间可以得出，交替方向乘子法达到目标精度需要的时间最短，邻近点梯度下降法次之，次梯度法所需的时间最长。
-从迭代的次数也可以看出，邻近点梯度下降法需要$226545$轮迭代，交替方向乘子法需要$16249$轮迭代，次梯度法需要$3047223$轮迭代。
+由实际的运行时间可以得出，邻近点梯度法和交替方向乘子法达到目标精度需要的时间都比较短，次梯度法所需的时间最长。
+从迭代的次数也可以看出，邻近点梯度下降法需要$24349$轮迭代，交替方向乘子法需要$115901$轮迭代，次梯度法需要$2684797$轮迭代，都相差了一个数量级。
 （此实验仅仅展示了一种情况，实际上迭代次数与超参数的选择有关，见下面的实验。）
 
-不仅如此，从上述三幅图中还可以看出，交替方向乘子法和邻近点梯度下降法都能达到很高的精度（即与真值相差不多），但次梯度法迭代次数多且精度非常低，是一种非常糟糕的算法。
+不仅如此，从上述三幅图中还可以看出，交替方向乘子法和邻近点梯度下降法都能达到很高的精度（即与真值相差不多），且收敛速度块，但次梯度法迭代次数多且精度非常低，是一种非常糟糕的算法。
 
 关于正则化参数$p$对最终结果的影响可见图\ref{fig:pprox}、图\ref{fig:padmm}和图\ref{fig:psubgrad}。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/pprox.png}
+\includegraphics[width=0.8\linewidth]{fig/pprox.pdf}
 \caption{邻近点梯度下降法}
 \label{fig:pprox}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/padmm.png}
+\includegraphics[width=0.8\linewidth]{fig/padmm.pdf}
 \caption{交替方向乘子法}
 \label{fig:padmm}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/psubgrad.png}
+\includegraphics[width=0.8\linewidth]{fig/psubgrad.pdf}
 \caption{次梯度法}
 \label{fig:psubgrad}
 \end{figure}
 
-从图中可以看出，当正则化参数$p$对迭代次数和收敛精度都有一定的影响。
+从这三幅图中可以看出，当正则化参数$p$对迭代次数和收敛精度都有一定的影响。
 对于邻近点梯度法，$p$取较大的值时，收敛速度比较快，且精度也较高。
 对于交替方向乘子法，$p$取较小的值时，收敛速度较快，但精度差异没有邻近点梯度法那么明显。
 而对于次梯度法，$p$对收敛速度和收敛精度几乎没有影响。
+
 
 \section{问题二}
 \subsection{问题描述}
@@ -325,7 +374,6 @@ def subgrad(res):
 此外，请讨论随机梯度法中Mini Batch大小对计算结果的影响。
 
 可参考：\url{http://deeplearning.net/tutorial/logreg.html}
-
 
 \subsection{算法设计}
 由于MNIST手写数据集为多分类问题，需要将输入的图片映射到对应的$10$个数字上，故采用多类别的logistic回归，即softmax回归进行求解。
@@ -346,7 +394,8 @@ p(y_i\mid \vx_i;W)=\frac{\ee^{\vw_{y_i}^\T\vx_i}}{\sum_{c=0}^{|\mathcal{C}|-1}\e
 \[\mL(Y\mid X;W)=\prod_{i=1}^m p(y_i\mid\vx_i;W)\]
 对应的对数似然函数为
 \[\ln\mL(Y\mid X;W)=\sum_{i=1}^m\ln p(y_i\mid\vx_i;W)\]
-极大化对数似然函数，相当于极小化负对数似然函数(negative log likelihood, NLL)，故得到最优化问题
+
+极大化对数似然函数，相当于极小化负对数似然函数(negative log likelihood, NLL)\footnote{由于已经取了softmax函数，并且在实施时采用独热码(one-hot encoding)方便矩阵运算，所以这里的NLL也可以看作是交叉熵函数。}，故得到最优化问题
 \begin{equation}
 \min_W \;\ell(W):=-\ln\mL(Y\mid X;W)
 \end{equation}
@@ -373,7 +422,7 @@ $\ell(W)$其实也是深度学习领域常说的损失函数(loss)。
 当$m$选取不同值时，(\ref{equ:gd})式为不同的优化方法：
 \begin{itemize}
 \item 当$m=M$时，梯度下降法，每次选取\textbf{所有样本}用于更新权重
-\item 当$m=1$时，随机梯度下降法，每次选取\textbf{一个样本}用于更新权重
+\item 当$m=1$时，随机梯度下降法(SGD)，每次选取\textbf{一个样本}用于更新权重
 \item 当$m\in[2,M-1]$时，小批量梯度下降法，每次只选取\textbf{部分样本}用于更新权重
 \end{itemize}
 
@@ -381,40 +430,49 @@ $\ell(W)$其实也是深度学习领域常说的损失函数(loss)。
 MNIST输入数据以numpy压缩格式存储，从\url{https://s3.amazonaws.com/img-datasets/mnist.npz}获取。
 可从中直接读出\verb'x_train'、\verb'y_train'、\verb'x_test'和\verb'y_test'。
 
+值得一提的几个实现细节：
+\begin{itemize}
+	\item 读入\verb'x_train'和\verb'x_test'后，增加一个全为$1$的维度，用于与偏移量$b$点乘
+	\item 训练前先进行归一化(normalization)防止计算softmax时数值上溢(overflow) % https://shusei-e.github.io/deep%20learning/softmax_without_overflow/
+	\item 充分利用了numpy的广播(broadcast)、扩展(keepdim)等技巧，使得梯度计算可以直接运用矩阵乘法，而不需逐元素相乘
+	\item 步长/学习率设置为$\alpha=0.1$
+\end{itemize}
+
 核心代码如下，完整代码请见\verb'p2.py'。
 \begin{lstlisting}
 class SoftmaxRegression():
 
-	def train(self, X, y_true, n_classes, n_iters=10, learning_rate=0.1):
-		self.n_samples, n_features = X.shape
+	def train(self, X, y_true, n_classes, n_iters=10, learning_rate=0.1, batch_size=1):
+		self.n_samples, n_features = X.shape # (M, C)
 		self.n_classes = n_classes
-		
+		self.batch_size = batch_size
 		self.weights = np.random.rand(self.n_classes, n_features)
-		self.bias = np.zeros((1, self.n_classes))
 		all_losses = []
 		all_accuracy = []
+		all_weights = []
 		
 		for i in range(n_iters):
-			scores = self.compute_scores(X)
+			batch_index = np.array(random.sample(range(self.n_samples),self.batch_size))
+			X_batch, y_batch = X[batch_index], y_true[batch_index]
+			scores = self.compute_scores(X_batch) # w^T.x
 			probs = self.softmax(scores)
-			y_predict = np.argmax(probs, axis=1)[:, np.newaxis]
-			y_one_hot = self.one_hot(y_true)
+			y_one_hot = self.one_hot(y_batch)
 
-			loss = self.nll_loss(y_one_hot, probs)
+			loss = self.nll_loss(y_one_hot, probs) # target function
 			all_losses.append(loss)
 
-			dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))
-			db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)
-
+			# gradient descent -> update weights
+			old_weights = self.weights.copy()
+			dw = (1 / self.batch_size) * np.dot(X_batch.T, (probs - y_one_hot))
 			self.weights = self.weights - learning_rate * dw.T
-			self.bias = self.bias - learning_rate * db
+			all_weights.append(self.weights)
 
 			if i % 100 == 0 or i == n_iters - 1:
 				y_predict = self.predict(X_test)
-				all_accuracy.append((np.sum(y_predict == y_test)/X_test.shape[0]) * 100)
+				all_accuracy.append((np.sum(y_predict == y_test) / X_test.shape[0]) * 100)
 				print(f'Iteration number: {i}, loss: {np.round(loss, 4)}, accuracy: {all_accuracy[-1]}%')
 
-		return self.weights, self.bias, all_losses, all_accuracy
+		return all_weights, all_losses, all_accuracy
 
 	def predict(self, X):
 		scores = self.compute_scores(X)
@@ -423,56 +481,111 @@ class SoftmaxRegression():
 
 	def softmax(self, scores):
 		exp = np.exp(scores) # (n_samples, n_classes)
-		sum_exp = np.sum(np.exp(scores), axis=1, keepdims=True)
+		sum_exp = np.sum(np.exp(scores), axis=1, keepdims=True) # sum along classes
 		softmax = exp / sum_exp
-		return softmax # (n_samples, n_classes)
+		return softmax
 
 	def compute_scores(self, X):
-		"""
-		    X: (n_samples, n_features)
-			scores: (n_samples, n_classes)
-		"""
-		return np.dot(X, self.weights.T) + self.bias
+		# X: (n_samples, n_features)
+		# scores: (n_samples, n_classes)
+		return np.dot(X, self.weights.T)
 
 	def nll_loss(self, y_true, probs):
-		loss = - (1 / self.n_samples) * np.sum(y_true * np.log(probs))
+		loss = - (1 / self.batch_size) * np.sum(y_true * np.log(probs))
 		return loss
 
 	def one_hot(self, y):
-		one_hot = np.zeros((self.n_samples, self.n_classes))
-		one_hot[np.arange(self.n_samples), y.T] = 1
+		one_hot = np.zeros((y.size, self.n_classes))
+		one_hot[np.arange(y.size), y.T] = 1
 		return one_hot
 \end{lstlisting}
 
 \subsection{结果分析}
+\begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\linewidth]{fig/p2-acc.png}
-\caption{与最优解距离及在测试集上的分类精度}
-\label{fig:p2_result}
+\includegraphics[width=\linewidth]{fig/p2-acc.eps}
+\caption{梯度下降法损失函数及分类精度变化}
+\label{fig:p2-acc-gd}
 \end{figure}
+\end{minipage}
+\begin{minipage}{0.5\linewidth}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\linewidth]{fig/p2-opt-dist.eps}
+\caption{梯度下降法与最优解的距离变化}
+\label{fig:p2-opt-dist-gd}
+\end{figure}
+\end{minipage}
+\begin{minipage}{0.5\linewidth}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/p2-sgd-acc.pdf}
+\caption{SGD损失函数及分类精度变化}
+\label{fig:p2-acc-sgd}
+\end{figure}
+\end{minipage}
+\begin{minipage}{0.5\linewidth}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\linewidth]{fig/p2-sgd-opt-dist.pdf}
+\caption{SGD与最优解的距离变化}
+\label{fig:p2-opt-dist-sgd}
+\end{figure}
+\end{minipage}
 
-从图\ref{fig:p2_result}中可以看出，运用梯度下降法求解，损失函数不断下降，在测试集上的分类精度不断上升。
+从图\ref{fig:p2-acc-gd}中可以看出，运用梯度下降法求解，损失函数不断下降，在测试集上的分类精度不断上升；图\ref{fig:p2-opt-dist-gd}中可以看出，迭代过程确实是在往最优解方向逼近\footnote{注：这里采用了矩阵的F范数作为距离度量。}，最终收敛在91.4\%的精度。
+
+同样，从图\ref{fig:p2-acc-sgd}和图\ref{fig:p2-opt-dist-sgd}中也可以得出对随机梯度下降法同样的结论，但是随机梯度下降法明显要不稳定得多，分类精度与损失函数都有较大波动（因为受单一特殊样本影响非常大），最终收敛在88\%左右的精度，没有梯度下降法优。
 
 批量大小、精度和训练时间的比较如表\ref{tab:minibatch}所示。
-
+从表中可以看出，当\verb'batch_size'较小时，参数更新的速度快，也能较快收敛，但是最终收敛到的精度往往较低。
+而\verb'batch_size'较大时，迭代速度非常慢，但往往几轮迭代就能得到很好的效果，而且随着迭代轮数的不断增加，分类的精度也不断在提升。
+如此例中，$100$到$1000$之间的\verb'batch_size'就是比较好的选择。
 \begin{table}[H]
 \caption{批量大小、精度和训练时间的比较}
 \label{tab:minibatch}
 \centering
-\begin{tabular}{|c|c|c|}\hline
-\textbf{批量大小} & \textbf{精度} & \textbf{训练时间}\\\hline
-60000 & 91.7\% & 933.93s\\\hline
+\begin{tabular}{|c|c|c|c|}\hline
+\textbf{批量大小} & \textbf{迭代次数} & \textbf{精度} & \textbf{训练时间}\\\hline
+1 & 10000 & 86.67\% & 2.38s\\\hline
+10 & 10000 & 88.08\% & 3.21s\\\hline
+100 & 5000 & 91.04\% & 2.97s\\\hline
+1000 & 5000 & 91.63\% & 38.81s\\\hline
+10000 & 1000 & 89.46\% & 69.88s\\\hline
+60000 & 1000 & 89.86\% & 404.68s\\\hline
+1 & 2500 & 82.6\% & 0.58s\\\hline
+10 & 2500 & 87.69\% & 0.64s\\\hline
+100 & 2500 & 91.0\% & 1.30s\\\hline
+1000 & 2500 & 91.31\% & 17.64s\\\hline
+10000 & 2500 & 90.89\% & 170.88s\\\hline
+60000 & 2500 & 90.88\% & 1010.26s\\\hline
 \end{tabular}
 \end{table}
+
+图\ref{fig:batch-size}展示了批量大小(\verb'batch_size')对最终分类精度的影响。
+我们也可以得到同样的结论，因此\verb'batch_size'的选取一定要适中，太小影响精度，太大影响训练时间。
+通过多个参数的测试，就能快速找到比较合适的\verb'batch_size'，进而加速训练并且训练的模型具有非常好的性能。
+\begin{figure}[H]
+\centering
+\begin{tabular}{cc}
+\includegraphics[width=0.5\linewidth]{fig/batch-size.pdf}
+\includegraphics[width=0.5\linewidth]{fig/batch-size-2.pdf}
+\end{tabular}
+\caption{批量大小对分类精度的影响}
+\label{fig:batch-size}
+\end{figure}
 
 \section{参考资料}
 \begin{enumerate}
 	\item Stanford CS231n, \url{http://cs231n.github.io/}
 	\item Stanford UFLDL Tutorial - Softmax Regression, \url{http://deeplearning.stanford.edu/tutorial/supervised/SoftmaxRegression/}
 \end{enumerate}
-% logistic回归，梯度下降法，牛顿法/IRLS算法 - RookieJ的文章 - 知乎 https://zhuanlan.zhihu.com/p/67842740
 % http://yann.lecun.com/exdb/mnist/
+% logistic回归，梯度下降法，牛顿法/IRLS算法 - RookieJ的文章 - 知乎 https://zhuanlan.zhihu.com/p/67842740
+% https://github.com/zotroneneis/machine_learning_basics/blob/master/softmax_regression.ipynb
+% https://blog.csdn.net/a19990412/article/details/85247465
+% https://cntk.ai/pythondocs/CNTK_103B_MNIST_LogisticRegression.html
 
 \end{document}
 

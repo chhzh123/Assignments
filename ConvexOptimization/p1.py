@@ -8,10 +8,8 @@ import matplotlib.pyplot as plt
 m = 50
 n = 100
 sd = 5 # sparse degree
-acc = 10e-8
-p = 10e-3
-alpha = 10e-4 # prox
-c = 10e-4 # admm
+accuracy = 1e-8
+p = 1e-1
 
 # initialization
 A = np.random.normal(0,1,(m,n))
@@ -22,81 +20,123 @@ for i in range(n):
 	x[i] = x[i] if i in xIndex else 0
 b = np.dot(A, x) + e
 
-###### proximal gradient descent #####
+class ProximalGradient():
 
-def soft_thresholding(x,offset):
-	if x < (-1)*offset:
-		return x + offset
-	elif x > offset:
-		return x - offset
-	else:
-		return 0
+	def __init__(self, alpha=1e-3):
+		self.name = "Proximal Gradient"
+		self.alpha = alpha
 
-def prox(xk_old,offset):
-	xk_new = np.zeros(xk_old.size)
-	for i in range(xk_old.size):
-		xk_new[i] = soft_thresholding(xk_old[i],offset)
-	return xk_new
+	def soft_thresholding(self, x, offset):
+		if x < (-1) * offset:
+			return x + offset
+		elif x > offset:
+			return x - offset
+		else:
+			return 0
 
-def proxgrad(res):
-	t = 0
-	xk = np.zeros(n)
-	while True:
-		xhat = xk - alpha * np.dot(A.T, np.dot(A, xk) - b)
-		xk_new = prox(xhat, alpha * p)
-		if np.linalg.norm(xk_new - xk, ord=2) < acc:
-			break
-		res.append(xk_new)
-		xk = xk_new.copy()
-		t += 1
-	print(t)
-	return xk
+	def prox(self, xk_old, offset):
+		# v_soft_thresholding = np.vectorize(self.soft_thresholding)
+		# return v_soft_thresholding(xk_old,offset)
+		xk_new = np.zeros(xk_old.size)
+		for i in range(xk_old.size):
+			xk_new[i] = self.soft_thresholding(xk_old[i],offset)
+		return xk_new
 
-##### alternating direction method of multipliers #####
+	def train(self,A,b,p):
+		_, self.n = A.shape
+		self.xk = np.zeros(self.n)
 
-def admm(res):
-	t = 0
-	xk = np.zeros(n)
-	yk = np.zeros(n)
-	vk = np.zeros(n)
-	while True:
-		xk_new = np.dot(
-			np.linalg.inv(np.dot(A.T, A) + c * np.eye(n,n)),
-			np.dot(A.T, b) + c * yk - vk)
-		yk_new = prox(xk_new + vk / c, p / c)
-		vk_new = vk + c * (xk_new - yk_new)
-		if np.linalg.norm(xk_new - xk, ord=2) < acc:
-			break
-		res.append(xk_new)
-		xk = xk_new.copy()
-		yk = yk_new.copy()
-		vk = vk_new.copy()
-		t += 1
-	print(t)
-	return xk
+		res = []
+		t = 0
+		while True:
+			xhat = self.xk - self.alpha * np.dot(A.T, np.dot(A, self.xk) - b)
+			xk_new = self.prox(xhat, self.alpha * p)
+			if np.linalg.norm(xk_new - self.xk, ord=2) < accuracy:
+				break
+			res.append(xk_new)
+			self.xk = xk_new.copy()
+			t += 1
 
-##### subgradient #####
+		print(t)
+		return self.xk, res
 
-def subgrad(res):
-	xk = np.zeros(n)
-	t = 0
-	while True:
-		pdx = np.zeros(xk.size)
-		alphak = alpha / (t + 1) # remember to decay the step
-		for i in range(xk.size):
-			if xk[i] != 0:
-				pdx[i] = 1 if xk[i] > 0 else -1
+class ADMM():
+
+	def __init__(self, c=1e-3):
+		self.name = "ADMM"
+		self.c = c
+
+	def soft_thresholding(self, x, offset):
+		if x < (-1) * offset:
+			return x + offset
+		elif x > offset:
+			return x - offset
+		else:
+			return 0
+
+	def prox(self, xk_old, offset):
+		xk_new = np.zeros(xk_old.size)
+		for i in range(xk_old.size):
+			xk_new[i] = self.soft_thresholding(xk_old[i],offset)
+		return xk_new
+
+	def train(self,A,b,p):
+		_, self.n = A.shape
+		self.xk = np.zeros(self.n)
+		self.yk = np.zeros(self.n)
+		self.vk = np.zeros(self.n)
+
+		res = []
+		t = 0
+		while True:
+			xk_new = np.dot(
+				np.linalg.inv(np.dot(A.T, A) + self.c * np.eye(self.n,self.n)),
+				np.dot(A.T, b) + self.c * self.yk - self.vk)
+			self.yk = self.prox(xk_new + self.vk / self.c, p / self.c)
+			self.vk = self.vk + self.c * (xk_new - self.yk)
+			if np.linalg.norm(xk_new - self.xk, ord=2) < accuracy:
+				break
+			res.append(xk_new)
+			self.xk = xk_new.copy()
+			t += 1
+
+		print(t)
+		return self.xk, res
+
+class Subgradient():
+
+	def __init__(self,alpha=1e-3):
+		self.name = "Subgradient"
+		self.alpha = alpha
+
+	def subgrad(self,x):
+		# subgradient of |x|
+		pdx = np.zeros(x.size)
+		for i in range(x.size):
+			if x[i] != 0:
+				pdx[i] = 1 if x[i] > 0 else -1
 			else: # pick a random float from [-1,1]
 				pdx[i] = 2 * np.random.random() - 1
-		pdf = np.dot(A.T, np.dot(A,xk) - b) + pdx
-		xk_new = xk - alphak * pdf
-		if np.linalg.norm(xk_new - xk, ord=2) < acc:
-			break
-		res.append(xk_new)
-		xk = xk_new.copy()
-		t += 1
-	print(t)
-	return xk
+		return pdx
+
+	def train(self,A,b,p):
+		_, self.n = A.shape
+		self.xk = np.zeros(self.n)
+
+		res = []
+		t = 0
+		while True:
+			alphak = self.alpha / (t + 1) # remember to decay the step
+			pdf = np.dot(A.T, np.dot(A, self.xk) - b) + self.subgrad(self.xk)
+			xk_new = self.xk - alphak * pdf
+			if np.linalg.norm(xk_new - self.xk, ord=2) < accuracy:
+				break
+			res.append(xk_new)
+			self.xk = xk_new.copy()
+			t += 1
+
+		print(t)
+		return self.xk, res
 
 ##### plot results #####
 
@@ -108,9 +148,9 @@ def plot_res(res,string=""):
 	for i in range(len(res)):
 		opt_dist[i] = np.linalg.norm(res[i] - res[-1], ord=2)
 		true_dist[i] = np.linalg.norm(res[i] - x, ord=2)
-	plt.plot(opt_dist, label='$||x^{(k)}-x^\\star|||_2^2$')
-	plt.plot(true_dist, label='$||x^{(k)}-x_{true}||_2^2$')
-	plt.xlabel("k")
+	plt.plot(opt_dist, label='$||x^{(k)}-x^\\star||_2$')
+	plt.plot(true_dist, label='$||x^{(k)}-x_{true}||_2$')
+	plt.xlabel("Number of iterations (k)")
 	plt.ylabel("Distance")
 	plt.legend(loc=1)
 	plt.show()
@@ -127,25 +167,24 @@ def plot_reg(ax,res,p,string=""):
 
 ##### test functions #####
 
-def test(fun,string=""):
-	res = []
-	print(proxgrad(res))
-	plot_res(res,string)
+def test(fun,A,b,p):
+	method = fun()
+	xk, res = method.train(A,b,p)
+	plot_res(res,method.name)
 
-def test_reg(fun,string=""):
-	global p
+def test_reg(fun,A,b):
+	method = fun()
 	fig, ax = plt.subplots(2,1)
-	ax[0].set_title("Effect of regularization parameter ({})".format(string))
-	ax[0].set_xlabel("k")
-	ax[0].set_ylabel("$||x^{(k)}-x^\\star|||_2^2$")
-	ax[1].set_xlabel("k")
-	ax[1].set_ylabel("$||x^{(k)}-x_{true}||_2^2$")
+	ax[0].set_title("Effect of regularization parameter ({})".format(method.name))
+	ax[0].set_xlabel("Number of iterations (k)")
+	ax[0].set_ylabel("$||x^{(k)}-x^\\star||_2$")
+	ax[1].set_xlabel("Number of iterations (k)")
+	ax[1].set_ylabel("$||x^{(k)}-x_{true}||_2$")
 
 	p = 2
 	for i in range(4):
-		p = p * 0.5
-		res = []
-		fun(res)
+		p *= 0.5
+		xk, res = method.train(A,b,p)
 		plot_reg(ax,res,p)
 
 	ax[0].legend(loc=1)
@@ -157,10 +196,11 @@ def test_reg(fun,string=""):
 
 if __name__ == '__main__':
 
-	# test(proxgrad,"Proximal Gradient")
-	# test(admm,"ADMM")
-	# test(subgrad,"Subgradient")
+	# test(ProximalGradient,A,b,p)
+	# test(ADMM,A,b,p)
+	# test(Subgradient,A,b,p)
 
-	test_reg(proxgrad,"Proximal Gradient")
-	test_reg(admm,"ADMM")
-	test_reg(subgrad,"Subgradient")
+	accuracy = 1e-6
+	test_reg(ProximalGradient,A,b)
+	test_reg(ADMM,A,b)
+	test_reg(Subgradient,A,b)
