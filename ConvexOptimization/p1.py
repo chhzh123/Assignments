@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 m = 50
 n = 100
 sd = 5 # sparse degree
-acc = 10e-9
+acc = 10e-8
 p = 10e-3
 alpha = 10e-4 # prox
 c = 10e-4 # admm
@@ -21,8 +21,6 @@ xIndex = np.random.randint(0,n,sd)
 for i in range(n):
 	x[i] = x[i] if i in xIndex else 0
 b = np.dot(A, x) + e
-
-res = []
 
 ###### proximal gradient descent #####
 
@@ -40,9 +38,9 @@ def prox(xk_old,offset):
 		xk_new[i] = soft_thresholding(xk_old[i],offset)
 	return xk_new
 
-def proxgrad(x0):
+def proxgrad(res):
 	t = 0
-	xk = x0.copy()
+	xk = np.zeros(n)
 	while True:
 		xhat = xk - alpha * np.dot(A.T, np.dot(A, xk) - b)
 		xk_new = prox(xhat, alpha * p)
@@ -56,11 +54,11 @@ def proxgrad(x0):
 
 ##### alternating direction method of multipliers #####
 
-def admm(x0,y0,v0):
+def admm(res):
 	t = 0
-	xk = x0.copy()
-	yk = y0.copy()
-	vk = v0.copy()
+	xk = np.zeros(n)
+	yk = np.zeros(n)
+	vk = np.zeros(n)
 	while True:
 		xk_new = np.dot(
 			np.linalg.inv(np.dot(A.T, A) + c * np.eye(n,n)),
@@ -79,8 +77,8 @@ def admm(x0,y0,v0):
 
 ##### subgradient #####
 
-def subgrad(x0):
-	xk = x0.copy()
+def subgrad(res):
+	xk = np.zeros(n)
 	t = 0
 	while True:
 		pdx = np.zeros(xk.size)
@@ -88,8 +86,8 @@ def subgrad(x0):
 		for i in range(xk.size):
 			if xk[i] != 0:
 				pdx[i] = 1 if xk[i] > 0 else -1
-			else:
-				pdx[i] = 2 * np.random.random() - 1 # pick a random float from [-1,1]
+			else: # pick a random float from [-1,1]
+				pdx[i] = 2 * np.random.random() - 1
 		pdf = np.dot(A.T, np.dot(A,xk) - b) + pdx
 		xk_new = xk - alphak * pdf
 		if np.linalg.norm(xk_new - xk, ord=2) < acc:
@@ -117,26 +115,52 @@ def plot_res(res,string=""):
 	plt.legend(loc=1)
 	plt.show()
 
+def plot_reg(ax,res,p,string=""):
+	res = np.array(res)
+	opt_dist = np.zeros(len(res))
+	true_dist = np.zeros(len(res))
+	for i in range(len(res)):
+		opt_dist[i] = np.linalg.norm(res[i] - res[-1], ord=2)
+		true_dist[i] = np.linalg.norm(res[i] - x, ord=2)
+	ax[0].plot(opt_dist, label="p={:.4}".format(p))
+	ax[1].plot(true_dist, label="p={:.4}".format(p))
+
+##### test functions #####
+
+def test(fun,string=""):
+	res = []
+	print(proxgrad(res))
+	plot_res(res,string)
+
+def test_reg(fun,string=""):
+	global p
+	fig, ax = plt.subplots(2,1)
+	ax[0].set_title("Effect of regularization parameter ({})".format(string))
+	ax[0].set_xlabel("k")
+	ax[0].set_ylabel("$||x^{(k)}-x^\\star|||_2^2$")
+	ax[1].set_xlabel("k")
+	ax[1].set_ylabel("$||x^{(k)}-x_{true}||_2^2$")
+
+	p = 2
+	for i in range(4):
+		p = p * 0.5
+		res = []
+		fun(res)
+		plot_reg(ax,res,p)
+
+	ax[0].legend(loc=1)
+	ax[1].legend(loc=1)
+	plt.tight_layout()
+	plt.show()
+
 ##### main function #####
 
 if __name__ == '__main__':
-	print(x)
 
-	# Proximal Gradient
-	x0 = np.zeros(n)
-	print(proxgrad(x0))
-	plot_res(res,"Proximal Gradient")
+	# test(proxgrad,"Proximal Gradient")
+	# test(admm,"ADMM")
+	# test(subgrad,"Subgradient")
 
-	# ADMM
-	res = []
-	x0 = np.zeros(n)
-	y0 = np.zeros(n)
-	v0 = np.zeros(n)
-	print(admm(x0,y0,v0))
-	plot_res(res,"ADMM")
-
-	# Subgradient
-	res = []
-	x0 = np.zeros(n)
-	print(subgrad(x0))
-	plot_res(res,"Subgradient")
+	test_reg(proxgrad,"Proximal Gradient")
+	test_reg(admm,"ADMM")
+	test_reg(subgrad,"Subgradient")

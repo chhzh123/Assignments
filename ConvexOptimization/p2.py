@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import sys
 
-MNIST_PATH = "mnist.npz"
+MNIST_PATH = "./mnist/mnist.npz"
 
 # constants
-n = 28 * 28
+n = 28 * 28 + 1
 M = 60000 # training set
 MTest = 10000 # test set
-max_iter = 10000
+max_iter = 5000
 m = 100 # mini-batch size
 C = 10
 alpha = 10e-2
@@ -27,7 +27,7 @@ res_acc = []
 
 ##### gradient descent #####
 
-def softmax(W,x,y):
+def softmax_fast(W,x,y):
 	sume = 0
 	dot = []
 	for c in range(C):
@@ -38,13 +38,25 @@ def softmax(W,x,y):
 	p = np.exp(dot[y]-max_dot) / sume
 	return p
 
-def grad(W,X,Y,j):
+def softmax(W,X):
+	scores = np.dot(X,W.T)
+	exp = np.exp(scores)
+	sum_exp = np.sum(np.exp(scores), axis=1, keepdims=True)
+	return exp / sum_exp
+
+def grad(W,X,Y,j,minibatch):
 	dw = np.zeros(n)
-	minibatch = random.sample(range(M),m)
 	for i in minibatch:
-		p = softmax(W,X[i],Y[i])
+		p = softmax_fast(W,X[i],Y[i])
 		dw -= X[i] * ((Y[i] == j) - p)
 	return dw
+
+# def grad(W,X,Y,j,minibatch):
+# 	dw = np.zeros(n)
+# 	p = softmax(W,X)
+# 	for i in minibatch:
+# 		dw -= X[i] * ((Y[i] == j) - p[i][Y[i]])
+# 	return dw
 
 def gradient_descent(Wk):
 	t = 0
@@ -52,8 +64,9 @@ def gradient_descent(Wk):
 	while True:
 		# alphak = alpha
 		Wk_new = np.zeros((C,n))
+		minibatch = random.sample(range(M),m)
 		for j in range(C):
-			Wk_new[j] = Wk[j] - alphak / m * grad(Wk,X,Y,j)
+			Wk_new[j] = Wk[j] - alphak / m * grad(Wk,X,Y,j,minibatch)
 		diff = np.linalg.norm(Wk_new - Wk, ord=2)
 		if diff < acc or t > max_iter:
 			break
@@ -74,7 +87,7 @@ def inference(W,x):
 	max_index = 0
 	max_p = 0
 	for c in range(C):
-		p = softmax(W,x,c)
+		p = softmax_fast(W,x,c)
 		if p > max_p:
 			max_index = c
 			max_p = p
@@ -90,6 +103,15 @@ def test(W):
 	accuracy /= MTest
 	print("Accuracy: {}%".format(accuracy*100))
 	return accuracy
+
+# def test(W):
+# 	print("Begin testing...")
+# 	accuracy = 0
+# 	p = softmax(W,XTest)
+# 	index = np.argmax(p,axis=1)
+# 	accurary = YTest[YTest == index] / len(YTest)
+# 	print("Accuracy: {}%".format(accuracy*100))
+# 	return accuracy
 
 ##### plot results #####
 
@@ -129,11 +151,13 @@ if __name__ == '__main__':
 	XTest, YTest = data["x_test"], data["y_test"]
 	data.close()
 
-	X.resize((M,n))
-	XTest.resize((MTest,n))
-	X = normalize(X)
-	XTest = normalize(XTest)
-	Wk = np.zeros((C,n))
+	X.resize((M,n-1))
+	XTest.resize((MTest,n-1))
+	# X = normalize(X)
+	# XTest = normalize(XTest)
+	X = np.column_stack((X,np.ones(M)))
+	XTest = np.column_stack((XTest,np.ones(MTest)))
+	# Wk = np.zeros((C,n))
 	Wk = np.random.normal(0,1,(C,n))
 	print("Begin training...")
 	gradient_descent(Wk)

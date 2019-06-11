@@ -190,26 +190,28 @@ def prox(xk_old,offset):
 		xk_new[i] = soft_thresholding(xk_old[i],offset)
 	return xk_new
 
-def proxgrad(x0):
+def proxgrad(res):
 	t = 0
-	xk = x0.copy()
+	xk = np.zeros(n)
 	while True:
 		xhat = xk - alpha * np.dot(A.T, np.dot(A, xk) - b)
 		xk_new = prox(xhat, alpha * p)
 		if np.linalg.norm(xk_new - xk, ord=2) < acc:
 			break
+		res.append(xk_new)
 		xk = xk_new.copy()
 		t += 1
+	print(t)
 	return xk
 \end{lstlisting}
 
 交替方向乘子法如下，设超参数$c=10^{-3}$。
 \begin{lstlisting}
-def admm(x0,y0,v0):
+def admm(res):
 	t = 0
-	xk = x0.copy()
-	yk = y0.copy()
-	vk = v0.copy()
+	xk = np.zeros(n)
+	yk = np.zeros(n)
+	vk = np.zeros(n)
 	while True:
 		xk_new = np.dot(
 			np.linalg.inv(np.dot(A.T, A) + c * np.eye(n,n)),
@@ -218,17 +220,19 @@ def admm(x0,y0,v0):
 		vk_new = vk + c * (xk_new - yk_new)
 		if np.linalg.norm(xk_new - xk, ord=2) < acc:
 			break
+		res.append(xk_new)
 		xk = xk_new.copy()
 		yk = yk_new.copy()
 		vk = vk_new.copy()
 		t += 1
+	print(t)
 	return xk
 \end{lstlisting}
 
 次梯度法如下，采用递减步长$\iter{\alpha}{k+1}=\dfrac{\iter{\alpha}{k}}{k+1}$。
 \begin{lstlisting}
-def subgrad(x0):
-	xk = x0.copy()
+def subgrad(res):
+	xk = np.zeros(n)
 	t = 0
 	while True:
 		pdx = np.zeros(xk.size)
@@ -242,8 +246,10 @@ def subgrad(x0):
 		xk_new = xk - alphak * pdf
 		if np.linalg.norm(xk_new - xk, ord=2) < acc:
 			break
+		res.append(xk_new)
 		xk = xk_new.copy()
 		t += 1
+	print(t)
 	return xk
 \end{lstlisting}
 
@@ -278,8 +284,34 @@ def subgrad(x0):
 
 由实际的运行时间可以得出，交替方向乘子法达到目标精度需要的时间最短，邻近点梯度下降法次之，次梯度法所需的时间最长。
 从迭代的次数也可以看出，邻近点梯度下降法需要$226545$轮迭代，交替方向乘子法需要$16249$轮迭代，次梯度法需要$3047223$轮迭代。
+（此实验仅仅展示了一种情况，实际上迭代次数与超参数的选择有关，见下面的实验。）
 
 不仅如此，从上述三幅图中还可以看出，交替方向乘子法和邻近点梯度下降法都能达到很高的精度（即与真值相差不多），但次梯度法迭代次数多且精度非常低，是一种非常糟糕的算法。
+
+关于正则化参数$p$对最终结果的影响可见图\ref{fig:pprox}、图\ref{fig:padmm}和图\ref{fig:psubgrad}。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/pprox.png}
+\caption{邻近点梯度下降法}
+\label{fig:pprox}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/padmm.png}
+\caption{交替方向乘子法}
+\label{fig:padmm}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/psubgrad.png}
+\caption{次梯度法}
+\label{fig:psubgrad}
+\end{figure}
+
+从图中可以看出，当正则化参数$p$对迭代次数和收敛精度都有一定的影响。
+对于邻近点梯度法，$p$取较大的值时，收敛速度比较快，且精度也较高。
+对于交替方向乘子法，$p$取较小的值时，收敛速度较快，但精度差异没有邻近点梯度法那么明显。
+而对于次梯度法，$p$对收敛速度和收敛精度几乎没有影响。
 
 \section{问题二}
 \subsection{问题描述}
@@ -296,23 +328,25 @@ def subgrad(x0):
 
 
 \subsection{算法设计}
-由于MNIST数据集为多分类问题，故采用泛化的logistic回归，即softmax回归进行求解。
+由于MNIST手写数据集为多分类问题，需要将输入的图片映射到对应的$10$个数字上，故采用多类别的logistic回归，即softmax回归进行求解。
+% multiclass logistic regression. Other common names for it include softmax regression and multinomial regression
 
-设训练集$\{(\vx_i,y_i)\}_{i=1}^M$，其中$M$为训练集数目，${|\mathcal{C}|}$为类别数目（在本例中${|\mathcal{C}|}=10$），$\vx_i\in\rr^n$为输入样本，$y_i\in\{0,1,\ldots,|\mathcal{C}|-1\}$为对应的标签。
+设训练集$\{(\vx_i,y_i)\}_{i=1}^M$，其中$M$为训练集数目，${|\mathcal{C}|}$为类别数目，$\vx_i\in\rr^{n+1}$为输入样本，$y_i\in\{0,1,\ldots,|\mathcal{C}|-1\}$为对应的标签。
+在本问题中${|\mathcal{C}|}=10$，$M=60000$，$n=28\times 28=784$，这里已经将二维的图片数组展平为一维的向量。
 
 输入$\vx_i$属于第$y_i$类的条件概率可用softmax函数进行计算
 \begin{equation}
 p(y_i\mid \vx_i;W)=\frac{\ee^{\vw_{y_i}^\T\vx_i}}{\sum_{c=0}^{|\mathcal{C}|-1}\ee^{\vw_c^\T\vx_i}}
 \end{equation}
 其中，
-\[W=\bmat{\vw_0^\T\\\vw_1^\T\\\vdots\\\vw_{|\mathcal{C}|-1}^\T}\in\rr^{{|\mathcal{C}|}\times n}\]
-为需要训练的参数，$\vw_i\in\rr^{n \times 1}$为每一个类别对应的权重向量。
+\[W=\bmat{\vw_0^\T\\\vw_1^\T\\\vdots\\\vw_{|\mathcal{C}|-1}^\T}\in\rr^{{|\mathcal{C}|}\times (n+1)}\]
+为需要训练的参数，$\vw_i\in\rr^{n+1}$为每一个类别对应的权重向量\footnote{注意到$\vw^\T\vx+b=\bmat{\vw^\T & b}\bmat{\vx\\1}$，故将最后的偏置项归入$\vw$中，并在$\vx$中添加为$1$的一个维度，进而偏置量和权重可以一起运算，$\vw_c^\T$和$\vx_i$都有$n+1$个维度。}。
 
 从而得到数据集的似然函数为
 \[\mL(Y\mid X;W)=\prod_{i=1}^m p(y_i\mid\vx_i;W)\]
 对应的对数似然函数为
 \[\ln\mL(Y\mid X;W)=\sum_{i=1}^m\ln p(y_i\mid\vx_i;W)\]
-极大化对数似然函数，相当于极小化负对数似然函数，故得到最优化问题
+极大化对数似然函数，相当于极小化负对数似然函数(negative log likelihood, NLL)，故得到最优化问题
 \begin{equation}
 \min_W \;\ell(W):=-\ln\mL(Y\mid X;W)
 \end{equation}
