@@ -350,6 +350,7 @@ p(y_i\mid \vx_i;W)=\frac{\ee^{\vw_{y_i}^\T\vx_i}}{\sum_{c=0}^{|\mathcal{C}|-1}\e
 \begin{equation}
 \min_W \;\ell(W):=-\ln\mL(Y\mid X;W)
 \end{equation}
+$\ell(W)$其实也是深度学习领域常说的损失函数(loss)。
 
 对$\ln p(y_i\mid\vx_i;W)$求梯度，有
 \[\pd{\ln p(y_i\mid\vx_i;W)}{\vw_j}=
@@ -378,15 +379,98 @@ p(y_i\mid \vx_i;W)=\frac{\ee^{\vw_{y_i}^\T\vx_i}}{\sum_{c=0}^{|\mathcal{C}|-1}\e
 
 \subsection{数值实验}
 MNIST输入数据以numpy压缩格式存储，从\url{https://s3.amazonaws.com/img-datasets/mnist.npz}获取。
+可从中直接读出\verb'x_train'、\verb'y_train'、\verb'x_test'和\verb'y_test'。
 
 核心代码如下，完整代码请见\verb'p2.py'。
 \begin{lstlisting}
+class SoftmaxRegression():
+
+	def train(self, X, y_true, n_classes, n_iters=10, learning_rate=0.1):
+		self.n_samples, n_features = X.shape
+		self.n_classes = n_classes
+		
+		self.weights = np.random.rand(self.n_classes, n_features)
+		self.bias = np.zeros((1, self.n_classes))
+		all_losses = []
+		all_accuracy = []
+		
+		for i in range(n_iters):
+			scores = self.compute_scores(X)
+			probs = self.softmax(scores)
+			y_predict = np.argmax(probs, axis=1)[:, np.newaxis]
+			y_one_hot = self.one_hot(y_true)
+
+			loss = self.nll_loss(y_one_hot, probs)
+			all_losses.append(loss)
+
+			dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))
+			db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)
+
+			self.weights = self.weights - learning_rate * dw.T
+			self.bias = self.bias - learning_rate * db
+
+			if i % 100 == 0 or i == n_iters - 1:
+				y_predict = self.predict(X_test)
+				all_accuracy.append((np.sum(y_predict == y_test)/X_test.shape[0]) * 100)
+				print(f'Iteration number: {i}, loss: {np.round(loss, 4)}, accuracy: {all_accuracy[-1]}%')
+
+		return self.weights, self.bias, all_losses, all_accuracy
+
+	def predict(self, X):
+		scores = self.compute_scores(X)
+		probs = self.softmax(scores)
+		return np.argmax(probs, axis=1)[:, np.newaxis]
+
+	def softmax(self, scores):
+		exp = np.exp(scores) # (n_samples, n_classes)
+		sum_exp = np.sum(np.exp(scores), axis=1, keepdims=True)
+		softmax = exp / sum_exp
+		return softmax # (n_samples, n_classes)
+
+	def compute_scores(self, X):
+		"""
+		    X: (n_samples, n_features)
+			scores: (n_samples, n_classes)
+		"""
+		return np.dot(X, self.weights.T) + self.bias
+
+	def nll_loss(self, y_true, probs):
+		loss = - (1 / self.n_samples) * np.sum(y_true * np.log(probs))
+		return loss
+
+	def one_hot(self, y):
+		one_hot = np.zeros((self.n_samples, self.n_classes))
+		one_hot[np.arange(self.n_samples), y.T] = 1
+		return one_hot
 \end{lstlisting}
 
 \subsection{结果分析}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/p2-acc.png}
+\caption{与最优解距离及在测试集上的分类精度}
+\label{fig:p2_result}
+\end{figure}
 
+从图\ref{fig:p2_result}中可以看出，运用梯度下降法求解，损失函数不断下降，在测试集上的分类精度不断上升。
 
-% \section{参考资料}
+批量大小、精度和训练时间的比较如表\ref{tab:minibatch}所示。
+
+\begin{table}[H]
+\caption{批量大小、精度和训练时间的比较}
+\label{tab:minibatch}
+\centering
+\begin{tabular}{|c|c|c|}\hline
+\textbf{批量大小} & \textbf{精度} & \textbf{训练时间}\\\hline
+60000 & 91.7\% & 933.93s\\\hline
+\end{tabular}
+\end{table}
+
+\section{参考资料}
+\begin{enumerate}
+	\item Stanford CS231n, \url{http://cs231n.github.io/}
+	\item Stanford UFLDL Tutorial - Softmax Regression, \url{http://deeplearning.stanford.edu/tutorial/supervised/SoftmaxRegression/}
+\end{enumerate}
 % logistic回归，梯度下降法，牛顿法/IRLS算法 - RookieJ的文章 - 知乎 https://zhuanlan.zhihu.com/p/67842740
 % http://yann.lecun.com/exdb/mnist/
 
