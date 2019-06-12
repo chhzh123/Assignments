@@ -33,20 +33,25 @@
 此外，请讨论正则化参数$p$对计算结果的影响。
 
 \subsection{算法设计}
+设
+\begin{equation}
+f(\vx)=\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vx}_1
+\end{equation}
+
 \subsubsection{邻近点梯度下降法}
 设
 \[\begin{cases}
-s(\vx):=\frac{1}{2}\norm{A\vx-\vb}_2^2\\
+s(\vx):=\dfrac{1}{2}\norm{A\vx-\vb}_2^2\\
 r(\vx):=p\norm{\vx}_1
 \end{cases}\]
-其中，$A\in\rr^{m\times n}$，$\vx\in\rr^n$，$\vb,\ve\in\rr^m$（在本题中$m=50,n=100$），则原式
-\[f(\vx):=\lrp{\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vx}_1}=s(\vx)+r(\vx)\]
+其中，$A\in\rr^{m\times n}$，$\vx\in\rr^n$，$\vb,\ve\in\rr^m$（在本题中$m=50,n=100$），$s(\vx)$为光滑函数，$r(\vx)$为非光滑函数，则原式
+\[f(\vx)=s(\vx)+r(\vx)\]
 先求$r(\vx)$的邻近点投影
 \begin{equation}
 \label{equ:prox}
 \opprox \hat{\vx}=\argmin_\vx\lrp{p\norm{\vx}_1+\frac{1}{2\alpha}\norm{\vx-\hat{\vx}}^2}
 \end{equation}
-对\ref{equ:prox}式右侧展开有
+对(\ref{equ:prox})式右侧展开有
 \begin{equation}
 \label{equ:prox2}
 \argmin_\vx\lrp{p\sum_{i=1}^n|x_i|+\frac{1}{2\alpha}\sum_{i=1}^n(x_i-\hat{x}_i)^2}
@@ -58,9 +63,9 @@ r(\vx):=p\norm{\vx}_1
 \end{equation}
 由不可微函数的极值判断条件有
 \begin{equation}
-0\in\partial_{x_i}p|x_i|+\frac{1}{\alpha}(x_i-\hat{x}_i)
+0\in\lrp{\partial_{x_i}p|x_i|+\frac{1}{\alpha}(x_i-\hat{x}_i)},\;\forall i
 \end{equation}
-对$x_i$进行分类讨论
+对每一个$x_i$进行分类讨论
 \begin{itemize}
 	\item 若$x_i>0$，则$|x_i|$对于$|x_i|$可微，即$\partial_{x_i}|x_i|=1$，有
 	\[p+\frac{1}{\alpha}(x_i-\hat{x}_i)=0\]
@@ -91,7 +96,7 @@ x_i=\begin{cases}
 \hat{x}_i-\alpha p & \hat{x}_i>\alpha p
 \end{cases}
 \end{equation}
-可以得到图\ref{fig:soft-thresholding}的软门限图
+可以得到图\ref{fig:soft-thresholding}的软门限(soft-thresholding)曲线
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.5\linewidth]{fig/soft-thresholding.pdf}
@@ -106,7 +111,7 @@ x_i=\begin{cases}
 \iter{\vx}{k+1}=\opprox \iter{\vx}{k+\frac{1}{2}}=\argmin_\vx\lrp{p\norm{\vx}_1+\dfrac{1}{2\alpha}\norm{\vx-\iter{\vx}{k+\frac{1}{2}}}_2^2}
 \end{cases}
 \end{equation}
-其中，$\iter{x}{k+\frac{1}{2}}$可直接计算，$\iter{x}{k+1}$可由(\ref{equ:soft-thresholding})式求得。
+其中，$\iter{x}{k+\frac{1}{2}}$可直接计算，$\iter{x}{k+1}$的显式解可由(\ref{equ:soft-thresholding})式求得。
 
 \subsubsection{交替方向乘子法}
 对原问题进行变形，等价于下述约束问题
@@ -131,7 +136,7 @@ L_c(\vx,\vy,\vv)=\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vy}_1+\vv^\T(\vx-\vy)+\f
 \end{cases}
 \end{equation}
 
-对$\iter{\vx}{k+1}$展开并配方，并将非主元项忽略，可求得(\ref{equ:admm1})与下面的式子等价
+对$\iter{\vx}{k+1}$展开并配方，并将非主元项忽略，可求得(\ref{equ:admm1})式与下面的式子等价
 \begin{subequations}
 \begin{numcases}{}
 \iter{\vx}{k+1}=\argmin_\vx \lrp{\frac{1}{2}\norm{A\vx-\vb}_2^2+\frac{c}{2}\norm{\vx-\iter{\vy}{k}+\frac{\iter{\vv}{k}}{c}}_2^2}\label{equ:admm21}\\
@@ -140,9 +145,9 @@ L_c(\vx,\vy,\vv)=\frac{1}{2}\norm{A\vx-\vb}_2^2+p\norm{\vy}_1+\vv^\T(\vx-\vy)+\f
 \end{numcases}
 \end{subequations}
 
-对于(\ref{equ:admm21})式，可直接通过求梯度的方法得到显式解，即
+对于(\ref{equ:admm21})式，可直接通过求梯度的方法得到显式解，得到
 \[\iter{\vx}{k+1}=(A^\T A+cI)^{-1}(A^\T\vb+c\iter{\vy}{k}-\iter{\vv}{k})\]
-对于(\ref{equ:admm22})式，由于涉及一范数，故需要求次微分，类似(\ref{equ:soft-thresholding})式的方法，设$z_i=\iter{x}{k+1}_i+\dfrac{\iter{v}{k}_i}{c}$，可得到
+对于(\ref{equ:admm22})式，由于涉及一范数，故需要求次微分，类似(\ref{equ:soft-thresholding})式的方法，设$z_i=\iter{x}{k+1}_i+\dfrac{\iter{v}{k}_i}{c}$，可得到类似的软门限表达式
 \[y_i=\begin{cases}
 z_i-\dfrac{p}{c} & z_i>\dfrac{p}{c}\\
 0 & z_i\in\lrs{-\dfrac{p}{c},\dfrac{p}{c}}\\
@@ -263,7 +268,7 @@ class ADMM():
 		return self.xk, res
 \end{lstlisting}
 
-次梯度法如下，采用递减步长$\iter{\alpha}{k+1}=\iter{\alpha}{k}/(k+1)$，初始步长$\iter{\alpha}{0}=10^{-3}$。
+次梯度法如下，采用递减步长$\iter{\alpha}{k+1}=\iter{\alpha}{0}/(k+1)$，初始步长$\iter{\alpha}{0}=10^{-3}$。
 \begin{lstlisting}
 class Subgradient():
 
@@ -427,6 +432,7 @@ $\ell(W)$其实也是深度学习领域常说的损失函数(loss)。
 \end{itemize}
 
 \subsection{数值实验}
+注意本作业的所有实验都\textbf{没有}调用额外的深度学习框架，仅仅使用了Python内置的库及numpy进行数值计算。
 MNIST输入数据以numpy压缩格式存储，从\url{https://s3.amazonaws.com/img-datasets/mnist.npz}获取。
 可从中直接读出\verb'x_train'、\verb'y_train'、\verb'x_test'和\verb'y_test'。
 
@@ -539,15 +545,17 @@ class SoftmaxRegression():
 同样，从图\ref{fig:p2-acc-sgd}和图\ref{fig:p2-opt-dist-sgd}中也可以得出对随机梯度下降法同样的结论，但是随机梯度下降法明显要不稳定得多，分类精度与损失函数都有较大波动（因为受单一特殊样本影响非常大），最终收敛在88\%左右的精度，没有梯度下降法优。
 
 批量大小、精度和训练时间的比较如表\ref{tab:minibatch}所示。
-从表中可以看出，当\verb'batch_size'较小时，参数更新的速度快，也能较快收敛，但是最终收敛到的精度往往较低。
+从表中可以看出，当\verb'batch_size'较小时，参数更新的速度快，但不稳定/较难收敛，最终达到的精度往往较低。
 而\verb'batch_size'较大时，迭代速度非常慢，但往往几轮迭代就能得到很好的效果，而且随着迭代轮数的不断增加，分类的精度也不断在提升。
+注意由于限制了最大迭代次数，所以对于比较大的\verb'batch_size'其损失函数依然在下降，即未收敛到最优解。
+尽管其能达到更高的精度（91.31\%以上），但是其所花费的时间显然是不能让人接受的。
 如此例中，$100$到$1000$之间的\verb'batch_size'就是比较好的选择。
 \begin{table}[H]
 \caption{批量大小、精度和训练时间的比较}
 \label{tab:minibatch}
 \centering
 \begin{tabular}{|c|c|c|c|}\hline
-\textbf{批量大小} & \textbf{迭代次数} & \textbf{精度} & \textbf{训练时间}\\\hline
+\textbf{批量大小} & \textbf{迭代次数} & \textbf{分类精度} & \textbf{训练时间}\\\hline
 1 & 10000 & 86.67\% & 2.38s\\\hline
 10 & 10000 & 88.08\% & 3.21s\\\hline
 100 & 5000 & 91.04\% & 2.97s\\\hline

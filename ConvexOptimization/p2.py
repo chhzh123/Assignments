@@ -1,3 +1,6 @@
+# Optimization: MNIST
+# Hongzheng Chen 17341015
+
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -150,7 +153,7 @@ def train_batch_size():
 
 if __name__ == '__main__':
 
-	# weights, loss, accuracy, time_used = train(MAX_ITER,batch_size)
-	# plot_res(weights,loss,accuracy)
+	weights, loss, accuracy, time_used = train(MAX_ITER,batch_size)
+	plot_res(weights,loss,accuracy)
 
 	train_batch_size()

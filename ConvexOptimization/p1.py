@@ -196,9 +196,9 @@ def test_reg(fun,A,b):
 
 if __name__ == '__main__':
 
-	# test(ProximalGradient,A,b,p)
-	# test(ADMM,A,b,p)
-	# test(Subgradient,A,b,p)
+	test(ProximalGradient,A,b,p)
+	test(ADMM,A,b,p)
+	test(Subgradient,A,b,p)
 
 	accuracy = 1e-6
 	test_reg(ProximalGradient,A,b)
