@@ -49,7 +49,7 @@ r(\vx):=p\norm{\vx}_1
 先求$r(\vx)$的邻近点投影
 \begin{equation}
 \label{equ:prox}
-\opprox \hat{\vx}=\argmin_\vx\lrp{p\norm{\vx}_1+\frac{1}{2\alpha}\norm{\vx-\hat{\vx}}^2}
+\opprox \hat{\vx}=\argmin_\vx\lrp{p\norm{\vx}_1+\frac{1}{2\alpha}\norm{\vx-\hat{\vx}}_2^2}
 \end{equation}
 对(\ref{equ:prox})式右侧展开有
 \begin{equation}
@@ -307,7 +307,7 @@ class Subgradient():
 \end{lstlisting}
 
 \subsection{结果分析}
-% 横轴迭代次数$k$，纵轴对数坐标，\norm{\iter{x}{k}-\iter{x}{t}}, \norm{\iter{x}{k}-x^\star}
+% 横轴迭代次数$k$，纵轴对数坐标，\norm{\iter{x}{k}-\iter{x}{t}}_2^2, \norm{\iter{x}{k}-x^\star}_2^2
 记最优解$\vx^\star$为最后一次迭代获得的$\vx$值，真值为$\vx_{\text{true}}$。
 
 运行结果如图\ref{fig:proxgrad}、图\ref{fig:admm}和图\ref{fig:subgrad}所示，该次实验$p=0.1$。
@@ -339,7 +339,7 @@ class Subgradient():
 从迭代的次数也可以看出，邻近点梯度下降法需要$24349$轮迭代，交替方向乘子法需要$115901$轮迭代，次梯度法需要$2684797$轮迭代，都相差了一个数量级。
 （此实验仅仅展示了一种情况，实际上迭代次数与超参数的选择有关，见下面的实验。）
 
-不仅如此，从上述三幅图中还可以看出，交替方向乘子法和邻近点梯度下降法都能达到很高的精度（即与真值相差不多），且收敛速度块，但次梯度法迭代次数多且精度非常低，是一种非常糟糕的算法。
+不仅如此，从上述三幅图中还可以看出，交替方向乘子法和邻近点梯度下降法都能达到很高的精度（即与真值相差不多），且收敛速度快，但次梯度法迭代次数多且精度非常低，是一种非常糟糕的算法。
 
 关于正则化参数$p$对最终结果的影响可见图\ref{fig:pprox}、图\ref{fig:padmm}和图\ref{fig:psubgrad}。
 \begin{figure}[H]
@@ -510,7 +510,7 @@ class SoftmaxRegression():
 \begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/p2-acc.eps}
+\includegraphics[width=\linewidth]{fig/p2-acc.pdf}
 \caption{梯度下降法损失函数及分类精度变化}
 \label{fig:p2-acc-gd}
 \end{figure}
@@ -518,7 +518,7 @@ class SoftmaxRegression():
 \begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.98\linewidth]{fig/p2-opt-dist.eps}
+\includegraphics[width=\linewidth]{fig/p2-opt-dist.pdf}
 \caption{梯度下降法与最优解的距离变化}
 \label{fig:p2-opt-dist-gd}
 \end{figure}
@@ -534,22 +534,22 @@ class SoftmaxRegression():
 \begin{minipage}{0.5\linewidth}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.98\linewidth]{fig/p2-sgd-opt-dist.pdf}
+\includegraphics[width=\linewidth]{fig/p2-sgd-opt-dist.pdf}
 \caption{SGD与最优解的距离变化}
 \label{fig:p2-opt-dist-sgd}
 \end{figure}
 \end{minipage}
 
-从图\ref{fig:p2-acc-gd}中可以看出，运用梯度下降法求解，损失函数不断下降，在测试集上的分类精度不断上升；图\ref{fig:p2-opt-dist-gd}中可以看出，迭代过程确实是在往最优解方向逼近\footnote{注：这里采用了矩阵的F范数作为距离度量。}，最终收敛在91.4\%的精度。
+从图\ref{fig:p2-acc-gd}中可以看出，运用梯度下降法求解，损失函数不断下降，在测试集上的分类精度不断上升；图\ref{fig:p2-opt-dist-gd}中可以看出，迭代过程确实是在往最优解方向逼近\footnote{注：这里采用了矩阵的F范数作为距离度量。}，最终收敛在91.4\%的精度（迭代2000次）。
 
-同样，从图\ref{fig:p2-acc-sgd}和图\ref{fig:p2-opt-dist-sgd}中也可以得出对随机梯度下降法同样的结论，但是随机梯度下降法明显要不稳定得多，分类精度与损失函数都有较大波动（因为受单一特殊样本影响非常大），最终收敛在88\%左右的精度，没有梯度下降法优。
+同样，从图\ref{fig:p2-acc-sgd}和图\ref{fig:p2-opt-dist-sgd}中也可以得出对随机梯度下降法同样的结论，但是随机梯度下降法明显要不稳定得多，分类精度与损失函数都有较大波动（因为受单一特殊样本影响非常大），最终达到88\%左右的精度（迭代60000次），没有梯度下降法优。
 
 批量大小、精度和训练时间的比较如表\ref{tab:minibatch}所示。
 从表中可以看出，当\verb'batch_size'较小时，参数更新的速度快，但不稳定/较难收敛，最终达到的精度往往较低。
 而\verb'batch_size'较大时，迭代速度非常慢，但往往几轮迭代就能得到很好的效果，而且随着迭代轮数的不断增加，分类的精度也不断在提升。
 注意由于限制了最大迭代次数，所以对于比较大的\verb'batch_size'其损失函数依然在下降，即未收敛到最优解。
 尽管其能达到更高的精度（91.31\%以上），但是其所花费的时间显然是不能让人接受的。
-如此例中，$100$到$1000$之间的\verb'batch_size'就是比较好的选择。
+如此例中，100到1000之间的\verb'batch_size'就是比较好的选择。
 \begin{table}[H]
 \caption{批量大小、精度和训练时间的比较}
 \label{tab:minibatch}

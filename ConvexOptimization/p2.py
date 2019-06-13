@@ -122,7 +122,7 @@ def plot_res(weights,loss,accuracy):
 	plt.cla()
 	opt_dist = np.zeros(len(weights))
 	for i in range(len(weights)):
-		opt_dist[i] = np.linalg.norm(weights[i] - weights[-1], ord=2)
+		opt_dist[i] = np.linalg.norm(weights[i] - weights[-1])
 	plt.plot(opt_dist, label='$||W^{(k)}-W^\\star||_F$')
 	plt.xlabel("Number of iterations (k)")
 	plt.ylabel("Distance")
@@ -153,7 +153,13 @@ def train_batch_size():
 
 if __name__ == '__main__':
 
-	weights, loss, accuracy, time_used = train(MAX_ITER,batch_size)
+	# Gradient descent
+	weights, loss, accuracy, time_used = train(2000,60000)
 	plot_res(weights,loss,accuracy)
 
+	# SGD
+	weights, loss, accuracy, time_used = train(60000,1)
+	plot_res(weights,loss,accuracy)
+
+	# different batch sizes
 	train_batch_size()
