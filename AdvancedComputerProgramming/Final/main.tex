@@ -1,11 +1,11 @@
 \documentclass[logo,reportComp]{thesis}
 \usepackage[cpp,pseudo,optidef]{mypackage}
-
+\usepackage{subfigure}
 \title{高级编程技术期末大作业}
 \subtitle{天池新人赛：快来一起挖掘幸福感！}
 \school{数据科学与计算机学院}
 \author{
-陈鸿峥$^\star$\qquad\quad 冯家苇$^\star$\qquad\quad \makebox[3em][s]{符\hspace{\fill}尧}$^\star$\qquad\quad \makebox[3em][s]{傅\hspace{\fill}畅}\protect\footnote{以学号为序，不代表贡献大小}\qquad\quad\\17341015\qquad 17341035\qquad 17341037\qquad 17341038}
+陈鸿峥$^\star$\qquad\quad 冯家苇$^\star$\qquad\quad \makebox[3em][s]{符\hspace{\fill}尧}$^\star$\qquad\quad \makebox[3em][s]{傅\hspace{\fill}畅}\protect\footnote{以学号为序，不代表贡献大小，小组分工如下：\textbf{陈鸿峥负责实验报告撰写；冯家苇和符尧负责具体模型实施及测试；傅畅负责PPT制作。模型构建及改进由四个人讨论一起完成。}}\qquad\quad\\17341015\qquad 17341035\qquad 17341037\qquad 17341038}
 \classname{17计算机科学与技术}
 \stunum{}
 \headercontext{高级编程技术期末大作业}
@@ -78,7 +78,13 @@ X_train = min_max_scaler.fit_transform(X_train)
 \end{lstlisting}
 
 \section{模型搭建}
-本次比赛我们采用了集成学习(ensemble learning)的方法，采用五个子模型（岭回归、支持向量回归、三种梯度提升方法），最后采用一个线性模型（贝叶斯岭回归）对这五个子模型的预测效果进行整合。
+本次比赛我们采用了集成学习(ensemble learning)的方法，称为RSXLC-BRR框架。我们采用五个子模型（岭回归、支持向量回归、三种梯度提升方法），最后采用一个线性模型（贝叶斯岭回归）对这五个子模型的预测效果进行整合。模型框架见图\ref{fig:model}。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{fig/modell.pdf}
+\caption{RSXLC-BRR模型框架}
+\label{fig:model}
+\end{figure}
 
 由于最终评价指标是MSE，故我们所有的模型都是回归模型，主要优化下面这条最小二乘表达式
 \begin{mini*}
@@ -193,7 +199,7 @@ CatBoost还结合上述样本排序方法，采用了一种新的计算方法来
 \section{具体实施}
 由于比赛方没有提供验证集，故对于每一个子模型，我们都采用\emph{K折交叉验证}的方法，将数据集划分为$k$等分，其中$k-1$份用于训练，剩下一份用于验证。
 
-这里只截取最后一个综合模型(\verb'BayesianRidge')的代码，其他模型实现方法类似，请见源文件。
+这里只截取最后一个综合模型(\verb'BayesianRidge')的代码，其他模型实现方法类似，请见源文件\verb'model.py'。
 \begin{lstlisting}
 train_stack = np.vstack([oof_lgb, oof_xgb, oof_cb, oof_svr, oof_rig]).transpose()
 test_stack = np.vstack([predictions_lgb, predictions_xgb, predictions_cb, predictions_svr, predictions_rig]).transpose()
@@ -214,19 +220,95 @@ for fold_, (trn_idx, val_idx) in enumerate(folds_stack.split(train_stack, target
     predictions += clf_3.predict(test_stack) / 10
 \end{lstlisting}
 
-\section{实验结果}
-\subsection{结果分析}
-\textcolor{red}{插几张数据结果图，简单分析一下}
+画图的代码请见\verb'show.py'。
 
+\section{实验过程}
+\subsection{数据处理}
 
-\subsection{最终排名}
-我们修改了不同的超参数，提交了两个版本，都取得了不错的成绩，如图\ref{fig:ranking}所示。
+首先观察数据集总体的分布。如图\ref{fig:happy&urbanrural}，观察图（a）可以发现，有60\%左右的被调查者选择了幸福指数4，意味着数据集分布有一定的偏斜。这将对模型提出更高的要求；观察图（b）可以发现，城乡幸福感有相似的分布。这里我们采用独热(one-hot)编码的方式区分这两类样本。
+\begin{figure}[H]
+	\centering
+	\subfigure[]{
+    \includegraphics[width=0.45\linewidth]{fig/happiness.png}
+	}
+	\quad
+	\subfigure[]{
+    \includegraphics[width=0.45\linewidth]{fig/surveytype.png}
+	}
+	\caption{数据分析图。左图为幸福感统计直方图，右图为城乡幸福感统计直方图}
+	\label{fig:happy&urbanrural}
+\end{figure}
+
+图\ref{fig:missing}展示了数据集中有缺失的几类特征。对于缺失较少的数据，我们采用补0或补平均值的方式；对于缺失较多的数据，我们通过实验对比选择性删除。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\linewidth]{fig/ranking-2.png}
-\caption{最终成绩}
+\includegraphics[width=0.7\linewidth]{fig/missing.png}
+\caption{缺失值统计}
+\label{fig:missing}
+\end{figure}
+
+图\ref{fig:corr}和图\ref{fig:-corr}展示了数据集处理后的原特征以及新加入的特征与幸福指数的相关性。
+这里选取了相关程度较高的（$\ge0.1$）与较低的（$\leq 0.015$）一些特征。
+在相关性较强的特征中，可以发现部分新加入的特征（从首个到\verb'class_10_diff'）有良好的正相关性；
+“沮丧频率”（depression，1表示频率最高）是原特征中正相关性最高的；而像“与3年前地位对比”(\verb'status_3_before')以及“与同龄人地位对比”(\verb'status_peer')等特征则具有较强的负相关性。
+在相关性较弱的特征中，我们通过实验对比选择性删除了部分，例如出生年份(birth)实际上具有较低的相关性，我们已将其删去。
+
+
+\begin{figure}[H]
+%\centering
+\includegraphics[width=0.8\linewidth]{fig/corr.png}
+\caption{相关性分析（$\ge 0.1$）}
+\label{fig:corr}
+\end{figure}
+
+\begin{figure}[H]
+%\centering
+\includegraphics[width=0.8\linewidth]{fig/-corr.png}
+\caption{相关性分析（$\leq 0.015$）}
+\label{fig:-corr}
+\end{figure}
+\subsection{训练过程}
+
+这里选取了子模型LightGBM的训练过程中Loss（即MSE）的变化，如图\ref{fig:mes_lgb}所示，可以看到在训练集上模型学的很好，同时在验证集上取得不错的效果。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig/mes_lgb.png}
+    \caption{LightGBM模型训练过程。左图为训练集上的Loss曲线，右图为验证集的Loss曲线}
+    \label{fig:mes_lgb}
+\end{figure}
+
+通过\verb'model.coef_'可查看五个模型的权重分布，如图\ref{fig:coef}所示。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{fig/coef.png}
+    \caption{BayesRidge为每个模型赋予了不同的权重}
+    \label{fig:coef}
+\end{figure}
+
+\clearpage
+\subsection{最终排名}
+我们修改了不同的超参数，提交了两个版本，都取得了不错的成绩，如图\ref{fig:ranking}所示。具体成绩见图\ref{fig:detail}。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/rankkk.png}
+\caption{最终排名}
 \label{fig:ranking}
 \end{figure}
+
+\begin{figure}[H]
+\centering
+\subfigure[账号jfjcaa]{
+    \includegraphics[width=0.45\linewidth]{fig/score.png}
+}
+\quad
+\subfigure[账号f.y.]{
+    \includegraphics[width=0.45\linewidth]{fig/detail2.png}
+}
+\caption{具体成绩}
+\label{fig:detail}
+\end{figure}
+
+PPT请见\verb'report.pptx'，最终提交结果请见\verb'happiness_submit.csv'。
 
 \section{参考资料}
 \begin{enumerate}
@@ -238,5 +320,3 @@ for fold_, (trn_idx, val_idx) in enumerate(folds_stack.split(train_stack, target
 \end{enumerate}
 
 \end{document}
-
-% https://tianchi.aliyun.com/competition/entrance/231702/introduction
