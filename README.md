@@ -8,7 +8,7 @@ Below is the list of the courses I took in CS major.
 
 | Course                              | Semester    | Compulsory?            | Assignments Available? | Notes Available? |
 | :---:                               | :---:       | :---:                  | :---:                  | :---:            |
-| C Programming                       | 2017 Autumn | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/C_Programming) |
+| C Programming                       | 2017 Autumn | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/C-Programming) |
 | C Programming (Lab)                 | 2017 Autumn | :white_check_mark:     |                        | |
 | Mathematical Analysis I             | 2017 Autumn | :ballot_box_with_check:|                        | |
 | Linear Algebra                      | 2017 Autumn | :ballot_box_with_check:|                        | [:blue_book:](https://github.com/chhzh123/Notes-of-Math/tree/master/Linear_algebra) |
@@ -19,7 +19,7 @@ Below is the list of the courses I took in CS major.
 | Mathematical Analysis II            | 2018 Spring | :ballot_box_with_check:|                        | |
 | Discrete Mathematics                | 2018 Spring | :ballot_box_with_check:|                        | |
 | Haskell Programming                 | 2018 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/Haskell)     | |
-| Computer Organization               | 2018 Autumn | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/Computer_Organization) |
+| Computer Organization               | 2018 Autumn | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/ComputerOrganization) |
 | Computer Organization (Lab)         | 2018 Autumn | :white_check_mark:     | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ComputerOrganization)     | |
 | Data Structures and Algorithms      | 2018 Autumn | :white_check_mark:     |                        | |
 | Data Structures and Algorithms (Lab)| 2018 Autumn | :white_check_mark:     | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DataStructure)     | |
@@ -27,9 +27,9 @@ Below is the list of the courses I took in CS major.
 | Probability and Statistics          | 2018 Autumn | :ballot_box_with_check:|                        | [:blue_book:](https://github.com/chhzh123/Notes-of-Math/tree/master/Probability_and_statistics) |
 | Engineering Fundamentals            | 2018 Autumn | :white_check_mark:     |                        | |
 | Lectures of Data and Computer Science|2018 Autumn |                        |                        | |
-| Operating Systems                   | 2019 Spring | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/Operating_Systems) |
+| Operating Systems                   | 2019 Spring | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/OperatingSystems) |
 | Operating Systems (Lab)             | 2019 Spring | :white_check_mark:     | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/OperatingSystems) & [:file_folder:](https://github.com/chhzh123/AdvancedOS)    | [:page_facing_up:](https://chhzh123.github.io/summary/os-dev/) |
-| Computer Networking                 | 2019 Spring | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/Computer_Networking) |
+| Computer Networking                 | 2019 Spring | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/ComputerNetworking) |
 | Computer Networking (Lab)           | 2019 Spring | :white_check_mark:     | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ComputerNetworking)     | |
 | Python Programming                  | 2019 Spring |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/AdvancedComputerProgramming)     | |
 | Parallel Computing                  | 2019 Spring | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ParallelComputing)     | [:page_facing_up:](https://chhzh123.github.io/summary/parallel-computing/) |
@@ -43,3 +43,8 @@ Below is the list of the courses I took in CS major.
 | Natural Language Processing         | 2019 Autumn |                        |                        | |
 | Digital Image Processing            | 2019 Autumn |                        |                        | |
 | Computer Graphics                   | 2019 Autumn |                        |                        | |
+| Distributed Systems                 | 2019 Autumn |                        |                        | |
+| Scientific Reading and Writing      | 2019 Autumn |                        |                        | |
+| Principles of Compilers             | 2020 Spring | :white_check_mark:     |                        | |
+| Principles of Compilers (Lab)       | 2020 Spring | :white_check_mark:     |                        | |
+| Machine Learning and Data Mining    | 2020 Spring | :o:                    |                        | |
