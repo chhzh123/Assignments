@@ -1,0 +1,65 @@
+﻿\documentclass[a4paper, 11pt]{article}
+\usepackage[cpp]{mypackage}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{scale=0.8}
+% \linespread{1.5}
+\usepackage[colorlinks,linkcolor=red]{hyperref}
+
+\title{
+\normalfont \normalsize
+\textsc{School of Data and Computer Science, Sun Yat-sen University} \\ [25pt] %textsc small capital letters
+\rule{\textwidth}{0.5pt} \\[0.4cm] % Thin top horizontal rule
+\huge  Lab3 Othello Game ($\alpha-\beta$ pruning) \\ % The assignment title
+\rule{\textwidth}{2pt} \\[0.5cm] % Thick bottom horizontal rule
+\author{17341015 Hongzheng Chen}
+\date{\normalsize\today}
+}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Othello}
+Othello (or Reversi) is a strategy board game for two players, played on an $8 \times 8$ uncheckered board. There are sixty-four identical game pieces called disks (often spelled "discs"), which are light on one side and dark on the other. Please see figure \ref{fig:othello}.
+
+Players take turns placing disks on the board with their assigned color facing up. During a play, any disks of the opponent's color that are in a straight line and bounded by the disk just placed and another disk of the current player's color are turned over to the current player's color.
+
+The object of the game is to have the majority of disks turned to display your color when the last playable empty square is filled.
+\begin{figure}
+  \centering
+  \includegraphics[width=6cm]{fig/othello}
+  \qquad
+  \includegraphics[width=6cm]{fig/othello2}
+  \caption{Othello Game}
+  \label{fig:othello}
+\end{figure}
+
+You can refer to \url{http://www.tothello.com/html/guideline_of_reversed_othello.html} for more information of guideline, meanwhile, you can download the software to have a try from \url{http://www.tothello.com/html/download.html}. The game installer \texttt{tothello\_trial\_setup.exe} can also be found in the current folder.
+
+
+\section{Tasks}
+\begin{enumerate}
+
+\item In order to reduce the complexity of the game, we think the board is $6\times 6$.
+
+\item There are several evaluation functions that involve many aspects, you can turn to \url{http://blog.sina.com.cn/s/blog_53ebdba00100cpy2.html} for help. In order to reduce the difficulty of the task, I have gaven you some hints of evaluation function in the file \texttt{Heuristic Function for Reversi (Othello).cpp}.
+
+\item Please choose an appropriate evaluation function and use min-max and $\alpha-\beta$ prunning to implement the Othello game. The framework file you can refer to is \texttt{Othello.cpp}. Of course, I wish your program can beat the computer.
+
+\item Write the related codes and take a screenshot of the running results in the file named \textsf{E03\_YourNumber.pdf}, and send it to \textsf{ai\_201901@foxmail.com}.
+\end{enumerate}
+
+
+\section{Codes}
+\begin{lstlisting}[language=Python]
+\end{lstlisting}
+
+
+\section{Results}
+
+
+\end{document}
