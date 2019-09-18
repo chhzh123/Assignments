@@ -1,0 +1,221 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+
+\title{数据库系统实验}
+\subtitle{Project 1: ToDoList}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{数据库系统实验作业}
+
+\usepackage{color}
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstset{
+   language=JavaScript,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   numbers=left,
+   numberstyle=\footnotesize,
+   numbersep=9pt,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+
+\begin{document}
+
+\maketitle
+
+% 1.	路由：/pages/index；
+% 2.	可以添加、删除、编辑、保存及读取待办事项；
+% 3.	事件最少包含两种状态：待完成、已完成，且状态可修改；
+% 加分项：
+% 1.	代码整洁规范；
+% 2.	样式美观；
+% 3.	附加其他功能及操作，如查找、状态筛选等等
+
+由于以前完全没有前端开发经验，因此第一个实验开发一个APP就耗费了我大量时间。
+先是从基本的HTML、CSS和JavaScript学起，然后学vue.js学网页布局，最后再上UniApp进行实操。
+中间遇到了非常非常多的问题，但最后都耐心地将它们都解决了，整体来说还是十分愉悦的，因为学到了很多东西，也做成了一个还可以用的ToDoList，如图\ref{fig:ini}所示。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\linewidth]{fig/main.png}
+\caption{初始界面}
+\label{fig:ini}
+\end{figure}
+
+我在ToDoList中实现了\textbf{添加、删除、编辑、保存、读取、查找、星标事项}等功能，下面将按照vue.js对应的三个模块\emph{模板、代码、样式}分别介绍。
+
+\section{架构及组件设计}
+这一部分对应的是vue.js中\verb'template'的部分。
+
+\subsection{交互组件}
+我创建了一个名为\verb'search_box'的类，对用户输入框进行管理，并且采用了一个渐变颜色的背景使得看上去更加舒服，即图\ref{fig:ini}中所示的三个长方形框。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/search_box.png}
+\caption{交互组件实例代码}
+\label{fig:interactive}
+\end{figure}
+
+该组件又包括两个部分：
+\begin{itemize}
+	\item 一个小的图标
+	\item 用户交互框，用\verb'input'实现
+\end{itemize}
+
+\subsection{列表组件}
+这一部分是ToDoList的核心，所有功能都将在这里实现。
+最外层是一个\verb'list-container'的类，然后采用\verb'v-for'遍历每一个待办事项，并分别创建名为\verb'item'的类。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/list_container.png}
+\caption{列表组件实例代码}
+\label{fig:list}
+\end{figure}
+
+在一行的\verb'item'类中又包括四个部分内容：勾选框\verb'checkbox'、待办事项内容、中间空隙\verb'middle-space'、右端图标\verb'icon-pack'。
+
+\section{界面设计}
+这一部分对应的是vue.js中\verb'style'的部分。
+
+为了让我的APP看上去没有那么糟糕，我还是花了一些时间在CSS的学习上。
+也通过查阅资料和查看网页源码等方式学会了一些基本的CSS布局方法（Flex布局）。
+
+下面讲讲两个值得一提的点。
+\begin{itemize}
+	\item 现在的APP中的内容都不可能只有文字，为了更加生动往往会增加一些图片或图标，这在手机端尤其是这样。
+	因此为了插入几个常用的图标（垃圾桶、星标、搜索等），我从阿里妈妈的Icon网站上\footnote{\url{https://www.iconfont.cn}}注册下载了一些图标并嵌入到我的APP中，使得展示更加美观。
+	\item CSS里面最难的恐怕就是布局了，我在这上面也折腾了很久，主要在于不知道如何做到一行内既有左对齐的组件，又有右对齐的组件，而且组件数目不一样多。
+	最后的解决方案还是我自己摸索出来的，虽然也许不那么优美。
+	即将一侧的组件打包成一个更大的类，然后在左右组件中间插入一个空隙类，采用Flex布局中的\verb'justify-content: space-between'属性即可实现我想要的效果。
+\end{itemize}
+
+\section{功能实现及演示}
+这一部分对应的是vue.js中\verb'script'的部分。
+\subsection{添加删除编辑}
+每次在添加待办事项用户输入框键入回车，都会调用\verb'schedule'函数，将用户输入的值添加到\verb'arr'数组中。
+注意要判断用户输入是否为空，若为空则不添加。
+
+若点击勾选框，则可以通过调用\verb'change'函数，将未完成事项更改为完成。
+
+删除则是检测到用户点击最右侧的垃圾桶图标时，调用\verb'del'函数，然后利用\verb'splice'函数将对应元素删除。
+
+编辑则比较麻烦，考虑两种情况。
+一种是用户还没完成任务，则此时采用\verb'input'输入框并将某一\verb'item'的值初始化为一开始用户输入的值，这时用户就可以直接在每一项上面修改，按回车会调用\verb'edit'函数进行更新。
+另一种情况则是用户已经完成了任务，则我将该事项锁死，即不再允许用户进行修改，除非用户将其状态切换回未完成。
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.4\linewidth]{fig/add.png}&
+\includegraphics[width=0.4\linewidth]{fig/finish.png}\\
+\includegraphics[width=0.4\linewidth]{fig/delete.png}&
+\includegraphics[width=0.4\linewidth]{fig/modify.png}
+\end{tabular}
+\caption{添加、完成、删除、编辑示例}
+\label{fig:add}
+\end{figure}
+
+\subsection{存储与加载数据}
+存储数据则可以直接调用UniApp提供的接口，如下所示。
+\begin{lstlisting}[language=JavaScript]
+uni.setStorage({
+	key: 'storage_key',
+	data: this.arr,
+	success: function(){
+		console.log('success');
+	}
+});
+\end{lstlisting}
+
+将上面一段代码插入到每一段添加修改删除的代码后面\footnote{可能会很慢，这里还未进行优化}，即可实现数据的及时保存。
+
+载入数据则采用下面一段代码，这里注意采用了JavaScript的\emph{箭头函数}，否则\verb'this'的指向会出错，导致无法正常读出数据。
+\begin{lstlisting}[language=JavaScript]
+uni.getStorage({
+	key: 'storage_key',
+	success: (res) => {
+			console.log(res.data);
+			this.arr = res.data;
+	} // binding
+});
+\end{lstlisting}
+
+结果如图\ref{fig:save}所示，可以见到刷新后，本地数据能够被重新读出并正确加载。
+\begin{figure}[H]
+\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.4\linewidth]{fig/before.png}&
+\includegraphics[width=0.4\linewidth]{fig/after.png}
+\end{tabular}
+\caption{保存及重加载数据}
+\label{fig:save}
+\end{figure}
+
+\subsection{查找}
+通过调用\verb'find'函数实现，这里引入了一个全局变量\verb'tmp'，当\verb'tmp'不为\verb'-1'时即找到对应的元素，此时会将该条目进行输出。
+这里的条目都是\emph{共享对象}的，即在查找出来的条目中修改数据也会导致源数据被修改。
+同时注意\verb'tmp'的数据要及时修改回\verb'-1'，如在添加删除或其他操作后面都要将\verb'tmp'值恢复。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\linewidth]{fig/search.png}
+\caption{查找}
+\label{fig:search}
+\end{figure}
+
+\subsection{星标事项}
+星标事项也是我的ToDoList的一个亮点，通过点击最右侧的星星图标，就可以把某一代办事项加入到星标事项中（调用\verb'star'函数，和修改待办事项状态的方法类似）。
+这里的输出会比较麻烦，因为vue.js不建议将\verb'v-for'和\verb'v-if'混合使用，因此需要\emph{动态}将星标事项筛选输出。
+这里在App的生命周期中添加了动态计算\verb'computed'的部分，用\verb'starArr'函数将星标事项筛选出来后再遍历输出。
+具体实现则采用了JavaScript的函数式编程功能，采用\verb'filter'对列表进行筛选，如下。
+\begin{lstlisting}[language=JavaScript]
+computed: {
+	starArr: function () {
+		return this.arr.filter(function (item) {
+			return item.star
+		})
+	}
+}
+\end{lstlisting}
+
+星标事项的演示如图\ref{fig:star}所示，可以看到三个条目全部都被删除、标星，说明是紧密联系在一起的对象。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\linewidth]{fig/star.png}
+\caption{星标事项}
+\label{fig:star}
+\end{figure}
+
+% 客户端存储 https://cn.vuejs.org/v2/cookbook/client-side-storage.html
+\begin{thebibliography}{99}
+\bibitem{bib:life} Vue.js生命周期，\url{https://www.cnblogs.com/chenzeyongjsj/p/8093789.html}
+\bibitem{bib:style} Vue.js风格指南，\url{https://cn.vuejs.org/v2/style-guide}
+\bibitem{bib:layout} 阮一峰，Flex布局教程，\url{http://www.ruanyifeng.com/blog/2015/07/flex-grammar.html}
+\bibitem{bib:iconfont} Uni-app Iconfont的引入，\url{https://www.jianshu.com/p/c2b100636006}
+\end{thebibliography}
+
+\end{document}
