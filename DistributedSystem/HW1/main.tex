@@ -1,0 +1,61 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+
+\title{分布式系统作业一}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{分布式系统作业}
+
+\begin{document}
+
+\maketitle
+
+\begin{question}
+在分布式系统中，为什么有时难以隐藏故障的发生以及故障恢复过程？
+\end{question}
+\begin{answer}
+一方面我们很难知道一个分布式系统究竟是跑得慢（因为负载不均、网络不通畅等原因），还是真实出现了故障，这是需要具体情况具体分析的。
+
+另一方面以现在分布式系统的自动化程度，是很难将这些故障的出现和恢复全部交由系统来做的（就像现在的编译器也没有办法做到自动帮我们修复bug一样），因此总要有人类介入（通过warning、error等方式告诉用户）。
+\end{answer}
+
+\begin{question}
+给出一些体现分布式系统可扩展性的案例，并解释？
+\end{question}
+\begin{answer}
+可扩展性包括规模可扩展、地理可扩展和管理可扩展。
+\begin{itemize}
+	\item 规模可扩展：近几年亚马逊\cite{bib:aws}、微软\cite{bib:azure}等云服务都至少翻了个倍，用户也不断在激增。
+	\item 地理可扩展：这对于现在的云服务厂商来说也十分普遍，如微软将新的数据中心部署在苏格兰奥克尼群岛海底，Facebook将服务器部署在北极圈内，腾讯将自己的数据中心扩展到贵州\cite{bib:geo}等等。
+	\item 管理可扩展：比如迅雷的P2P(BitTorrent)\cite{bib:xunlei}系统
+\end{itemize}
+\end{answer}
+
+\begin{question}
+列举应用程序之间的通信方式，并简单解释？
+\end{question}
+\begin{answer}
+主要是下列两种模式：
+\begin{itemize}
+	\item Client-Server模式：即中心化的分布式系统，一个Client与多个Server进行通信，可以实现一对一、一对多或多对一通信。
+	\item P2P模式：即去中心化的分布式系统，所有服务器都是对等实体，互相之间可以通信。
+\end{itemize}
+但这个问题问得有点大，如果涉及到具体的通信协议，传统的采用TCP/IP的方式进行传输，而现在很多分布式系统都开始采用RDMA\cite{bib:rdma}的方式。
+而且近年来的通信架构也有很大程度的发展，无论是PCIe\cite{bib:pcie}、InfiniBand\cite{bib:infiniband}，还是现在英伟达推的NvLink\cite{bib:nvlink}都将分布式系统的通信速度推向新的高峰。
+\end{answer}
+
+\begin{thebibliography}{99}
+\bibitem{bib:aws} 亚马逊云AWS，\url{https://aws.amazon.com/cn/?nc2=h_lg}
+\bibitem{bib:azure} 微软云Azure，\url{https://azure.microsoft.com/zh-cn/}
+\bibitem{bib:geo} 科技巨头们的数据中心，\url{https://baijiahao.baidu.com/s?id=1609550999919190110&wfr=spider&for=pc}
+\bibitem{bib:xunlei} 迅雷P2P，\url{https://www.xunlei.com/}
+\bibitem{bib:rdma} 远程直接内存访问(RDMA)，\url{https://en.wikipedia.org/wiki/Remote_direct_memory_access}
+\bibitem{bib:pcie} PCIe，\url{https://en.wikipedia.org/wiki/PCI_Express}
+\bibitem{bib:infiniband} InfiniBand，\url{https://en.wikipedia.org/wiki/InfiniBand}
+\bibitem{bib:nvlink} NvLink，\url{https://www.nvidia.com/en-us/data-center/nvlink/}
+\end{thebibliography}
+
+\end{document}
