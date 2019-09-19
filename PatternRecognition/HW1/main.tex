@@ -14,21 +14,6 @@
 
 \maketitle
 
-% \begin{question}[\textsection 2 Q2]
-% Consider minimax criterion for the zero-one loss function, i.e., $\lambda_{11} = \lambda_{22} = 0$ and $\lambda_{12} = \lambda_{21} = 1$.
-% \begin{itemize}
-% 	\item [(a)] Prove that in this case the decision regions will satisfy
-% \[\int_{\mathcal{R}_2}p(\vx\mid\omega_1)\diff\vx=\int_{\mathcal{R}_1}p(\vx\mid\omega_2)\diff\vx\]
-% 	\item [(b)] Is this solution always unique? If not, construct a simple counterexample.
-% \end{itemize}
-% \end{question}
-% \begin{answer}
-% \end{answer}
-% \begin{itemize}
-% 	\item [(a)]
-% 	\item [(b)]
-% \end{itemize}
-
 \begin{question}[\textsection 2 Q2]
 假设两个等概率的一维密度具有如下形式：对任给$i=1,2$及$0<b_i$，$p(x\mid\omega_i)\propto\ee^{-|x-a_i|/b_i}$。
 \begin{itemize}
@@ -61,4 +46,88 @@
 \end{itemize}
 \end{answer}
 
+\begin{question}[\textsection 2 Q7]
+考虑两个一维柯西分布的Neyman-Pearson准则：
+\[p(x\mid\omega_i)=\frac{1}{\pi b}\cdot\frac{1}{1+\lrp{\frac{x-a_i}{b}}^2}\,,\qquad i=1,2\]
+在0-1误差损失下，且为了简化，设$a_2>a_1$，宽度$b$相同，且先验概率相等。
+\begin{itemize}
+	\item [(a)] 假设当一样本实际属于$\omega_1$却被误认为$\omega_2$的模式分类时的最大可接受误差率为$E_1$，用所给变量确定判决边界。
+	\item [(b)] 对于此边界，将$\omega_2$错分为$\omega_1$的误差率是多少？
+	\item [(c)] 在0-1损失率下的总误差率是多少？
+	\item [(d)] 将你的结论应用于特殊情况：$b=1$且$a_1=-1,a_2=1$且$E_1=0.1$
+	\item [(e)] 将你的结论与贝叶斯误差率（即没有Neyman-Pearson条件）作比较。
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 因先验概率相等，故$p(x\mid\omega_1)=1/2$。
+	设判别边界为$x^\star$，则
+	\[\begin{aligned}
+	E_1&=\intab{x^\star}{\infty}{p(x\mid\omega_1)P(\omega_1)}\\
+	&=\frac{1}{2}\intab{x^\star}{\infty}{\frac{1}{\pi b}\frac{1}{1+\lrp{\frac{x-a_1}{b}}^2}}\\
+	&=\frac{1}{2\pi b}\intabu{u^\star}{\infty}{\frac{b}{1+u^2}}{u}\qquad u=\frac{x-a_1}{b}\\
+	&=\frac{1}{2\pi}\arctan u\Big|_{u^\star}^{\infty}
+	\end{aligned}\]
+	移项得到
+	\[2\pi E_1=\frac{\pi}{2}-\arctan\frac{x^\star-a_1}{b}\]
+	两侧同时取$\tan$，整理得
+	\[x^\star=a_1+\frac{b}{\tan(2\pi E_1)}\]
+
+	\item [(b)] 由题(a)的结果
+	\[\begin{aligned}
+	E_2&=\intab{-\infty}{x^\star}{p(x\mid\omega_2)P(\omega_2)}\\
+	&=\frac{1}{\pi b}\intab{-\infty}{x^\star}{\frac{1}{1+\lrp{\frac{x-a_i}{b}}^2}P(\omega_2)}\\
+	&=\frac{1}{2\pi b}\intabu{-\infty}{u^\star}{\frac{b}{1+u^2}}{u}\qquad u=\frac{x-a_2}{b}\\
+	&=\frac{1}{2\pi}\arctan u\Big|_{-\infty}^{u^\star}\\
+	&=\frac{1}{4}+\frac{1}{2\pi}\arctan\frac{x^\star-a_2}{b}
+	\end{aligned}\]
+	
+	\item [(c)] 综合题(a)和题(b)有
+	\[E=E_1+E_2=E_1+\frac{1}{4}+\frac{1}{2\pi}\arctan\frac{x^\star-a_2}{b}\]
+	
+	\item [(d)] 将值代入(c)式得到$x^\star=0.3764$，$E=0.2613$
+	
+	\item [(e)] 贝叶斯的决策边界为$x_B^\star=0$，进而贝叶斯误差率为
+	\[\begin{aligned}
+	E_B&=2\cdot\frac{1}{2\pi b}\intab{0}{\infty}{\frac{1}{1+\lrp{\frac{x-a_1}{b}}^2}}\\
+	&=\arctan u\Big|_0^\infty\\
+	&=0.25<E
+	\end{aligned}\]
+	即确实贝叶斯误差率会小于基于Neyman-Pearson准则的误差率
+\end{itemize}
+\end{answer}
+
+\begin{question}[\textsection 2 Q9]
+使用第7题给出的条件密度，设类别的先验概率相等。
+\begin{itemize}
+	\item [(a)] 证明最小误差概率为
+	\[P(error)=\frac{1}{2}-\frac{1}{\pi}\tan^{-1}\left|\frac{a_2-a_1}{2b}\right|\]
+	\item [(b)] 绘出它随$|a_2-a_1|/(2b)$变化的曲线图。
+	\item [(c)] $P(error)$的最大值是多少？在什么条件下可以达到此值？试说明原因。
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 不妨设$a_2>a_1$，判决边界为$(a_1+a_2)/2$，则误差概率为
+	\[\begin{aligned}
+	P(error)&=\intab{-\infty}{(a_1+a_2)/2}{p(x\mid \omega_2)P(\omega_2)}+\intab{(a_1+a_2)/2}{\infty}{p(x\mid \omega_1)P(\omega_1)}\\
+	&=\frac{1}{2\pi b}\lrp{\intab{-\infty}{(a_1+a_2)/2}{\frac{1}{1+\lrp{\frac{x-a_2}{b}}^2}}+\intab{(a_1+a_2)/2}{\infty}{\frac{1}{1+\lrp{\frac{x-a_1}{b}}^2}}}\\
+	&=\frac{1}{2\pi b}\lrp{\arctan u\Big|_{-\infty}^{(a_1-a_2)/(2b)}+\arctan u\Big|_{(-a_1+a_2)/(2b)}^{\infty}}\\
+	&=\frac{1}{2}-\frac{1}{\pi}\arctan\frac{a_2-a_1}{2b}
+	\end{aligned}\]
+	对于$a_1\leq a_2$的情形类似，故得证
+
+	\item [(b)] 如下图所示
+	\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\linewidth]{error.pdf}
+	\end{figure}
+
+	\item [(c)] 当$|a_2-a_1|/(2b)=0$时$P(error)$达到最大值$1/2$，也即两个概率分布相同（$a_1=a_2$），或者两个概率分布都为常量值（$a_1\ne a_2,b=\infty$）
+\end{itemize}
+\end{answer}
+
 \end{document}
+% ftp://222.200.180.156/
+% student
+% 2019s
