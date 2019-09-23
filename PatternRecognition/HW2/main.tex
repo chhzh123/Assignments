@@ -1,0 +1,89 @@
+\documentclass[reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+
+\title{模式识别作业二}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{模式识别作业}
+\lstset{language=python}
+
+\begin{document}
+
+\maketitle
+
+\begin{question}[\textsection 2 Q23]
+考虑三维正态分布$p(\vx\mid\omega)\thicksim N(\vmu,\Sigma)$，其中
+\[\vmu=\bmat{1\\2\\2},\;\Sigma=\bmat{1 & 0 & 0\\0 & 5 & 2\\0 & 2 &5}\]
+\begin{itemize}
+	\item [(a)] 求点$\vx_0=\bmat{0.5 & 0 & 1}^\T$处的概率密度。
+	\item [(b)] 构造白化变换$A_\omega=\phi\Lambda^{-1/2}$，计算分别表示本征向量和本征值的矩阵$\phi$和$\Lambda$；接下来，将此分布转换为以原点为中心协方差矩阵为单位阵的分布，即$p(\vx\mid\omega)\thicksim N(0,I)$。
+	\item [(c)] 将整个同样的转换过程应用于点$\vx_0$以产生一变换点$\vx_\omega$。
+	\item [(d)] 通过详细计算，证明原分布中从$\vx_0$到均值$\vmu$的Mahalanobis距离与变换后的分布中从$\vx_\omega$到$\vzero$\\的Mahalanobis距离相等。
+	\item [(e)] 概率密度在一个一般的线性变换下是否保持不变？换句话说，对于某线性变换$T$，是否有$p(\vx_0\mid N(\vmu,\Sigma))=p(T^\T\vx_0\mid N(T^\T\vmu,T^\T\Sigma T))$？解释原因。
+	\item [(f)] 证明当把一个一般的白化变换$A_\omega=\phi\Lambda^{-1/2}$应用于一个高斯分布时可保证最终分布的协方差与单位阵$I$成比例，检查变换后的分布是否仍然具有归一化特性。
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 我们有$d=3$维，
+	\[\begin{aligned}
+	|\Sigma|&=\vmat{1 & 0 & 0\\0 & 5 & 2\\0 & 2 & 5}=21\\
+	\Sigma^{-1}&=\bmat{1 & 0 & 0\\0 & 5 & 2\\0 & 2 & 5}^{-1}=\bmat{1 & 0 & 0\\0 & 5/21 & -2/21\\0 & -2/21 & 5/21}
+	\end{aligned}\]
+	又有平方Mahalanobis距离
+	\[\begin{aligned}
+	\qquad&(\vx_0-\vmu)^\T\Sigma^{-1}(\vx_0-\vmu)\\
+	=&\bmat{0.5-1\\0-2\\1-2}^\T\bmat{1 & 0 & 0\\0 & 5/21 & -2/21\\0 & -2/21 & 5/21}\bmat{0.5-1\\0-2\\1-2}\\
+	=& 1.06
+	\end{aligned}\]
+	将上述数值代入得到概率密度
+	\[p(\vx_0\mid\omega)=\frac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}}\exp\lrs{-\frac{1}{2}(\vx_0-\vmu)^\T}\Sigma^{-1}(\vx_0-\vmu)=0.008155\]
+
+	\item [(b)] 先求出$\Sigma$的特征值，考虑特征方程$|\Sigma-\lambda I|=0$
+	\[\vmat{1-\lambda & 0 & 0\\0 & 5-\lambda & 2\\0 & 2 & 5-\lambda}=(1-\lambda)(3-\lambda)(7-\lambda)=0\]
+	对于不同特征值，回代求其特征向量
+	\[\begin{aligned}
+	\lambda_1&=1:\;\bmat{1 & 0 & 0\\0 & 5 & 2\\0 & 2 & 5}\bmat{x_1\\x_2\\x_3}=\bmat{x_1\\x_2\\x_3}\implies\phi_1=\bmat{1\\0\\0}\\
+	\lambda_2&=3:\;\bmat{1 & 0 & 0\\0 & 5 & 2\\0 & 2 & 5}\bmat{x_1\\x_2\\x_3}=\bmat{3x_1\\3x_2\\3x_3}\implies\phi_2=\bmat{0\\1/\sqrt{2}\\-1/\sqrt{2}}\\
+	\lambda_3&=7:\;\bmat{1 & 0 & 0\\0 & 5 & 2\\0 & 2 & 5}\bmat{x_1\\x_2\\x_3}=\bmat{7x_1\\7x_2\\7x_3}\implies\phi_3=\bmat{0\\1/\sqrt{2}\\1/\sqrt{2}}\\
+	\end{aligned}\]
+	最终得到本征值矩阵
+	\[\phi=\bmat{1 & 0 & 0\\0 & 1/\sqrt{2} & 1/\sqrt{2}\\0 & -1/\sqrt{2} & 1/\sqrt{2}}\]
+	以及
+	\[A_\omega=\phi\Lambda^{-1/2}=\bmat{1 & 0 & 0\\0 & 1/\sqrt{2} & 1/\sqrt{2}\\0 & -1/\sqrt{2} & 1/\sqrt{2}}\bmat{1 & 0 & 0\\0 & \sqrt{3} & 0\\0 & 0 & \sqrt{7}}=\bmat{1 & 0 & 0\\ 0 & 1/\sqrt{6} & 1/\sqrt{14}\\ 0 & -1/\sqrt{6} & 1/\sqrt{14}}\]
+	进而
+	\[Y=A_\omega^\T(\vx-\vmu)\thicksim N(0,I)\]
+
+	\item [(c)] 将$\vx_0$代入有
+	\[\vx_\omega=A_\omega^\T(\vx_0-\vmu)=\bmat{1 & 0 & 0\\ 0 & 1/\sqrt{6} & -1/\sqrt{6}\\ 0 & 1/\sqrt{14} & 1/\sqrt{14}}\bmat{-0.5\\ -2\\ -1}=\bmat{-0.5\\-1/\sqrt{6}\\-3/\sqrt{14}}\]
+
+	\item [(d)] 由(a)知原距离$r^2=1.06$，而新的距离
+	\[r_\omega^2=\vx_\omega^\T\vx_\omega=1.06\]
+	因此两者相等
+
+	\item [(e)] 设线性变换后的向量为$\vx'=T^\T\vx$，进而有均值
+	\[\vmu'=\sum_{k=1}^n\vx_k'\Big/n=\sum_{k=1}^n T^\T\vx_k\Big/n=T^\T\sum_{k=1}^n\vx_k\Big/n=T^\T\vmu\]
+	和协方差
+	\[\Sigma'=\sum_{k=1}^n(\vx_k'-\vmu')(\vx_k'-\mu')^\T=T^\T\lrs{\sum_{k=1}^n(\vx_k-\vmu)(\vx_k-\mu)^\T}T=T^\T\Sigma T\]
+	又$|\Sigma'|=|T^\T\Sigma T|=|\Sigma|$，故
+	\[p(\vx_0\mid N(\vmu,\Sigma))=p(T^\T\vx_0\mid N(T^\T\vmu,T^\T\Sigma T))\]
+
+	\item [(f)] 由图2.8上面的公式，我们有
+	\[\vy=A_\omega^\T\vx\thicksim N(A_\omega^\T\vmu,A_\omega^\T\Sigma A_\omega)\]
+	进而可得协方差矩阵
+	\[\begin{aligned}
+	A_\omega^\T\Sigma A_\omega &= (\phi\Lambda^{-1/2})^\T\phi\Lambda\phi^\T(\phi\Lambda^{-1/2})\\
+	&= \Lambda^{-1/2}(\phi^\T(\phi\Lambda\phi^\T)\phi)\Lambda^{-1/2}\\
+	&= I
+	\end{aligned}\]
+	故变换后的分布依然具有归一化特性
+\end{itemize}
+\end{answer}
+
+\end{document}
+% ftp://222.200.180.156/
+% student
+% 2019s
