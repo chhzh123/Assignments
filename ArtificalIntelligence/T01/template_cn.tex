@@ -46,11 +46,17 @@
 % The missionaries and cannibals problem (see the lecture notes): Consider the case of M = 5 and K = 3. Use the heuristic function h(n) = M + C − 2B. Trace the operation of $A^\star$ with cycle checking: Draw the search tree; for each node, mark its g and h values.
 \end{question}
 \begin{answer}
-如下图所示，还未进行剪枝就已经找到最优解了。
+如下图所示，$g$值用铅笔写在右侧，$h$值写在每个元组的旁边。
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/A2.png}
+\includegraphics[width=\linewidth]{fig/A2-1.png}
 \end{figure}
+由于整个过程非常繁复，因此我也编程进行实现验证结果，如下图所示，其中括号内内容为当前启发式函数$f=g+h$的值，$d$则表示被环检测检测出来需要被剪枝的节点。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/program.png}
+\end{figure}
+可以看出结果确实正确，即使采用$A^\star$算法也需要经过11步才能找到最优解。
 \end{answer}
 
 
