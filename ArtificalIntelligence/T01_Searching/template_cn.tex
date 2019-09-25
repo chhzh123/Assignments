@@ -29,10 +29,15 @@
 \begin{question}
 使用\textbf{带环检测的一致代价搜索}寻找从Arad出发去Bucharest的路径，并作出搜索树。
 % Consider travel in Romania from Arad to Bucharest. Trace the operation of uniform-cost search with cycle-checking: draw the search tree.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/map.png}
+\end{figure}
 \end{question}
 \begin{answer}
 如下图所示，环检测部分已经用删除线标出。
 注意每次添加进边界集的顺序以字母为序，但是扩展结点以路径代价为序。
+而且当结点从优先队列出队时才进行目标检测。
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{fig/A1.png}
