@@ -16,6 +16,14 @@
 \maketitle
 % https://www.db-book.com/db6/lab-dir/labexercises-dir/
 
+具体代码请见下述四个程序文件，运行结果也都附在后文。
+\begin{itemize}
+\item \verb'BasicSQL-HW.sql'：第二大题问题1到问题8
+\item \verb'BasicSQL-HW2.sql'：第二大题问题9到问题13
+\item \verb'IntermediateSQL-HW.sql'：第三大题问题1到问题5
+\item \verb'IntermediateSQL-HW2.sql'：第三大题问题6到问题10
+\end{itemize}
+
 \section{Accessing the Database}
 需要先下载\verb'DDL-MySQL.sql'和\verb'smallRelationsInsertFile.sql'两个文件，然后用
 \begin{lstlisting}
@@ -105,9 +113,9 @@ where S.ID = C.ID and C.dept_name = 'Comp. Sci.';
 
 \begin{question}
 \normalfont 
-Display the IDs of all instructors who have never taught a couse (Notesad1) Oracle uses the keyword minus in place of except; (2) interpret "taught" as "taught or is scheduled to teach")
+Display the IDs of all instructors who have never taught a couse. Note: (1) Oracle uses the keyword minus in place of except; (2) interpret "taught" as "taught or is scheduled to teach".
 \end{question}
-\begin{answer}\mbox{}\par
+\begin{answer}注意MySQL没有\verb'except'，故需要换种方式编写。
 \begin{lstlisting}
 -- (without except!)
 select ID
@@ -131,6 +139,12 @@ where ID not in
     from instructor natural join teaches);
 \end{lstlisting}
 \end{answer}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/Q1-8.png}
+\caption{问题1到8结果}
+\end{figure}
 
 \begin{question}
 \normalfont 
@@ -202,9 +216,8 @@ group by MID;
 \normalfont 
 Write a query to list all actors who have not acted in any movie
 \end{question}
-\begin{answer}\mbox{}\par
+\begin{answer}这里创建视图(view)是为了下一问比较好做，如果单独只做这一问则可以不创建。
 \begin{lstlisting}
-drop view no_movie_actor;
 create view no_movie_actor as
 select name
 from actors
@@ -218,7 +231,7 @@ select * from no_movie_actor;
 \normalfont 
 List names of actors, along with titles of movies they have acted in. If they have not acted in any movie, show the movie title as null. (Do not use SQL outerjoin syntax here, write it from scratch.)
 \end{question}
-\begin{answer}\mbox{}\par
+\begin{answer}这里不用outerjoin，只好先创建null的行，再进行整合。
 \begin{lstlisting}
 select *
 from ((select name, title
@@ -231,6 +244,11 @@ from ((select name, title
 \end{lstlisting}
 \end{answer}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/Q9-13.png}
+\caption{问题11到13结果，问题9、问题10的结果由于全是Query OK，故这里忽略}
+\end{figure}
 
 \setcounter{question}{0}
 \section{Intermediate SQL}
@@ -253,7 +271,7 @@ from (select sec_id, semester, year, count(distinct id) as enrollment
 \normalfont 
 Find all sections that had the maximum enrollment (along with the enrollment), using a subquery.
 \end{question}
-\begin{answer}\mbox{}\par
+\begin{answer}这里复用了上一问的语句。
 \begin{lstlisting}
 with T(sec_id, semester, year, enrollment) as
   (select sec_id, semester, year, count(distinct id)
@@ -274,7 +292,7 @@ As in in Q1, but now also include sections with no students taking them; the enr
 \item [(b)] Using aggregation on a left outer join (use the SQL natural left outer join syntax)
 \end{itemize}
 \end{question}
-\begin{answer}\mbox{}\par
+\begin{answer}注意在添加元组时都需要保持约束的可满足性。
 \begin{lstlisting}
 -- Test data (need to preserve the constraints)
 delete from course
@@ -321,7 +339,7 @@ Find instructors who have taught all the above courses
 \item [(b)] Using matching of counts which we covered in class (don't forget the distinct clause!).
 \end{itemize}
 \end{question}
-\begin{answer}\mbox{}\par
+\begin{answer}由于MySQL没有\verb'except'语法，故这里同样需要采用其他方法代替(not in)。
 \begin{lstlisting}
 -- Q5.1
 select distinct ID, name
@@ -349,6 +367,12 @@ where ((select count(distinct course_id)
 \end{lstlisting}
 \end{answer}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/Q9-13.png}
+\caption{问题1到5结果}
+\end{figure}
+
 \begin{question}
 \normalfont 
 Insert each instructor as a student, with tot\_creds = 0, in the same department
@@ -358,6 +382,10 @@ Insert each instructor as a student, with tot\_creds = 0, in the same department
 insert into student
   select ID, name, dept_name, '0'
   from instructor;
+\end{lstlisting}
+由于学生和老师的ID冲突，直接运行会报以下错误
+\begin{lstlisting}
+ERROR 1062 (23000): Duplicate entry '76543' for key 'PRIMARY'
 \end{lstlisting}
 \end{answer}
 
@@ -369,8 +397,12 @@ Now delete all the newly added "students" above (note: already existing students
 \begin{lstlisting}
 delete from student
   where (ID, name, dept_name) in
-    (select (ID, name, dept_name)
+    (select ID, name, dept_name
       from instructor);
+\end{lstlisting}
+由于上一问没有插入成功，因此这一问也不会产生删除，运行会得到
+\begin{lstlisting}
+Query OK, 0 rows affected (0.00 sec)
 \end{lstlisting}
 \end{answer}
 
@@ -386,6 +418,11 @@ set tot_cred = (
   from takes natural join course
   where S.ID = takes.ID and takes.grade is not null);
 \end{lstlisting}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/Q8.png}
+\caption{问题8结果}
+\end{figure}
 \end{answer}
 
 \begin{question}
@@ -400,13 +437,19 @@ set salary = 10000 * (
   from teaches as T
   where I.ID = T.ID);
 \end{lstlisting}
+由于部分老师上了3节课，薪酬变为30000美元，但与数据库的约束条件冲突，故直接运行会产生以下错误。
+\begin{lstlisting}
+ERROR 3819 (HY000): Check constraint 'instructor_chk_1' is violated.
+\end{lstlisting}
 \end{answer}
 
 \begin{question}
 \normalfont 
 Create your own query: define what you want to do in English, then write the query in SQL. Make it as difficult as you wish, the harder the better.
 \end{question}
-\begin{answer}\mbox{}\par
+\begin{answer}
+这里我设计的问题是，统计由CS系教授开设的且被学生注册的课程总数。
+这里既采用了子查询，又使用了聚集函数等。
 \begin{lstlisting}
 -- Number of courses taught by instuctors of CS department registered by the students
 select count(cs_course.course_id)
@@ -417,6 +460,11 @@ from ((select distinct course_id
   (select distinct course_id from takes) as all_course
   on cs_course.course_id = all_course.course_id);
 \end{lstlisting}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/Q10.png}
+\caption{问题10结果}
+\end{figure}
 \end{answer}
 
 
