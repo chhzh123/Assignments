@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -287,22 +287,26 @@ class CornersProblem(search.SearchProblem):
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
         # Please add any code here which you would like to use
         # in initializing the problem
-        "*** YOUR CODE HERE ***"
+        visited = [0,0,0,0]
+        for (i,corner) in enumerate(self.corners):
+            if self.startingPosition == corner:
+                visited[i] = 1
+        self.startState = (self.startingPosition,visited)
 
     def getStartState(self):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.startState
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if state[1] == [1,1,1,1]:
+            return True
+        return False
 
     def getSuccessors(self, state):
         """
@@ -323,8 +327,16 @@ class CornersProblem(search.SearchProblem):
             #   dx, dy = Actions.directionToVector(action)
             #   nextx, nexty = int(x + dx), int(y + dy)
             #   hitsWall = self.walls[nextx][nexty]
-
-            "*** YOUR CODE HERE ***"
+            x, y = state[0]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            if not self.walls[nextx][nexty]:
+                nextCorner = [item for item in state[1]]
+                if (nextx,nexty) in self.corners:
+                    i = self.corners.index((nextx,nexty))
+                    nextCorner[i] = 1
+                nextState = ((nextx,nexty),nextCorner)
+                successors.append((nextState,action,1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -359,8 +371,13 @@ def cornersHeuristic(state, problem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    pos = state[0]
+    cornerFlag = state[1]
+    res = 0
+    for i,corner in enumerate(corners):
+        if not cornerFlag[i]:
+            res += abs(pos[0] - corner[0]) + abs(pos[1] - corner[1])
+    return res
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -453,8 +470,13 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    foodLst = foodGrid.asList()
+    # print(position) # (10, 3)
+    # print(foodLst) # [(1, 1), (1, 4), (1, 5), (2, 1), (3, 1), (4, 1), (4, 4), (5, 1), (7, 4), (10, 4), (13, 4), (13, 5), (14, 5)]
+    sumup = 0
+    for food in foodLst:
+        sumup += abs(position[0] - food[0]) + abs(position[1] - food[1])
+    return sumup
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
