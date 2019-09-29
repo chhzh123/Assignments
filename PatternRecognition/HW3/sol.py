@@ -7,7 +7,8 @@ def normal_distribution(mu,sigma,size=10):
 	Sigma: d*d-dim covariance matrix
 	n: number of generated points
 	"""
-	return np.random.multivariate_normal(mu,sigma,size)
+	# return np.random.multivariate_normal(mu,sigma,size)
+	return np.dot(np.random.randn(size,mu.size), np.linalg.cholesky(sigma)) + mu
 
 def discriminant(x,mu,sigma,p_omega):
 	"""
