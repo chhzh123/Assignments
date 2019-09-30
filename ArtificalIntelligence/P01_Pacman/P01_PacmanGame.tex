@@ -8,7 +8,7 @@
 \usepackage{hyperref}
 \usepackage{longtable}
 
-\title{	
+\title{
 \normalfont \normalsize
 \textsc{School of Data and Computer Science, Sun Yat-sen University} \\ [25pt] %textsc small capital letters
 \rule{\textwidth}{0.5pt} \\[0.4cm] % Thin top horizontal rule
@@ -68,7 +68,7 @@ In this section, your Pacman agent will find paths through his maze world, both 
 
 \textbf{Files to Edit and Submit:} You will fill in portions of \textsf{search.py} and \textsf{searchAgents.py} during the assignment. You should submit these files with your code and comments. Please do not change the other files in this distribution or submit any of our original files other than these files.
 
-\textbf{Evaluation:} Your code will be autograded for technical correctness. Please do not change the names of any provided functions or classes within the code, or you will wreak havoc on the autograder. 
+\textbf{Evaluation:} Your code will be autograded for technical correctness. Please do not change the names of any provided functions or classes within the code, or you will wreak havoc on the autograder.
 \subsection{Welcome to Pacman}
 After downloading the code (search.zip), unzipping it, and changing to the directory, you should be able to play a game of Pacman by typing the following at the command line:
 
@@ -248,9 +248,9 @@ This will show what your algorithm does on a number of small trees, as well as a
 \item All states in minimax should be GameStates, either passed in to getAction or generated via GameState.generateSuccessor. In this project, you will not be abstracting to simplified states.
 \item On larger boards such as openClassic and mediumClassic (the default), you'll find Pacman to be good at not dying, but quite bad at winning. He'll often thrash around without making progress. He might even thrash around right next to a dot without eating it because he doesn't know where he'd go after eating that dot. Don't worry if you see this behavior, question 5 will clean up all of these issues.
 \item When Pacman believes that his death is unavoidable, he will try to end the game as soon as possible because of the constant penalty for living. Sometimes, this is the wrong thing to do with random ghosts, but minimax agents always assume the worst:
-  
+
   \texttt{python pacman.py -p MinimaxAgent -l trappedClassic -a depth=3}
-  
+
 \end{itemize}
 \subsection{Question 5: $\alpha-\beta$ Pruning ( 5 points)}
 Make a new agent that uses $\alpha-\beta$ pruning to more efficiently explore the minimax tree, in \textsf{AlphaBetaAgent}. Again, your algorithm will be slightly more general than the pseudocode from lecture, so part of the challenge is to extend the $\alpha-\beta$ pruning logic appropriately to multiple minimizer agents.
@@ -275,9 +275,9 @@ The pseudo-code below represents the algorithm you should implement for this que
   \item The related files written in Python2 can be found in \textsf{search.zip} and \textsf{multiagent.zip}. You can refer to \url{https://www.liaoxuefeng.com/wiki/001374738125095c955c1e6d8bb493182103fac9270762a000} if you are a noob of Python.
 \item You can ask one partner to join you to do together. Please complete the above five questions, and you only need to send \textsf{P01\_YourNumber.zip} which contains the modified \textsf{search.zip} and \textsf{multiagent.zip} to the mailbox(\textsf{ai\_201901@foxmail.com}) before the deadline(2019/10/9 23:59). For this project, you needn't submit the \texttt{pdf} file.
 \item Last but not least, you are not alone! If you find yourself stuck on something, contact the TA for help.
-  
-\end{enumerate}
-  
 
-\end{document} 
+\end{enumerate}
+
+
+\end{document}
 
