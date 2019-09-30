@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -111,6 +111,39 @@ class MinimaxAgent(MultiAgentSearchAgent):
       Your minimax agent (question 2)
     """
 
+    def DFMinimax(self, depth, gameState, currAgent):
+        """
+        DFMiniMax(n, Player) //return Utility of state n given that
+        //Player is MIN or MAX
+        If n is TERMINAL
+        Return V(n) //Return terminal states utility
+                    //(V is specified as part of game)
+        //Apply Player's moves to get successor states.
+        ChildList = n.Successors(Player)
+        If Player == MIN
+          return minimum of DFMiniMax(c, MAX) over c \in ChildList
+        Else //Player is MAX
+          return maximum of DFMiniMax(c, MIN) over c \in ChildList
+        """
+        actions = gameState.getLegalActions(currAgent)
+        if depth > self.depth or len(actions) == 0:
+            return (self.evaluationFunction(gameState),Directions.STOP)
+        if currAgent == 0: # MAX node
+            maxVal = []
+            for action in actions:
+                state = gameState.generateSuccessor(currAgent,action)
+                maxVal.append((self.DFMinimax(depth,state,1)[0],action))
+            return max(maxVal)
+        else: # MIN node
+            minVal = []
+            for action in actions:
+                state = gameState.generateSuccessor(currAgent,action)
+                if currAgent == gameState.getNumAgents() - 1:
+                    minVal.append((self.DFMinimax(depth+1,state,0)[0],action))
+                else: # one by one action
+                    minVal.append((self.DFMinimax(depth,state,currAgent+1)[0],action))
+            return min(minVal)
+
     def getAction(self, gameState):
         """
           Returns the minimax action from the current gameState using self.depth
@@ -128,20 +161,59 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        _, action = self.DFMinimax(1,gameState,0)
+        return action
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
 
+    def DFMinimax(self, depth, gameState, currAgent, alpha, beta):
+        """
+        DFMiniMax(n, Player) //return Utility of state n given that
+        //Player is MIN or MAX
+        If n is TERMINAL
+        Return V(n) //Return terminal states utility
+                    //(V is specified as part of game)
+        //Apply Player's moves to get successor states.
+        ChildList = n.Successors(Player)
+        If Player == MIN
+          return minimum of DFMiniMax(c, MAX) over c \in ChildList
+        Else //Player is MAX
+          return maximum of DFMiniMax(c, MIN) over c \in ChildList
+        """
+        actions = gameState.getLegalActions(currAgent)
+        if depth > self.depth or len(actions) == 0:
+            return (self.evaluationFunction(gameState),Directions.STOP)
+        if currAgent == 0: # MAX node
+            val = (-0x3f3f3f3f,Directions.STOP)
+            for action in actions:
+                state = gameState.generateSuccessor(currAgent,action)
+                val = max(val,(self.DFMinimax(depth,state,1,alpha,beta)[0],action))
+                if val[0] > beta:
+                    return val
+                alpha = max(alpha,val[0])
+            return val
+        else: # MIN node
+            val = (0x3f3f3f3f,Directions.STOP)
+            for action in actions:
+                state = gameState.generateSuccessor(currAgent,action)
+                if currAgent == gameState.getNumAgents() - 1:
+                    val = min(val,(self.DFMinimax(depth+1,state,0,alpha,beta)[0],action))
+                else: # one by one action
+                    val = min(val,(self.DFMinimax(depth,state,currAgent+1,alpha,beta)[0],action))
+                if val[0] < alpha:
+                    return val
+                beta = min(beta,val[0])
+            return val
+
     def getAction(self, gameState):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        _, action = self.DFMinimax(1,gameState,0,-0x3f3f3f3f,0x3f3f3f3f)
+        return action
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
