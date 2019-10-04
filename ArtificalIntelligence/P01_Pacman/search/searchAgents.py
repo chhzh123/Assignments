@@ -287,6 +287,7 @@ class CornersProblem(search.SearchProblem):
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
         # Please add any code here which you would like to use
         # in initializing the problem
+        self.startingGameState = startingGameState
         visited = [0,0,0,0]
         for (i,corner) in enumerate(self.corners):
             if self.startingPosition == corner:
@@ -370,13 +371,65 @@ def cornersHeuristic(state, problem):
     """
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    top, right = walls.height-2, walls.width-2
 
     pos = state[0]
     cornerFlag = state[1]
-    res = 0
+    ## Heuristic 1 (503)
+    # res = 0
+    # for i,corner in enumerate(corners):
+    #     if not cornerFlag[i]:
+    #         res += abs(pos[0] - corner[0]) + abs(pos[1] - corner[1])
+
+    ## Heuristic 2 (1057)
+    # remaining_corners = []
+    # dis = []
+    # num_visited = 0
+    # for i,corner in enumerate(corners):
+    #     if not cornerFlag[i]:
+    #         num_visited += 1
+    #         remaining_corners.append(corner)
+    #         dis.append(abs(pos[0] - corner[0]) + abs(pos[1] - corner[1]))
+    # dis.sort()
+    # res = 0 if len(dis) == 0 else dis[0]
+    # dis = []
+    # for i in range(len(remaining_corners)):
+    #     for j in range(i+1,len(remaining_corners)):
+    #         a = remaining_corners[i]
+    #         b = remaining_corners[j]
+    #         dis.append(abs(a[0] - b[0]) + abs(a[1] - b[1]))
+    # dis.sort()
+    # res += sum(dis[:4-num_visited])
+
+    # # Heuristic 3 (693)
+    # # Find a path getting through all the foods
+    # remaining_points = []
+    # curr_point = pos
+    # for i,corner in enumerate(corners):
+    #     if not cornerFlag[i]:
+    #         remaining_points.append(corner)
+    # res = 0
+    # while len(remaining_points) > 0:
+    #     distance = []
+    #     for i,point in enumerate(remaining_points):
+    #         distance.append((abs(curr_point[0] - point[0]) + abs(curr_point[1] - point[1]),i))
+    #     distance.sort()
+    #     res += distance[0][0]
+    #     index = distance[0][1]
+    #     curr_point = remaining_points[index]
+    #     remaining_points = remaining_points[:index] + remaining_points[index+1:] # pop out the point with minimum distance
+    # return res
+
+    # Heuristic 4 (1135/802)
+    from util import manhattanDistance
+    remaining_points = []
     for i,corner in enumerate(corners):
         if not cornerFlag[i]:
-            res += abs(pos[0] - corner[0]) + abs(pos[1] - corner[1])
+            remaining_points.append(corner)
+    if len(remaining_points) == 0:
+        return 0
+    # res = max(map(lambda x:manhattanDistance(pos,x), remaining_points))
+    res = max(map(lambda x:mazeDistance(pos,x,problem.startingGameState), remaining_points))
     return res
 
 class AStarCornersAgent(SearchAgent):
@@ -473,10 +526,36 @@ def foodHeuristic(state, problem):
     foodLst = foodGrid.asList()
     # print(position) # (10, 3)
     # print(foodLst) # [(1, 1), (1, 4), (1, 5), (2, 1), (3, 1), (4, 1), (4, 4), (5, 1), (7, 4), (10, 4), (13, 4), (13, 5), (14, 5)]
-    sumup = 0
-    for food in foodLst:
-        sumup += abs(position[0] - food[0]) + abs(position[1] - food[1])
-    return sumup
+
+    ## Heuristic 1 (5403)
+    # sumup = 0
+    # for food in foodLst:
+    #     sumup += abs(position[0] - food[0]) + abs(position[1] - food[1])
+    # return sumup
+
+    # # Heuristic 2 (6101)
+    # remaining_points = [food for food in foodLst]
+    # curr_point = position
+    # res = 0
+    # # Find a path getting through all the foods
+    # while len(remaining_points) > 0:
+    #     distance = []
+    #     for i,point in enumerate(remaining_points):
+    #         distance.append((abs(curr_point[0] - point[0]) + abs(curr_point[1] - point[1]),i))
+    #     distance.sort()
+    #     res += distance[0][0]
+    #     index = distance[0][1]
+    #     curr_point = remaining_points[index]
+    #     remaining_points = remaining_points[:index] + remaining_points[index+1:] # pop out the point with minimum distance
+    # return res
+
+    # Heuristic 3 (9445/4111)
+    from util import manhattanDistance
+    if len(foodLst) == 0:
+        return 0
+    # res = max(map(lambda x:manhattanDistance(position,x), foodLst))
+    res = max(map(lambda x:mazeDistance(position,x,problem.startingGameState), foodLst))
+    return res
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"

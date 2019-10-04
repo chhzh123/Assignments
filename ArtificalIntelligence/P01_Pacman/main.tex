@@ -6,7 +6,7 @@
 \usepackage{geometry}
 \usepackage{listings}
 \geometry{scale=0.8}
-\linespread{1.5}
+% \linespread{1.5}
 \usepackage{hyperref}
 \usepackage{longtable}
 \lstset{language=python}
@@ -57,9 +57,9 @@ For the codes, please refer to the attached files.
 \end{figure}
 
 \section{Question 2: Corners Problem: Heuristic (3 points)}
-\texttt{python pacman.py -l mediumCorners -p SearchAgent -a fn=aStarSearch,prob=CornersProblem,heuristic=cornersHeuristic}
+\texttt{python pacman.py -l mediumCorners -p SearchAgent -a fn=aStarSearch,\\prob=CornersProblem,heuristic=cornersHeuristic --frameTime 0}
 
-We represent the state as below
+I represent the state as below
 \begin{center}
   pacmanx, pacmany, 0, 0, 0, 0
 \end{center}
@@ -69,11 +69,19 @@ And the goal state is
   *, *, 1, 1, 1, 1
 \end{center}
 
-We design a heuristic that calculates the total Manhattan distance from the current position of the pacman to each unvisited corner.
+Actually, I design lots of heuristic functions which are all listed below.
+The best one may be the heuristic that calculates maximum maze distance between current point and unvisited corners (using BFS).
 This is obviously admissible and consistent, since every time the pacman reach to a corner, the total distance can be reduced, and the heuristic value of the goal state is 0.
+And this is a strategy putting computation on pruning but not searching, where the pruning time may cost a lot.
+The result also shows that only 802 nodes are needed to expanded by my heuristics.
 
 \begin{lstlisting}
-  class CornersProblem(search.SearchProblem):
+class CornersProblem(search.SearchProblem):
+    """
+    This search problem finds paths through all four corners of a layout.
+
+    You must select a suitable state space and successor function
+    """
 
     def __init__(self, startingGameState):
         """
@@ -89,6 +97,7 @@ This is obviously admissible and consistent, since every time the pacman reach t
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
         # Please add any code here which you would like to use
         # in initializing the problem
+        self.startingGameState = startingGameState
         visited = [0,0,0,0]
         for (i,corner) in enumerate(self.corners):
             if self.startingPosition == corner:
@@ -158,16 +167,79 @@ This is obviously admissible and consistent, since every time the pacman reach t
 
 
 def cornersHeuristic(state, problem):
+    """
+    A heuristic for the CornersProblem that you defined.
 
+      state:   The current search state
+               (a data structure you chose in your search problem)
+
+      problem: The CornersProblem instance for this layout.
+
+    This function should always return a number that is a lower bound on the
+    shortest path from the state to a goal of the problem; i.e.  it should be
+    admissible (as well as consistent).
+    """
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    top, right = walls.height-2, walls.width-2
 
     pos = state[0]
     cornerFlag = state[1]
-    res = 0
+    ## Heuristic 1 (503)
+    # res = 0
+    # for i,corner in enumerate(corners):
+    #     if not cornerFlag[i]:
+    #         res += abs(pos[0] - corner[0]) + abs(pos[1] - corner[1])
+
+    ## Heuristic 2 (1057)
+    # remaining_corners = []
+    # dis = []
+    # num_visited = 0
+    # for i,corner in enumerate(corners):
+    #     if not cornerFlag[i]:
+    #         num_visited += 1
+    #         remaining_corners.append(corner)
+    #         dis.append(abs(pos[0] - corner[0]) + abs(pos[1] - corner[1]))
+    # dis.sort()
+    # res = 0 if len(dis) == 0 else dis[0]
+    # dis = []
+    # for i in range(len(remaining_corners)):
+    #     for j in range(i+1,len(remaining_corners)):
+    #         a = remaining_corners[i]
+    #         b = remaining_corners[j]
+    #         dis.append(abs(a[0] - b[0]) + abs(a[1] - b[1]))
+    # dis.sort()
+    # res += sum(dis[:4-num_visited])
+
+    # # Heuristic 3 (693)
+    # # Find a path getting through all the foods
+    # remaining_points = []
+    # curr_point = pos
+    # for i,corner in enumerate(corners):
+    #     if not cornerFlag[i]:
+    #         remaining_points.append(corner)
+    # res = 0
+    # while len(remaining_points) > 0:
+    #     distance = []
+    #     for i,point in enumerate(remaining_points):
+    #         distance.append((abs(curr_point[0] - point[0]) + abs(curr_point[1] - point[1]),i))
+    #     distance.sort()
+    #     res += distance[0][0]
+    #     index = distance[0][1]
+    #     curr_point = remaining_points[index]
+    #     remaining_points = remaining_points[:index] + remaining_points[index+1:] # pop out the point with minimum distance
+    # return res
+
+    # Heuristic 4 (1135/802)
+    from util import manhattanDistance
+    remaining_points = []
     for i,corner in enumerate(corners):
         if not cornerFlag[i]:
-            res += abs(pos[0] - corner[0]) + abs(pos[1] - corner[1])
+            remaining_points.append(corner)
+    if len(remaining_points) == 0:
+        return 0
+    # res = max(map(lambda x:manhattanDistance(pos,x), remaining_points))
+    res = max(map(lambda x:mazeDistance(pos,x,problem.startingGameState), remaining_points))
     return res
 \end{lstlisting}
 
@@ -178,10 +250,11 @@ We can see that the heuristic is admissible and consistent that it can find the 
 \end{figure}
 
 \section{Question 3: Eating All The Dots (4 points)}
-\texttt{python pacman.py -l testSearch -p SearchAgent -a fn=astar,prob=FoodSearchProblem,heuristic=foodHeuristic}.
+\texttt{python pacman.py -l trickySearch -p SearchAgent -a fn=astar,\\prob=FoodSearchProblem,heuristic=foodHeuristic --frameTime 0}.
 
-We design a heuristic that calculates the total Manhattan distance from the current position of the pacman to each food (similar to Question 2, which is indeed a very efficient heuristic).
+I reuse the heuristic function in Question 2 that calculates the maximum maze distance from the current position of the pacman to each food.
 This is also obviously admissible and consistent, since every time the pacman get to one food, the total distance can be reduced, and the heuristic value of the goal state is 0.
+And using this heuristics, only 4111 nodes are expanded.
 
 \begin{lstlisting}
 def foodHeuristic(state, problem):
@@ -190,10 +263,36 @@ def foodHeuristic(state, problem):
     foodLst = foodGrid.asList()
     # print(position) # (10, 3)
     # print(foodLst) # [(1, 1), (1, 4), (1, 5), (2, 1), (3, 1), (4, 1), (4, 4), (5, 1), (7, 4), (10, 4), (13, 4), (13, 5), (14, 5)]
-    sumup = 0
-    for food in foodLst:
-        sumup += abs(position[0] - food[0]) + abs(position[1] - food[1])
-    return sumup
+
+    ## Heuristic 1 (5403)
+    # sumup = 0
+    # for food in foodLst:
+    #     sumup += abs(position[0] - food[0]) + abs(position[1] - food[1])
+    # return sumup
+
+    # # Heuristic 2 (6101)
+    # remaining_points = [food for food in foodLst]
+    # curr_point = position
+    # res = 0
+    # # Find a path getting through all the foods
+    # while len(remaining_points) > 0:
+    #     distance = []
+    #     for i,point in enumerate(remaining_points):
+    #         distance.append((abs(curr_point[0] - point[0]) + abs(curr_point[1] - point[1]),i))
+    #     distance.sort()
+    #     res += distance[0][0]
+    #     index = distance[0][1]
+    #     curr_point = remaining_points[index]
+    #     remaining_points = remaining_points[:index] + remaining_points[index+1:] # pop out the point with minimum distance
+    # return res
+
+    # Heuristic 3 (9445/4111)
+    from util import manhattanDistance
+    if len(foodLst) == 0:
+        return 0
+    # res = max(map(lambda x:manhattanDistance(position,x), foodLst))
+    res = max(map(lambda x:mazeDistance(position,x,problem.startingGameState), foodLst))
+    return res
 \end{lstlisting}
 
 We can see that the heuristic is admissible and consistent that it can find the optimal solution the same as what UCS found.
