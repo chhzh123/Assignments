@@ -23,13 +23,13 @@
 % (c) Compute the inverse Fourier transform. (d) Multiply the result by (-1)x+y and take the real part. (e) Compute the spectrum.
 % Basically, this project implements Fig. 4.5. If you are using MATLAB, then your Fourier transform program will not be limited to images whose size are integer powers of 2. If you are implementing the program yourself, then the FFT routine you are using may be limited to integer powers of 2. In this case, you may need to zoom or shrink an image to the proper size by using the program you developed in Project 02-04.
 % An approximation: To simplify this and the following projects (with the exception of Project 04-05), you may ignore image padding (Section 4.6.3). Although your results will not be strictly correct, significant simplifications will be gained not only in image sizes, but also in the need for cropping the final result. The principles will not be affected by this approximation.
-\subsection{原理}
+第一题仅仅是实现一些基本函数，简要说明如下。
 \begin{itemize}
     \item [(a)] 由于$\Im[f(x,y)(-1)^{x+y}]=F(u-M/2,v-N/2)$，故将原图乘上$(-1)^{x+y}$后可实现频率域的中心平移
     \item [(b)] 直接乘上常数$c$即可
     \item [(c)] matlab的\verb'ifft2'即可完成逆傅里叶变换
     \item [(d)] 同(a)，恢复原图
-    \item [(e)] 即复数的模，$|F(u,v)=\sqrt{R^2(x,y)+I^2(x,y)}$
+    \item [(e)] 即复数的模，$|F(u,v)|=\sqrt{R^2(x,y)+I^2(x,y)}$
 \end{itemize}
 
 \section{傅里叶谱与平均值(PROJECT 04-02)}
@@ -37,18 +37,18 @@
 % Fourier Spectrum and Average Value (a) Download Fig. 4.18(a) and compute its (centered) Fourier spectrum. (b) Display the spectrum.
 % (c) Use your result in (a) to compute the average value of the image.
 \subsection{原理}
-利用PROJECT 04-01中实现的函数即可求出图片的中心化傅里叶谱。
+利用PROJECT 04-01中实现的函数即可求出图片的中心化傅里叶谱，详情请见附录中的代码。
 
 \subsection{实验结果与分析}
-傅里叶谱的展示通过了一个伽马变换。
+傅里叶谱的展示通过了一个伽马变换，虽然噪声较多，但依然能够清晰看出正中间的高频分量。
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/01.jpg}
+\includegraphics[width=0.8\linewidth]{fig/01.jpg}
 \end{figure}
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{fig/02.jpg}
-\end{figure}
+
+若在傅里叶变换前没有进行图像中心化，则
+\[F(0,0)=\frac{1}{MN}\sum_{x=0}^{M-1}\sum_{y=0}^{N-1}f(x,y)\]
+为图像像素的均值，可求得为$207.31$。
 
 \section{低通滤波器(PROJECT 04-03)}
 % PROJECT 04-03 Lowpass Filtering
@@ -71,12 +71,15 @@
     \item 计算上述结果的IDFT
     \item 取上式的实部，并乘上$(-1)^{x+y}$恢复图像
 \end{enumerate}
+因此先生成高斯滤波器$H(u,v)$，再根据上述步骤即可实现低通滤波。
 
 \subsection{实验结果与分析}
+如下图所示，在频率域进行高斯低通滤波后，图像确实变模糊了。
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/03.jpg}
+\includegraphics[width=0.8\linewidth]{fig/02.jpg}
 \end{figure}
+
 
 \section{高通滤波器(PROJECT 04-04)}
 % PROJECT 04-04 Highpass Filtering Using a Lowpass Image
@@ -85,27 +88,57 @@
 \subsection{原理}
 利用下式可以得到高通滤波的图像
 \[f_{hp}(x,y)=f(x,y)-f_{lp}(x,y)\]
-其中$f_{lp}$即为上面通过高斯滤波后的图像。
+其中$f_{lp}$即为PROJECT 04-04通过高斯滤波后的图像。
 
 \subsection{实验结果与分析}
+用原图像减去高斯低通滤波后图像的方法得到的高通图像要比直接进行高斯高通滤波的边缘更加清晰（当然这可能是因为书本影印的原因），事实上
+\[F(u,v)-F(u,v)H(u,v)=F(u,v)(1-H(u,v))=F(u,v)G(u,v)\]
+其中$H$为高斯低通滤波器，$G$为高斯高通滤波器，因此这两种方式是等价的。
+故存在差异的原因则是由于数值计算的误差，即进行傅里叶变换时产生的数值差异导致两幅图像的差异。
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/04.jpg}
+\includegraphics[width=0.8\linewidth]{fig/03.jpg}
+\end{figure}
+
+通过加大$\sigma$的值，可以使高斯低通滤波器作用的范围更大，进而剩余的高通分量更少，也即图像只剩部分细节可见。
+可以看到下图已经和图4.26(c)比较接近了，但是边缘还是存在。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/04.jpg}
 \end{figure}
 
 \section{频率域的相关(PROJECT 04-05)}
 % PROJECT 04-05
-% Correlation in the Frequency Domain Download Figs. 4.41(a) and (b) and duplicate Example 4.11 to obtain Fig. 4.41(e). Give
-% the (x,y) coordinates of the location of the maximum value in the 2D correlation function. There is no need to plot the profile in Fig. 4.41(f).
+% Correlation in the Frequency Domain Download Figs. 4.41(a) and (b) and duplicate Example 4.11 to obtain Fig. 4.41(e). Give the (x,y) coordinates of the location of the maximum value in the 2D correlation function. There is no need to plot the profile in Fig. 4.41(f).
 \subsection{原理}
 利用空间域的相关与频率域的乘积构成傅里叶变换对这一性质
 \[f(x,y)\circ h(x,y)\iff F^\star(u,v)H(u,v)\]
 
 \subsection{实验结果与分析}
+相关性结果如下图所示。
+若$f$为原图，$g$为掩膜/需要查找的图像，并且延拓后的图像大小为$M\times N$，要查找的图像在原图左上角$(x_0,y_0)$的位置，则两图计算出相关性系数的最大值的位置为$(M-x_0,N-y_0)$。
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{fig/05.jpg}
 \end{figure}
+
+通过Matlab计算可以找出最大值出现在$(191,193)$的位置，符合上述结论。
+
+\section{傅里叶变换的旋转性质}
+% 以Fig4.4为例检验谱平面随着图像旋转而旋转的性质。
+\subsection{原理}
+引入极坐标
+\[x=r\cos\theta,y=r\sin\theta,u=\omega\cos\phi,v=\omega\sin\phi\]
+有
+\[f(r,\theta+\theta_0)\iff F(\omega,\phi+\theta_0)\]
+
+\subsection{实验结果与分析}
+从下图可以看出，当原图进行旋转时，频域确实也以相同的角度和方向旋转。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/06.jpg}
+\end{figure}
+
 
 \appendix\appendixconfig
 \section{完整PROJECT代码}
@@ -121,14 +154,14 @@ fftI = fft2(centerize(I));
 sp = spectrum(fftI);
 
 % (c)
-s = sum(sum(abs(fftI)));
+s = sum(sum(I));
 avg = s / (m * n);
 
 % (b)
 figure,
 subplot(121),imshow(uint8(I));
 title('Fig.4.18(a)`原图'')
-subplot(122),imshow(sp.^0.2,[]);
+subplot(122),imshow(uint8(sp.^0.4),[]); % (log(1 + sp),[]);
 title('Fig.4.18(a)`傅里叶谱'')
 
 % PROJECT 04-03 (b)
@@ -171,8 +204,8 @@ cimg1 = centerize(img1);
 cimg2 = centerize(img2);
 f1 = fft2(cimg1);
 f2 = fft2(cimg2);
-rel = conj(f1).* f2;
-% rel = f2 .* conj(f1);
+% rel = conj(f1).* f2;
+rel = f2 .* conj(f1);
 newI = recover(ifft2(rel));
 figure,
 subplot(131),imshow(uint8(I1));
@@ -181,46 +214,76 @@ subplot(132),imshow(uint8(I2));
 title('Fig.4.41(b)`原图'')
 subplot(133),imshow(uint8(newI.^0.3));
 title('Fig.4.41`图像相关'')
+max_value = max(max(newI));
+[row,col] = find(newI == max_value);
+
+% Fig 4.04(a)
+I = imread('Fig0404(a).jpg');
+I0 = frotate(I,0);
+I1 = frotate(I,45);
+I2 = frotate(I,90);
+I3 = frotate(I,135);
+I4 = frotate(I,180);
+figure,
+subplot(231),imshow(I);
+title('Fig.4.04(a)`原图'')
+subplot(232),imshow(log(I0 +1));
+title('`原图傅里叶谱'')
+subplot(233),imshow(log(I4 +1));
+title('`旋转180$\degree$傅里叶谱'')
+subplot(234),imshow(log(I1 +1));
+title('`旋转45$\degree$傅里叶谱'')
+subplot(235),imshow(log(I3 +1));
+title('`旋转135$\degree$傅里叶谱'')
+subplot(236),imshow(log(I2 +1));
+title('`旋转90$\degree$傅里叶谱'')
 
 % PROJECT 04-03 (a)
 function g = gauss_lowpass(img,center_x,center_y,sig)
-    [M,N] = size(img);
-    [X,Y] = meshgrid(1:M,1:N);
-    D = (X - center_x).^2 + (Y - center_y).^2;
-    H = exp(-D/(2*sig^2));
-    cimg = centerize(img);
-    f = fft2(cimg);
-    g = centerize(real(ifft2(H.*f)));
+	[M,N] = size(img);
+	[Y,X] = meshgrid(1:N,1:M);
+	D = (X - center_x).^2 + (Y - center_y).^2;
+	H = exp(-D/(2*sig^2));
+	cimg = centerize(img);
+	f = fft2(cimg);
+	g = centerize(real(ifft2(H.*f)));
 end
 
 % PROJECT 04-01
 % (a)
 function g = centerize(img)
-    [M,N] = size(img);
-    [X,Y] = meshgrid(1:M,1:N);
-    ones = (-1).^(X+Y);
-    g = ones.*img;
+	[M,N] = size(img);
+	[Y,X] = meshgrid(1:N,1:M);
+	ones = (-1).^(X+Y);
+	g = ones.*img;
 end
 
 % (b)
 function g = mul_real(A,c)
-    % g = c * real(A) + c * imag(A) * i;
-    g = c * A;
+	% g = c * real(A) + c * imag(A) * i;
+	g = c * A;
 end
 
 % (c)
 function g = inverse_fft(A)
-    g = ifft2(A);
+	g = ifft2(A);
 end
 
 % (d)
 function g = recover(A)
-    g = centerize(real(A));
+	g = centerize(real(A));
 end
 
 % (e)
 function g = spectrum(A)
-    g = abs(A);
+	g = abs(A);
+end
+
+% rotate
+function g = frotate(img,ang)
+	rI = imrotate(img,ang);
+	FI = ifft2(centerize(double(rI)));
+	g = abs(FI);
 end
 \end{lstlisting}
 
