@@ -1,7 +1,6 @@
 import os, sys, time, platform
 import pandas as pd
 import requests
-import urllib.request as urllib2
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 # from selenium import webdriver
@@ -10,18 +9,18 @@ from bs4 import BeautifulSoup
 import multiprocessing
 import logging
 
-MAX_DEPTH = 3
+MAX_DEPTH = 5
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level = logging.INFO)
-handler = logging.FileHandler("log.txt")
+handler = logging.FileHandler("log-Oct-5.txt")
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 url_file_name = "gaokao_url.txt"
-official_url_file_name = "official_url.txt"
+official_url_file_name = "official_url_new.txt"
 sep = "\\" if 'Windows' in platform.system() else "/"
 
 task = eval(open("tasks.json","r").read())["17341015"]
@@ -67,38 +66,48 @@ if official_url_file_name not in os.listdir():
 	for (step,url) in enumerate(gaokao_url,1):
 		print(step,end=" ")
 		if url == None:
+			official_url.append(None)
 			continue
 		page = requests.get(url,timeout=30)
 		soup = BeautifulSoup(page.content,'lxml')
+		div = soup.find("div",attrs={"class":"msg"})
 		try:
-			# span = soup.find("span",attrs={"class":"judge-empty"})
-			# tag = span.contents[0]
-			# link = tag["href"]
-			span = soup.find("div",attrs={"class":"msg"})
-			tag = span.find("a")
+			tag = div.find("a")
 			link = tag["href"]
 			official_url.append(link)
 		except:
-			cnt_none += 1
-			official_url.append(None)
+			try:
+				span = soup.find("span",attrs={"class":"judge-empty"})
+				p = span.find("p")
+				link = p.contents[0]
+				official_url.append(link)
+				print(school_name[step-1],link)
+			except:
+				cnt_none += 1
+				official_url.append(None)
 
 	print(official_url)
+	print(len(official_url))
 	outfile = open(official_url_file_name,"w")
 	outfile.write(str(official_url))
 	print(cnt_none)
 else:
 	url_file = open(official_url_file_name,"r")
 	official_url = eval(url_file.read())
+# Need human involution!!! (the links may need to be further modified)
 
-def crawl(pages, school_abbr, school_chinese_name, depth=1, pagefolder="pages"):
+def crawl(pages, school_abbr, school_chinese_name, pagefolder="pages"):
 	pagefolder += sep + school_chinese_name
 	if not os.path.exists(pagefolder):
 		os.makedirs(pagefolder)
+	# else:
+	# 	print("School folder exists {}".format(school_chinese_name))
+	# 	return
 	try:
-		html = urllib2.urlopen(pages[0]).read()
 		folder = pagefolder + sep + "index.html"
+		html = requests.get(pages[0],timeout=30)
 		with open(folder,"wb") as file:
-			file.write(html)
+			file.write(html.content)
 		logger.info("Saved {}".format(folder))
 		# if not os.path.isfile(folder):
 		# 	with open(folder,"wb") as file:
@@ -106,6 +115,9 @@ def crawl(pages, school_abbr, school_chinese_name, depth=1, pagefolder="pages"):
 		# 	logger.info("Saved {}".format(folder))
 	except:
 		logger.info("Cannot create {}".format(folder))
+		print("Cannot create {}".format(school_chinese_name))
+		return
+
 	indexed_url = []
 	curr_depth = 0
 	while len(pages) != 0:
@@ -117,7 +129,7 @@ def crawl(pages, school_abbr, school_chinese_name, depth=1, pagefolder="pages"):
 			if page not in indexed_url:
 				indexed_url.append(page)
 				try:
-					html = urllib2.urlopen(page).read()
+					html = requests.get(page,timeout=30).content
 				except:
 					logger.info("Could not open {}".format(page))
 					continue
@@ -127,7 +139,7 @@ def crawl(pages, school_abbr, school_chinese_name, depth=1, pagefolder="pages"):
 					try:
 						if not os.path.exists(folder):
 							os.makedirs(folder)
-						folder += "\\index.html"
+						folder += sep + "index.html"
 						if not os.path.isfile(folder):
 							with open(folder,"wb") as file:
 								file.write(html)
@@ -164,7 +176,8 @@ def crawl(pages, school_abbr, school_chinese_name, depth=1, pagefolder="pages"):
 						if tmp_url[0:4] == "http":
 							new_pages.append(tmp_url)
 		pages = new_pages
-	print("Finish {}".format(school_abbr))
+	print("Finish {}".format(school_chinese_name))
+	logger.info("Finish {}".format(school_abbr))
 
 if __name__ == "__main__":
 	start_time = time.time()
@@ -176,7 +189,7 @@ if __name__ == "__main__":
 		# if url == None or i < 10 or i > 20:
 		# 	continue
 		print("Downloading {}...".format(url))
-		pool.apply_async(crawl,args=([url],url.split(".")[1],str(task[i])+"-"+school_name[i]))
+		pool.apply_async(crawl,args=([url],url.split(".")[1],str(task[i])+"-"+school_name[i],"pages_new"))
 
 	pool.close()
 	pool.join()
