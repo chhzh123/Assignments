@@ -25,6 +25,8 @@
 \tableofcontents
 \newpage
 
+% Score: 29/30 + 26/35 + 35/35 = 90/100
+
 \section{Q1 - 环检测算法}
 \begin{question}
 使用\textbf{带环检测的一致代价搜索}寻找从Arad出发去Bucharest的路径，并作出搜索树。
@@ -43,6 +45,7 @@
 \includegraphics[width=\linewidth]{fig/A1.png}
 \end{figure}
 \end{answer}
+% B结点计算错误，应该是450
 
 \section{Q2 - $A^\star$算法}
 \begin{question}[传教士与野人问题]
@@ -63,7 +66,9 @@
 \end{figure}
 可以看出结果确实正确，即使采用$A^\star$算法也需要经过11步才能找到最优解。
 \end{answer}
-
+% 注意优先队列以(f,h)作为优先级排序，即当f相同时，选取h较小的那个
+% (5,2,1)扩展错位置
+% 漏最后四个结点（一共24个扩展，剪枝部分可不用标出）
 
 \section{Q3 - $\alpha-\beta$剪枝}
 \begin{question}
