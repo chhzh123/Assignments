@@ -65,4 +65,4 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// gcc gl_test.c glut32.lib -lopengl32 -o gl_test.exe
+// gcc planet.c glut32.lib -lopengl32 -o planet.exe
