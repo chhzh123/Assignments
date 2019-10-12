@@ -65,4 +65,4 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// gcc planet.c glut32.lib -lopengl32 -o planet.exe
+// gcc planet.c -I.\include -L.\lib -lglut32 -lopengl32 -o planet.exe
