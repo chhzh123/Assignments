@@ -40,14 +40,14 @@
 利用PROJECT 04-01中实现的函数即可求出图片的中心化傅里叶谱，详情请见附录中的代码。
 
 \subsection{实验结果与分析}
-傅里叶谱的展示通过了一个伽马变换，虽然噪声较多，但依然能够清晰看出正中间的高频分量。
+傅里叶谱的展示通过了一个伽马变换，虽然噪声较多，但依然能够清晰看出正中间的低频分量。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/01.jpg}
+\includegraphics[width=0.8\linewidth]{fig/01.png}
 \end{figure}
 
 若在傅里叶变换前没有进行图像中心化，则
-\[F(0,0)=\frac{1}{MN}\sum_{x=0}^{M-1}\sum_{y=0}^{N-1}f(x,y)\]
+\[\frac{1}{MN}F(0,0)=\frac{1}{MN}\sum_{x=0}^{M-1}\sum_{y=0}^{N-1}f(x,y)\]
 为图像像素的均值，可求得为$207.31$。
 
 \section{低通滤波器(PROJECT 04-03)}
@@ -60,24 +60,30 @@
 其中$D(u,v)$为距傅里叶变换原点的距离，$\sigma$为高斯曲线扩展的程度。
 
 频率域滤波的流程如下图所示。
+注意这里要进行图像的\textbf{延拓}，以确保傅里叶变换的正确性。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/process.png}
 \end{figure}
 \begin{enumerate}
-    \item 用$(-1)^{x+y}$乘上输入图像来进行中心变换
-    \item 由上面得到的结果计算图像的DFT，得到$F(u,v)$
-    \item 用滤波器函数$H(u,v)$乘上$F(u,v)$
-    \item 计算上述结果的IDFT
-    \item 取上式的实部，并乘上$(-1)^{x+y}$恢复图像
+	\item 给定大小为$M\times N$的输入图像$f(x,y)$，选择填充参数$P=2M$，$Q=2N$
+	\item 对$f(x,y)$添加必要的0，形成大小为$P\times Q$的填充后的图像$f_p(x,y)$
+	\item 用$(-1)^{x+y}$乘以$f_p(x,y)$，做频谱中心化处理
+	\item 用上面结果计算DFT，得到$F(u,v)$
+	\item 生成一个\textbf{实对称}的滤波函数$H(u,v)$，大小为$P\times Q$，中心在$(P/2,Q/2)$处。
+	用阵列相乘得到$G(u,v)=H(u,v)F(u,v)$
+	\item 计算上式得到的IDFT，并恢复原图像
+	\[g_p(x,y)=\Real[\Im[G(u,v)]](-1)^{x+y}\]
+	\item 通过从$g_p(x,y)$的左上角提取$M\times N$大小的区域，得到最终结果$g(x,y)$
 \end{enumerate}
 因此先生成高斯滤波器$H(u,v)$，再根据上述步骤即可实现低通滤波。
 
 \subsection{实验结果与分析}
 如下图所示，在频率域进行高斯低通滤波后，图像确实变模糊了。
+同时注意到由于进行了\emph{零延拓}，当截止频率较小时，会出现周围一圈黑圈（因原图与黑色延拓部分一起模糊了）。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/02.jpg}
+\includegraphics[width=0.8\linewidth]{fig/02.png}
 \end{figure}
 
 
@@ -91,20 +97,20 @@
 其中$f_{lp}$即为PROJECT 04-04通过高斯滤波后的图像。
 
 \subsection{实验结果与分析}
-用原图像减去高斯低通滤波后图像的方法得到的高通图像要比直接进行高斯高通滤波的边缘更加清晰（当然这可能是因为书本影印的原因），事实上
+用原图像减去高斯低通滤波后图像的方法得到的高通图像与直接进行高斯高通滤波的方法产生的图像没有太大区别，事实上
 \[F(u,v)-F(u,v)H(u,v)=F(u,v)(1-H(u,v))=F(u,v)G(u,v)\]
 其中$H$为高斯低通滤波器，$G$为高斯高通滤波器，因此这两种方式是等价的。
-故存在差异的原因则是由于数值计算的误差，即进行傅里叶变换时产生的数值差异导致两幅图像的差异。
+故存在差异的原因是数值计算的误差，即进行傅里叶变换时产生的数值差异导致两幅图像的差异。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/03.jpg}
+\includegraphics[width=0.8\linewidth]{fig/03.png}
 \end{figure}
 
 通过加大$\sigma$的值，可以使高斯低通滤波器作用的范围更大，进而剩余的高通分量更少，也即图像只剩部分细节可见。
-可以看到下图已经和图4.26(c)比较接近了，但是边缘还是存在。
+可以看到下图已经和图4.26(c)非常接近了，这里选择的$\sigma=80$。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/04.jpg}
+\includegraphics[width=0.9\linewidth]{fig/04.png}
 \end{figure}
 
 \section{频率域的相关(PROJECT 04-05)}
@@ -119,7 +125,7 @@
 若$f$为原图，$g$为掩膜/需要查找的图像，并且延拓后的图像大小为$M\times N$，要查找的图像在原图左上角$(x_0,y_0)$的位置，则两图计算出相关性系数的最大值的位置为$(M-x_0,N-y_0)$。
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/05.jpg}
+\includegraphics[width=\linewidth]{fig/05.png}
 \end{figure}
 
 通过Matlab计算可以找出最大值出现在$(191,193)$的位置，符合上述结论。
@@ -136,7 +142,7 @@
 从下图可以看出，当原图进行旋转时，频域确实也以相同的角度和方向旋转。
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{fig/06.jpg}
+\includegraphics[width=\linewidth]{fig/06.png}
 \end{figure}
 
 
@@ -153,16 +159,18 @@ I = double(I);
 fftI = fft2(centerize(I));
 sp = spectrum(fftI);
 
-% (c)
-s = sum(sum(I));
-avg = s / (m * n);
-
 % (b)
 figure,
 subplot(121),imshow(uint8(I));
 title('Fig.4.18(a)`原图'')
 subplot(122),imshow(uint8(sp.^0.4),[]); % (log(1 + sp),[]);
 title('Fig.4.18(a)`傅里叶谱'')
+
+% (c)
+s = sum(sum(I));
+avg = s / (m * n)
+fftOrig = fft2(I);
+avg_fourier = fftOrig(1,1) / (m*n)
 
 % PROJECT 04-03 (b)
 gimg = gauss_lowpass(I,m/2,n/2,15);
@@ -175,23 +183,29 @@ title('Fig.4.18(a)`高斯低通滤波后'')
 % PROJECT 04-04
 % (a)
 simg = I - gimg;
+simg1 = gauss(I,15,0);
 figure,
-subplot(121),imshow(uint8(I));
+subplot(131),imshow(uint8(I));
 title('Fig.4.18(a)`原图'')
-subplot(122),imshow(uint8(simg));
-title('Fig.4.18(a)`钝化模板'')
+subplot(132),imshow(uint8(simg));
+title({'Fig.4.18(a)`钝化模板'';'(`原图减低通')'})
+subplot(133),imshow(uint8(simg1));
+title({'Fig.4.26(a)`钝化模板'';'(`高通')'})
 
 % (b)
-simg2 = I - gauss_lowpass(I,m/2,n/2,100);
+simg2 = I - gauss(I,80,1);
+simg22 = gauss(I,80,0);
 figure,
-subplot(121),imshow(uint8(I));
+subplot(131),imshow(uint8(I));
 title('Fig.4.18(a)`原图'')
-subplot(122),imshow(uint8(simg2));
-title('Fig.4.18(a)`钝化模板' (sigma=100)')
+subplot(132),imshow(uint8(simg2));
+title({'Fig.4.18(a)`钝化模板'';'(`原图减低通')'})
+subplot(133),imshow(uint8(simg22));
+title({'Fig.4.26(c)`钝化模板'';'(`高通')'})
 
 % PROJECT 04-05
-I1 = imread('Fig0441(a).jpg');
-I2 = imread('Fig0441(b).jpg');
+I1 = imread('Fig0441(a).png');
+I2 = imread('Fig0441(b).png');
 [m1,n1] = size(I1);
 [m2,n2] = size(I2);
 P = 298;
@@ -215,15 +229,15 @@ title('Fig.4.41(b)`原图'')
 subplot(133),imshow(uint8(newI.^0.3));
 title('Fig.4.41`图像相关'')
 max_value = max(max(newI));
-[row,col] = find(newI == max_value);
+[row,col] = find(newI == max_value)
 
 % Fig 4.04(a)
-I = imread('Fig0404(a).jpg');
-I0 = frotate(I,0);
-I1 = frotate(I,45);
-I2 = frotate(I,90);
-I3 = frotate(I,135);
-I4 = frotate(I,180);
+Ir = imread('Fig0404(a).png');
+I0 = frotate(Ir,0);
+I1 = frotate(Ir,45);
+I2 = frotate(Ir,90);
+I3 = frotate(Ir,135);
+I4 = frotate(Ir,180);
 figure,
 subplot(231),imshow(I);
 title('Fig.4.04(a)`原图'')
@@ -239,14 +253,23 @@ subplot(236),imshow(log(I2 +1));
 title('`旋转90$\degree$傅里叶谱'')
 
 % PROJECT 04-03 (a)
-function g = gauss_lowpass(img,center_x,center_y,sig)
+function g = gauss(img,sig,lowpass_flag)
 	[M,N] = size(img);
-	[Y,X] = meshgrid(1:N,1:M);
+	P = 2 * M; Q = 2 * N; % remember to do extension
+	Iext = zeros(P,Q);
+	Iext(1:M,1:N) = img(1:M,1:N);
+	[Y,X] = meshgrid(1:Q,1:P);
+    center_x = P/2; center_y = Q/2;
 	D = (X - center_x).^2 + (Y - center_y).^2;
-	H = exp(-D/(2*sig^2));
-	cimg = centerize(img);
+	if lowpass_flag == 1
+		H = exp(-D/(2*sig^2));
+	else
+		H = 1 - exp(-D/(2*sig^2));
+    end
+	cimg = centerize(Iext);
 	f = fft2(cimg);
 	g = centerize(real(ifft2(H.*f)));
+	g = g(1:M,1:N);
 end
 
 % PROJECT 04-01

@@ -8,10 +8,6 @@ I = double(I);
 fftI = fft2(centerize(I));
 sp = spectrum(fftI);
 
-% (c)
-s = sum(sum(I));
-avg = s / (m * n);
-
 % (b)
 figure,
 subplot(121),imshow(uint8(I));
@@ -19,8 +15,14 @@ title('Fig.4.18(a)原图')
 subplot(122),imshow(uint8(sp.^0.4),[]); % (log(1 + sp),[]);
 title('Fig.4.18(a)傅里叶谱')
 
+% (c)
+s = sum(sum(I));
+avg = s / (m * n)
+fftOrig = fft2(I);
+avg_fourier = fftOrig(1,1) / (m*n)
+
 % PROJECT 04-03 (b)
-gimg = gauss_lowpass(I,m/2,n/2,15);
+gimg = gauss(I,15,1);
 figure,
 subplot(121),imshow(uint8(I));
 title('Fig.4.18(a)原图')
@@ -30,19 +32,25 @@ title('Fig.4.18(a)高斯低通滤波后')
 % PROJECT 04-04
 % (a)
 simg = I - gimg;
+simg1 = gauss(I,15,0);
 figure,
-subplot(121),imshow(uint8(I));
+subplot(131),imshow(uint8(I));
 title('Fig.4.18(a)原图')
-subplot(122),imshow(uint8(simg));
-title('Fig.4.18(a)钝化模板')
+subplot(132),imshow(uint8(simg));
+title({'Fig.4.18(a)钝化模板';'(原图减低通)'})
+subplot(133),imshow(uint8(simg1));
+title({'Fig.4.26(a)钝化模板';'(高通)'})
 
 % (b)
-simg2 = I - gauss_lowpass(I,m/2,n/2,100);
+simg2 = I - gauss(I,80,1);
+simg22 = gauss(I,80,0);
 figure,
-subplot(121),imshow(uint8(I));
+subplot(131),imshow(uint8(I));
 title('Fig.4.18(a)原图')
-subplot(122),imshow(uint8(simg2));
-title('Fig.4.18(a)钝化模板 (sigma=100)')
+subplot(132),imshow(uint8(simg2));
+title({'Fig.4.18(a)钝化模板';'(原图减低通)'})
+subplot(133),imshow(uint8(simg22));
+title({'Fig.4.26(c)钝化模板';'(高通)'})
 
 % PROJECT 04-05
 I1 = imread('Fig0441(a).jpg');
@@ -70,15 +78,15 @@ title('Fig.4.41(b)原图')
 subplot(133),imshow(mat2gray(newI),[]);
 title('Fig.4.41图像相关')
 max_value = max(max(newI));
-[row,col] = find(newI == max_value);
+[row,col] = find(newI == max_value)
 
 % Fig 4.04(a)
-I = imread('Fig0404(a).jpg');
-I0 = frotate(I,0);
-I1 = frotate(I,45);
-I2 = frotate(I,90);
-I3 = frotate(I,135);
-I4 = frotate(I,180);
+Ir = imread('Fig0404(a).jpg');
+I0 = frotate(Ir,0);
+I1 = frotate(Ir,45);
+I2 = frotate(Ir,90);
+I3 = frotate(Ir,135);
+I4 = frotate(Ir,180);
 figure,
 subplot(231),imshow(I);
 title('Fig.4.04(a)原图')
@@ -94,14 +102,23 @@ subplot(236),imshow(log(I2 +1));
 title('旋转90°傅里叶谱')
 
 % PROJECT 04-03 (a)
-function g = gauss_lowpass(img,center_x,center_y,sig)
+function g = gauss(img,sig,lowpass_flag)
 	[M,N] = size(img);
-	[Y,X] = meshgrid(1:N,1:M);
+	P = 2 * M; Q = 2 * N; % remember to do extension
+	Iext = zeros(P,Q);
+	Iext(1:M,1:N) = img(1:M,1:N);
+	[Y,X] = meshgrid(1:Q,1:P);
+    center_x = P/2; center_y = Q/2;
 	D = (X - center_x).^2 + (Y - center_y).^2;
-	H = exp(-D/(2*sig^2));
-	cimg = centerize(img);
+	if lowpass_flag == 1
+		H = exp(-D/(2*sig^2));
+	else
+		H = 1 - exp(-D/(2*sig^2));
+    end
+	cimg = centerize(Iext);
 	f = fft2(cimg);
 	g = centerize(real(ifft2(H.*f)));
+	g = g(1:M,1:N);
 end
 
 % PROJECT 04-01
