@@ -1,0 +1,196 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage[cpp,table]{mypackage}
+\usepackage{cancel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{listings}
+\geometry{scale=0.8}
+% \linespread{1.5}
+\usepackage[colorlinks,linkcolor=red]{hyperref}
+
+\title{
+\normalfont \normalsize
+\textsc{School of Data and Computer Science, Sun Yat-sen University} \\ [25pt] %textsc small capital letters
+\rule{\textwidth}{0.5pt} \\[0.4cm] % Thin top horizontal rule
+\huge  T02 CSP and KR\\ % The assignment title
+\rule{\textwidth}{2pt} \\[0.5cm] % Thick bottom horizontal rule
+\author{17341015 陈鸿峥}
+\date{\normalsize\today}
+}
+
+\begin{document}
+\maketitle
+% \tableofcontents
+\newpage
+
+% Score: -/15 + -/35 + -/15 + -/35 = -/100
+
+\begin{question}\normalfont
+    Give precise formulations for each of the following as CSPs: Provide the variables, domains and constraints.
+    \begin{itemize}
+    \item [(a)] Crossword puzzle: shown below. We want to find six three-letter words: three words read across (A1, A2, and A3) and three words read down (D1, D2, and D3). Each word must be chosen from the list of forty possible words.
+    \begin{center}
+        {\scriptsize
+        \begin{tabular}{|p{1cm}|p{1cm}|p{1cm}|}\hline
+            A1, D1 & D2 & D3\\[1cm]\hline
+            A2 & & \\[1cm]\hline
+            A3 & & \\[1cm]\hline
+        \end{tabular}}
+        {\small
+        \begin{tabular}{l}
+            Word list:\\
+            add, ado, age, ago, aid,\\
+            ail, aim, air, and, any,\\
+            ape, apt, arc, are, ark,\\
+            arm, art, ash, ask, auk,\\
+            awe, awl, aye, bad, bag,\\
+            ban, bat, bee, boa, ear,\\
+            eel, eft, far, fat, fit,\\
+            lee, oaf, rat, tar, tie.
+        \end{tabular}}
+    \end{center}
+    \item [(b)] Independent set: Given a graph and a number $k$, find an independent set of size $k$, that is, a set of $k$ vertices, no two of which are adjacent.
+    \item [(c)] Crypto-arithmetic puzzle: $\text{SEND} + \text{MORE} = \text{MONEY}$. We want to replace each letter by a different digit so that the equation is correct.
+    \end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+\item [(a)] 设第$(i,j)$个格可以填入的字母为\textbf{变量}$V_{ij}$，其中$i$代表行号，$j$代表列号，$i,j\in\{1,2,3\}$。
+设单词表中每个单词的第$k$个字母构成集合$W_k(k=1,2,3)$，有
+\[\begin{aligned}
+    W_1 &= \{a,b,e,f,l,o,r,t\}\\
+    W_2 &= \{a,d,e,f,g,i,n,o,p,r,s,u,w,y\}\\
+    W_3 &= \{c,d,e,f,g,h,k,l,m,n,o,r,t,y\}
+\end{aligned}\]
+在不引起歧义的情况下，这里忽略字符的引号。
+有以下\textbf{论域}：
+\[\begin{aligned}
+\dom[V_{11}] &= W_1\cup W_1 = \{a,b,e,f,l,o,r,t\}\\
+\dom[V_{12}] &= W_1\cup W_2 = \{a,b,d,e,f,g,i,l,n,o,p,r,s,t,u,w,y\}\\
+\dom[V_{13}] &= W_1\cup W_3 = \{a,b,c,d,e,f,g,h,k,l,m,n,o,r,t,y\}\\
+\dom[V_{21}] &= W_2\cup W_1 = \{a,b,d,e,f,g,i,l,n,o,p,r,s,t,u,w,y\}\\
+\dom[V_{22}] &= W_2\cup W_2 = \{a,d,e,f,g,i,n,o,p,r,s,u,w,y\}\\
+\dom[V_{23}] &= W_2\cup W_3 = \{a,c,d,e,f,g,h,i,k,l,m,n,o,p,r,s,t,u,w,y\}\\
+\dom[V_{31}] &= W_3\cup W_1 = \{a,b,c,d,e,f,g,h,k,l,m,n,o,r,t,y\}\\
+\dom[V_{32}] &= W_3\cup W_2 = \{a,c,d,e,f,g,h,i,k,l,m,n,o,p,r,s,t,u,w,y\}\\
+\dom[V_{33}] &= W_3\cup W_3 = \{c,d,e,f,g,h,k,l,m,n,o,r,t,y\}
+\end{aligned}\]
+\textbf{限制条件}$C(X,Y,Z)$代表$\overline{XYZ}$构成的字符串在单词列表中，所有限制如下：
+\[\begin{aligned}
+    & C(V_{11},V_{12},V_{13}),C(V_{21},V_{22},V_{23}),C(V_{31},V_{32},V_{33})\\
+    & C(V_{11},V_{21},V_{31}),C(V_{12},V_{22},V_{32}),C(V_{13},V_{23},V_{33})
+\end{aligned}\]
+
+\item [(b)] 设\textbf{变量}$V_1,V_2,\ldots,V_k$为独立集(independent set)中的$k$个元素，每一个$V_i$的\textbf{论域}均为图$\sG$的所有顶点$\sV$，\textbf{限制条件}为
+\[C(V_1,V_2,\ldots,V_k):=\;(\forall V_i,V_j(i,j\in\{1,\ldots,k\}\land i\ne j):\;V_i\text{不与}V_j\text{相邻})\]
+
+\item [(c)] 设\textbf{变量}为$V_S,V_E,V_N,V_D,V_M,V_O,V_R,V_Y$，每一个变量的\textbf{论域}均为\{0,1,\ldots,9\}，\textbf{约束条件}为
+\[C(V_S,V_E,V_N,V_D,V_M,V_O,V_R,V_Y)\]
+满足
+\[1000(V_S+V_M)+100(V_E+V_O)+10(V_N+V_R)+(V_D+V_E)=10000V_M+1000V_O+100V_N+10V_E+V_Y\]
+\end{itemize}
+\end{answer}
+
+\begin{question}\normalfont
+    Consider a scheduling problem, where there are five activities to be scheduled in four time slots. Suppose we represent the activities by the variables $A, B,  C, D, E$, where the domain of each variable is $\{1,2,3,4\}$ and the constraints are $A > D$, $D > E$, $C \ne A$, $C > E$, $C \ne D$, $B \geq A$, $B \ne C$, and $C \ne D + 1$.
+    \begin{itemize}
+    \item [(a)] Find the first solution by using the Forward Checking algorithm with the MRV heuristics that we always instantiate next that variable with smallest remaining number of elements in its domain, breaking ties in alphabetic order. Assign values in the current domain of each variable in increasing order. At each node indicate
+    \begin{itemize}
+        \item [i.] The variable being instantiated and the value being assigned to it.
+        \item [ii.] The CurDom for each variable.
+        \item [iii.] Mark any node with an empty CurDom with DWO.
+    \end{itemize}
+    \item [(b)] Enforce GAC on the constraints, and give the resultant variable domains. You should show which values of a domain are removed at each step, and which arc is responsible for removing the value. Then use the GAC algorithm to find the first solution.
+    \end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+\item [(a)] 对限制条件重新排序，有
+\begin{itemize}
+    \item A: $C(A,B),C(A,C),C(A,D)$
+    \item B: $C(B,A),C(B,C)$
+    \item C: $C(C,A),C(C,B),C_1(C,D),C_2(C,D),C(C,E)$
+    \item D: $C(D,A),C_1(D,C),C_2(D,C),C(D,E)$
+    \item E: $C(E,C),C(E,D)$
+\end{itemize}
+搜索过程如下，用中括号表示论域，没有中括号则代表赋值。
+注意搜索限制按照字母序进行搜索，因此可能出现未搜索到对应限制（未进行论域删减），就提前终止了。
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}\hline
+    Depth & A & B & C & D & E \\\hline
+    0 & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\\hline
+    1 & 1 & [1, 2, 3, 4] & [1, 2, 3, 4] & DWO & [1, 2, 3, 4]\\ \hline
+    1 & 2 & [2, 3, 4] & [1, 3, 4] & [1] & [1, 2, 3, 4]\\ \hline
+    2 & 2 & [2, 3, 4] & [1, 3, 4] & 1 & DWO\\ \hline
+    1 & 3 & [3, 4] & [1, 2, 4] & [1, 2] & [1, 2, 3, 4]\\ \hline
+    2 & 3 & 3 & [1, 2, 4] & [1, 2] & [1, 2, 3, 4]\\ \hline
+    3 & 3 & 3 & [1, 2, 4] & 1 & DWO\\ \hline
+    3 & 3 & 3 & [1, 4] & 2 & [1]\\ \hline
+    4 & 3 & 3 & [4] & 2 & 1\\ \hline
+    5 & 3 & 3 & 4 & 2 & 1\\ \hline
+\end{tabular}
+\end{center}
+最终得到解为$A=3,B=3,C=4,D=2,E=1$。
+\item [(b)]
+搜索及剪枝过程如下，其中首列为搜索深度或剪枝的条件（违反一致性的边(arc)）。
+后面的记号与(a)题相同，没有加方括号的为赋值，加了方括号的为论域，每轮GAC检测删除的值都已用删除线标出。
+注意这里合并了连续对同一变量的论域进行删减的情况。
+\begin{center}
+\begin{longtable}{|c|c|c|c|c|c|}\hline
+    Depth / Constraints & A & B & C & D & E\\\hline
+    0 & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
+    1 & 1, \color{red}{[1]} & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
+    $a > d$ & 1, \color{red}{[\cancel{1}] (DWO)} & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
+    1 & 2, \color{red}{[2]} & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
+    $a \leq b$ & 2, [2] & \color{red}{[\cancel{1}, 2, 3, 4]} & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
+    $a > d$ & 2, [2] & [2, 3, 4] & [1, 2, 3, 4] & \color{red}{[1, \cancel{2, 3, 4}]} & [1, 2, 3, 4]\\ \hline
+    $a \ne c$ & 2, [2] & [2, 3, 4] & \color{red}{[1, \cancel{2}, 3, 4]} & [1] & [1, 2, 3, 4]\\ \hline
+    $d > e$ & 2, [2] & [2, 3, 4] & [1, 3, 4] & \color{red}{[\cancel{1}] (DWO)} & [1, 2, 3, 4]\\ \hline
+    1 & 3, \color{red}{[3]} & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
+    $a \leq b$ & 3, [3] & \color{red}{[\cancel{1, 2}, 3, 4]} & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
+    $a > d$ & 3, [3] & [3, 4] & [1, 2, 3, 4] & \color{red}{[1, 2, \cancel{3, 4}]} & [1, 2, 3, 4]\\ \hline
+    $a \ne c$ & 3, [3] & [3, 4] & \color{red}{[1, 2, \cancel{3}, 4]} & [1, 2] & [1, 2, 3, 4]\\ \hline
+    $d > e$ & 3, [3] & [3, 4] & [1, 2, 4] & \color{red}{[\cancel{1}, 2]} & [1, 2, 3, 4]\\ \hline
+    $d > e$ & 3, [3] & [3, 4] & [1, 2, 4] & [2] & \color{red}{[1, \cancel{2, 3, 4}]}\\ \hline
+    $d \ne c$ & 3, [3] & [3, 4] & \color{red}{[1, \cancel{2}, 4]} & [2] & [1]\\ \hline
+    $c > e$ & 3, [3] & [3, 4] & \color{red}{[\cancel{1}, 4]} & [2] & [1]\\ \hline
+    $c \ne b$ & 3, [3] & \color{red}{[3, \cancel{4}]} & [4] & [2] & [1]\\ \hline
+    2 & 3, [3] & 3, \color{red}{[3]} & [4] & [2] & [1]\\ \hline
+    3 & 3, [3] & 3, [3] & 4, \color{red}{[4]} & [2] & [1]\\ \hline
+    4 & 3, [3] & 3, [3] & 4, [4] & 2, \color{red}{[2]} & [1]\\ \hline
+    5 & 3, [3] & 3, [3] & 4, [4] & 2, [2] & 1, \color{red}{[1]}\\ \hline
+\end{longtable}
+\end{center}
+可以看出GAC算法对于剪枝非常高效，使得最后只扩展了六个结点就搜索到了解$A=3,B=3,C=4,D=2,E=1$。
+\end{itemize}
+\end{answer}
+
+\begin{question}\normalfont
+    Determine whether the following sentence is valid using resolution:
+    \[(\exists x\forall y P(x,y)\lor\exists x\forall y Q(x,y))\to
+    \exists x\forall y(P(x,y)\lor Q(x,y))\]
+\end{question}
+\begin{answer}
+    \[\lnot(\exists x\forall y P(x,y)\lor\exists x\forall y Q(x,y))\lor \exists x\forall y(P(x,y)\lor Q(x,y))\]
+    \[\forall x\exists y \lnot P(x,y)\land\forall x\exists y \lnot Q(x,y))\lor (\exists x\forall y(P(x,y)\lor Q(x,y)))\]
+    \[(\lnot P(X,a)\land \lnot Q(Y,b))\lor (P(c,Z)\lor Q(c,Z))\]
+    \[(\lnot P(X,a),P(c,Z),Q(c,Z))\land (\lnot Q(Y,b),P(c,Z),Q(c,Z))\]
+    令$X=c,Y=c,Z=a,b=a$归结可得
+\end{answer}
+
+\begin{question}\normalfont
+    Victor has been murdered, and Arthur, Bertram, and Carleton are the only suspects (meaning exactly one of them is the murderer). Arthur says that Bertramwas the victim's friend, but that Carleton hated the victim. Bertram says that he was out of town the day of the murder, and besides, he didn't even know the guy. Carleton says that he saw Arthur and Bertram with the victim just before the murder. You may assume that everyone – except possibly for the murderer – is telling the truth.
+    \begin{itemize}
+    \item [(a)] Use Resolution to find the murderer. In other words, formalize the facts as a set of clauses, prove that there is a murderer, and extract his identity from the derivation.
+    \item [(b)] Suppose we discover that we were wrong – we cannot assume that there was only a single murderer (there may have been a conspiracy). Show that in this case the facts do not support anyone's guilt. In other words, for each suspect, present a logical interpretation that supports all the facts but where that suspect is innocent and the other two are guilty.
+    \end{itemize}
+\end{question}
+\begin{answer}
+
+\end{answer}
+
+\end{document}
+
+% Due: 2019.10.23
