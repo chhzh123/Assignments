@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package pyinterpreter;
+
+service Evaluation {
+	rpc eval (EvalRequest) returns (EvalReply) {}
+}
+
+message EvalRequest {
+	string msg = 1;
+}
+
+message EvalReply {
+	string msg = 1;
+}
