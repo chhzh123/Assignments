@@ -173,11 +173,33 @@
     \exists x\forall y(P(x,y)\lor Q(x,y))\]
 \end{question}
 \begin{answer}
+    按照子句形式的转换顺序，有
+    \begin{itemize}
+        \item 消除蕴含
     \[\lnot(\exists x\forall y P(x,y)\lor\exists x\forall y Q(x,y))\lor \exists x\forall y(P(x,y)\lor Q(x,y))\]
-    \[\forall x\exists y \lnot P(x,y)\land\forall x\exists y \lnot Q(x,y))\lor (\exists x\forall y(P(x,y)\lor Q(x,y)))\]
-    \[(\lnot P(X,a)\land \lnot Q(Y,b))\lor (P(c,Z)\lor Q(c,Z))\]
-    \[(\lnot P(X,a),P(c,Z),Q(c,Z))\land (\lnot Q(Y,b),P(c,Z),Q(c,Z))\]
-    令$X=c,Y=c,Z=a,b=a$归结可得
+        \item 否定内移
+    \[(\forall x\exists y (\lnot P(x,y))\land\forall x\exists y (\lnot Q(x,y)))\lor (\exists x\forall y(P(x,y)\lor Q(x,y)))\]
+        \item 标准化变量
+    \[(\forall x\exists y (\lnot P(x,y))\land\forall z\exists w (\lnot Q(z,w)))\lor (\exists a\forall b(P(a,b)\lor Q(a,b)))\]
+        \item Skolemize
+    \[(\forall x(\lnot P(x,f(x)))\land\forall z(\lnot Q(z,g(z))))\lor (\forall b(P(a,b)\lor Q(a,b)))\]
+        \item 改为前缀形式
+    \[\forall x\forall z\forall b(\lnot P(x,f(x))\land\lnot Q(z,g(z)))\lor (P(a,b)\lor Q(a,b))\]
+        \item 分配律
+    \[\forall x\forall z\forall b ((\lnot P(x,f(x))\lor P(a,b)\lor Q(a,b))
+    \land(\lnot Q(z,g(z))\lor P(a,b)\lor Q(a,b)))\]
+        \item 变成子句形式
+        \begin{itemize}
+            \item [1.] $\lnot P(x,f(x))\lor P(a,b)\lor Q(a,b)$
+            \item [2.] $\lnot Q(z,g(z))\lor P(a,b)\lor Q(a,b)$
+        \end{itemize}
+    \end{itemize}
+    归结过程如下
+    \begin{enumerate}
+        \item [3.] $R[1a,2b]\{x=a,f(x)=b\}$：$(\not Q(z,g(z)),Q(a,b))$
+        \item [4.] $R[3a,3b]\{z=a,g(z)=b\}$：$()$
+    \end{enumerate}
+    总结即当$x=a,f(x)=b,z=a,g(z)=b$时得到归结结果，题目中的式子成立。
 \end{answer}
 
 \begin{question}\normalfont
@@ -188,7 +210,51 @@
     \end{itemize}
 \end{question}
 \begin{answer}
-
+\begin{itemize}
+    \item [a.] 凶手既可以说真话也可以说假话，而不是凶手则一定说真话，则凶手与他说的话之间呈\emph{或}的关系。
+    简记Arthur, Bertram, Carleton, Victor为A, B, C, V，并设谓词$M(x)$代表$x$为凶手，$F(x)$代表$x$为V的朋友，$O(x)$代表$x$有不在场证明。
+    则由题目信息，可给出下列公式
+    \[\begin{aligned}
+        & M(A)\lor(F(B)\land\lnot F(C))\\
+        & M(B)\lor(O(B)\land\lnot F(B))\\
+        & M(C)\lor(\lnot O(A)\land\lnot O(B))
+    \end{aligned}\]
+    并且仅仅只有一个凶手，故
+    \[M(A)\oplus M(B)\oplus M(C)\]
+    其中$x \oplus y:=(x\lor y)\land(\lnot x\lor\lnot y)$代表异或。
+    全部写成子句形式，我们有
+    \begin{enumerate}
+        \item $(M(A),F(B))$
+        \item $(M(A),\lnot F(C))$
+        \item $(M(B),O(B))$
+        \item $(M(B),\lnot F(B))$
+        \item $(M(C),\lnot O(A))$
+        \item $(M(C),\lnot O(B))$
+        \item $(M(A), M(B), M(C))$
+        \item $(\lnot M(A), \lnot M(B))$
+        \item $(\lnot M(B), \lnot M(C))$
+        \item $(\lnot M(C), \lnot M(A))$
+    \end{enumerate}
+    询问为$\exists xM(x)$，为提取答案有下列子句
+    \begin{flushleft}
+        11. $(\lnot M(x),Answer(x))$
+    \end{flushleft}
+    做以下归约
+    \begin{enumerate}
+        \item[12.] $R[1,4]:\;(M(A),M(B))$
+        \item[13.] $R[3,6]:\;(M(B),M(C))$
+        \item[14.] $R[10,12]:\;(\lnot M(C),M(B))$
+        \item[15.] $R[13,14]:\;(M(B))$
+        \item[16.] $R[11,15]\{x=B\}:\;(Answer(B))$
+    \end{enumerate}
+    所以得到Bertram为凶手。
+    \item [b.] 如果凶手可能不止一个，则只有1-7条子句仍继续符合。下面给出可能的解释：
+    \begin{itemize}
+        \item 当$A$为清白，$B,C$为凶手时：$A$说真话，$B$是朋友，$C$不是朋友；$B$说假话，$B$当天在场且$B$是朋友；$C$可说真话可说假话。
+        \item 当$B$为清白，$A,C$为凶手时：$B$说真话，$B$不在场，且$B$不是朋友；$A$说假话，$B$不是朋友，$C$可以是朋友也可以不是；$C$说假话，$B$不在场，$A$可在场可不在场。
+        \item 当$C$为清白，$A,B$为凶手时：$C$说真话，$A$在场，$B$在场；$B$说假话，$B$在场，但$B$是否是朋友不确定；$A$可说真话也可说假话，$B,C$是否朋友不确定。
+    \end{itemize}
+\end{itemize}
 \end{answer}
 
 \end{document}
