@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='pyinterpreter',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x13pyinterpreter.proto\x12\rpyinterpreter\"\x1a\n\x0b\x45valRequest\x12\x0b\n\x03msg\x18\x01 \x01(\t\"\x18\n\tEvalReply\x12\x0b\n\x03msg\x18\x01 \x01(\t2L\n\nEvaluation\x12>\n\x04\x65val\x12\x1a.pyinterpreter.EvalRequest\x1a\x18.pyinterpreter.EvalReply\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x13pyinterpreter.proto\x12\rpyinterpreter\"\x1a\n\x0b\x45valRequest\x12\x0b\n\x03msg\x18\x01 \x01(\t\"\x18\n\tEvalReply\x12\x0b\n\x03msg\x18\x01 \x01(\t2L\n\nEvaluation\x12>\n\x04\x65val\x12\x1a.pyinterpreter.EvalRequest\x1a\x18.pyinterpreter.EvalReply\"\x00\x32H\n\x05Query\x12?\n\x05query\x12\x1a.pyinterpreter.EvalRequest\x1a\x18.pyinterpreter.EvalReply\"\x00\x62\x06proto3')
 )
 
 
@@ -129,5 +129,29 @@ _EVALUATION = _descriptor.ServiceDescriptor(
 _sym_db.RegisterServiceDescriptor(_EVALUATION)
 
 DESCRIPTOR.services_by_name['Evaluation'] = _EVALUATION
+
+
+_QUERY = _descriptor.ServiceDescriptor(
+  name='Query',
+  full_name='pyinterpreter.Query',
+  file=DESCRIPTOR,
+  index=1,
+  serialized_options=None,
+  serialized_start=170,
+  serialized_end=242,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='query',
+    full_name='pyinterpreter.Query.query',
+    index=0,
+    containing_service=None,
+    input_type=_EVALREQUEST,
+    output_type=_EVALREPLY,
+    serialized_options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_QUERY)
+
+DESCRIPTOR.services_by_name['Query'] = _QUERY
 
 # @@protoc_insertion_point(module_scope)

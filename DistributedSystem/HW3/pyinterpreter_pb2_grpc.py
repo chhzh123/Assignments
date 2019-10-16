@@ -44,3 +44,45 @@ def add_EvaluationServicer_to_server(servicer, server):
   generic_handler = grpc.method_handlers_generic_handler(
       'pyinterpreter.Evaluation', rpc_method_handlers)
   server.add_generic_rpc_handlers((generic_handler,))
+
+
+class QueryStub(object):
+  # missing associated documentation comment in .proto file
+  pass
+
+  def __init__(self, channel):
+    """Constructor.
+
+    Args:
+      channel: A grpc.Channel.
+    """
+    self.query = channel.unary_unary(
+        '/pyinterpreter.Query/query',
+        request_serializer=pyinterpreter__pb2.EvalRequest.SerializeToString,
+        response_deserializer=pyinterpreter__pb2.EvalReply.FromString,
+        )
+
+
+class QueryServicer(object):
+  # missing associated documentation comment in .proto file
+  pass
+
+  def query(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+
+def add_QueryServicer_to_server(servicer, server):
+  rpc_method_handlers = {
+      'query': grpc.unary_unary_rpc_method_handler(
+          servicer.query,
+          request_deserializer=pyinterpreter__pb2.EvalRequest.FromString,
+          response_serializer=pyinterpreter__pb2.EvalReply.SerializeToString,
+      ),
+  }
+  generic_handler = grpc.method_handlers_generic_handler(
+      'pyinterpreter.Query', rpc_method_handlers)
+  server.add_generic_rpc_handlers((generic_handler,))

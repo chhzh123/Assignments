@@ -6,6 +6,10 @@ service Evaluation {
 	rpc eval (EvalRequest) returns (EvalReply) {}
 }
 
+service Query {
+	rpc query (EvalRequest) returns (EvalReply) {}
+}
+
 message EvalRequest {
 	string msg = 1;
 }
@@ -13,3 +17,5 @@ message EvalRequest {
 message EvalReply {
 	string msg = 1;
 }
+
+// python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. pyinterpreter.proto
