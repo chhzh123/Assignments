@@ -4,6 +4,7 @@ import yaml
 
 import grpc
 
+import numpy as np
 import mysql.connector
 import pyinterpreter_pb2
 import pyinterpreter_pb2_grpc
