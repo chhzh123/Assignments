@@ -61,7 +61,7 @@ class Grid(object):
 		self.valid = self.tmp_valid.copy()
 
 	def print(self):
-		print("Grid({},{}):{}".format(self.x,self.y,self.valid),flush=True)
+		print("Grid({},{})-{}:{}".format(self.x,self.y,self.value,self.valid),flush=True)
 
 class Futoshiki(object):
 	def __init__(self,size):
@@ -179,7 +179,7 @@ def GAC_Enforce(board,q):
 		v2 = board.arr[v2[0]][v2[1]]
 		for (v,v_other) in [(v1,v2),(v2,v1)]:
 			valid_num = v.get_valid_num().copy()
-			if (v.x,v.y) != (v1.x,v1.y):
+			if op != "!=" and (v.x,v.y) != (v1.x,v1.y):
 				op = "<" if op == ">" else ">"
 			for d in valid_num:
 				flag_assignment = False
@@ -191,8 +191,6 @@ def GAC_Enforce(board,q):
 					v.del_num(d)
 					if v.get_valid_len() == 0:
 						q = Queue()
-						v.print()
-						print(v.get_constraints())
 						return "DWO"
 					else:
 						for c_other in v.get_constraints():
@@ -206,15 +204,10 @@ def GAC(board,level):
 		print("Time: {:.2f}s".format(time.time()-start))
 		sys.exit()
 	grid = board.get_unassigned()
-	cnt = 0
-	for d in grid.get_valid_num():
+	valid_num = grid.get_valid_num()
+	for d in valid_num:
 		# avoid restoring the pruned values
 		currBoard = deepcopy(board)
-		# print(level)
-		# currBoard.print_valid()
-		# cnt += 1
-		# if cnt > 1:
-		# 	sys.exit()
 		# need not do propagation
 		currBoard.set_value(grid.x,grid.y,d,False)
 		GACQueue = Queue()
@@ -253,5 +246,5 @@ for (i,j,val) in toBeAdded:
 board.ini_unassigned()
 
 start = time.time()
-FC(board,0)
-# GAC(board,0)
+# FC(board,0)
+GAC(board,0)
