@@ -62,20 +62,20 @@
 \[\begin{aligned}
     W_1 &= \{a,b,e,f,l,o,r,t\}\\
     W_2 &= \{a,d,e,f,g,i,n,o,p,r,s,u,w,y\}\\
-    W_3 &= \{c,d,e,f,g,h,k,l,m,n,o,r,t,y\}
+    W_3 &= \{a,c,d,e,f,g,h,k,l,m,n,o,r,t,y\}
 \end{aligned}\]
 在不引起歧义的情况下，这里忽略字符的引号。
 有以下\textbf{论域}：
 \[\begin{aligned}
-\dom[V_{11}] &= W_1\cup W_1 = \{a,b,e,f,l,o,r,t\}\\
-\dom[V_{12}] &= W_1\cup W_2 = \{a,b,d,e,f,g,i,l,n,o,p,r,s,t,u,w,y\}\\
-\dom[V_{13}] &= W_1\cup W_3 = \{a,b,c,d,e,f,g,h,k,l,m,n,o,r,t,y\}\\
-\dom[V_{21}] &= W_2\cup W_1 = \{a,b,d,e,f,g,i,l,n,o,p,r,s,t,u,w,y\}\\
-\dom[V_{22}] &= W_2\cup W_2 = \{a,d,e,f,g,i,n,o,p,r,s,u,w,y\}\\
-\dom[V_{23}] &= W_2\cup W_3 = \{a,c,d,e,f,g,h,i,k,l,m,n,o,p,r,s,t,u,w,y\}\\
-\dom[V_{31}] &= W_3\cup W_1 = \{a,b,c,d,e,f,g,h,k,l,m,n,o,r,t,y\}\\
-\dom[V_{32}] &= W_3\cup W_2 = \{a,c,d,e,f,g,h,i,k,l,m,n,o,p,r,s,t,u,w,y\}\\
-\dom[V_{33}] &= W_3\cup W_3 = \{c,d,e,f,g,h,k,l,m,n,o,r,t,y\}
+\dom[V_{11}] &= W_1\cap W_1 = \{a,b,e,f,l,o,r,t\}\\
+\dom[V_{12}] &= W_1\cap W_2 = \{a,e,f,o,r\}\\
+\dom[V_{13}] &= W_1\cap W_3 = \{a,e,f,l,o,r,t\}\\
+\dom[V_{21}] &= W_2\cap W_1 = \{a,e,f,o,r\}\\
+\dom[V_{22}] &= W_2\cap W_2 = \{a,d,e,f,g,i,n,o,p,r,s,u,w,y\}\\
+\dom[V_{23}] &= W_2\cap W_3 = \{a,d,e,f,g,n,o,r,y\}\\
+\dom[V_{31}] &= W_3\cap W_1 = \{a,e,f,l,o,r,t\}\\
+\dom[V_{32}] &= W_3\cap W_2 = \{a,d,e,f,g,n,o,r,y\}\\
+\dom[V_{33}] &= W_3\cap W_3 = \{a,c,d,e,f,g,h,k,l,m,n,o,r,t,y\}
 \end{aligned}\]
 \textbf{限制条件}$C(X,Y,Z)$代表$\overline{XYZ}$构成的字符串在单词列表中，所有限制如下：
 \[\begin{aligned}
