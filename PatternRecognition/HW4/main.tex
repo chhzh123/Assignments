@@ -1,0 +1,146 @@
+\documentclass[reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+
+\title{模式识别作业四}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{模式识别作业}
+\lstset{language=python}
+
+\begin{document}
+
+\maketitle
+
+\begin{question}[\textsection 3 Q4]
+设$\vx$为一个$d$维的二值向量，服从多维伯努利分布
+\[P(\vx\mid\vtheta)=\prod_{i=1}^d\theta_i^{x_i}(1-\theta)^{1-x_i}\]
+其中$\vtheta=(\theta_1,\ldots,\theta_d)^\T$为一个未知的参数向量，而$\theta_i$为$x_i=1$的概率。
+证明：对于$\vtheta$的最大似然估计为
+\[\hat{\vtheta}=\frac{1}{n}\sum_{k=1}^n\vx_k\]
+\end{question}
+\begin{answer}
+考虑$n$个样本的采样$\{\vx_k\}_{k=1}^{n}$，似然函数为
+\[L(\vtheta)=\prod_{k=1}^n\prod_{i=1}^d\theta_i^{x_{ki}}(1-\theta_i)^{1-x_{ki}}\]
+对数似然函数为
+\[\ell(\vtheta)=\sum_{k=1}^n\sum_{i=1}^dx_{ki}\lrp{\ln\theta_i+(1-x_{ki})\ln(1-\theta_i)}\]
+对上式求梯度有
+\[[\nabla_{\vtheta}\ell(\vtheta)]_i=\nabla_{\theta_i}\ell(\theta)=\frac{1}{\theta_i}\sum_{k=1}^nx_{ki}-\frac{1}{1-\theta_i}\sum_{k=1}^n(1-x_{ki})=0\]
+对上式整理可得
+\[\hat{\theta}_i=\frac{1}{n}\sum_{k=1}^nx_{ki}\]
+表为向量形式即得结果。
+\end{answer}
+
+\begin{question}[\textsection 3 Q19]
+假设我们有一组训练样本，都服从高斯分布，其协方差矩阵$\Sigma$已知，而均值$\vmu$未知。
+进一步假设这个均值$\vmu$本身是随机取值的，服从均值为$\vm_0$，协方差为$\Sigma_0$的高斯分布。
+\begin{itemize}
+	\item [(a)] 均值$\vmu$的MAP估计是什么？
+	\item [(b)] 假设我们用线性变换来变换坐标$\vx'=A\vx$，其中$A$为非奇异矩阵。
+	那么，MAP能够对变换以后的$\vmu'$做出正确的估计吗？并加以解释。
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 对于高斯分布有对数似然函数$\ell(\vmu)$和概率密度函数$p(\vmu)$
+	\[\begin{aligned}
+	\ell(\vmu)
+	&=\sum_{k=1}^{n} \ln \left[p\left(\mathbf{x}_{k} | \boldsymbol{\mu}\right)\right] \\
+	&=-\frac{n}{2} \ln \left[(2 \pi)^{d}|\Sigma|\right]-\sum_{k=1}^{n} \frac{1}{2}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)^{\T} \Sigma^{-1}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)\\
+	p(\boldsymbol{\mu})&=\frac{1}{(2 \pi)^{d / 2}\left|\Sigma_{0}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)^{\T} \Sigma_{0}^{-1}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)\right]
+	\end{aligned}\]
+	进而MAP估计为
+	\[\begin{aligned} \hat{\boldsymbol{\mu}}
+	=&\argmax_{\vmu}\lrp{\ell(\vmu)p(\vmu)}\\
+	=& \underset{\boldsymbol{\mu}}{\arg \max }\left\{\left[-\frac{n}{2} \ln \left[(2 \pi)^{d}|\Sigma|\right]-\sum_{k=1}^{n} \frac{1}{2}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)^{\T} \Sigma^{-1}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)\right]\right.\\
+	&\left. \cdot\left[\frac{1}{(2 \pi)^{d / 2}\left|\Sigma_{0}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)^{\T} \Sigma_{0}^{-1}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)\right]\right]\right\}
+	\end{aligned}\]
+	\item [(b)] 由均值和协方差的性质有
+	\[\begin{aligned}\boldsymbol{\mu}^{\prime}&= \mathbb{E}\left[\mathbf{x}^{\prime}\right]=\mathbb{E}[A \mathbf{x}]=A \mathbb{E}[\mathbf{x}]=A \boldsymbol{\mu}\\
+	\Sigma^{\prime} &=\mathbb{E}\left[\left(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime}\right)\left(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime}\right)^{\T}\right] \\
+	&=\mathbb{E}\left[\left(A \mathbf{x}^{\prime}-A \boldsymbol{\mu}^{\prime}\right)\left(A \mathbf{x}^{\prime}-A \boldsymbol{\mu}^{\prime}\right)^{\T}\right] \\
+	&=\mathbb{E}\left[A\left(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime}\right)\left(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime}\right)^{\T} A^{\T}\right] \\
+	&=A \mathbb{E}\left[(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime})\left(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime}\right)^{\T}\right] A^{\T} \\
+	&=A \Sigma A^{\T}
+	\end{aligned}\]
+	进而有$\vmu'$的对数似然函数
+	\[\begin{aligned}
+	\ell(\vmu')
+	&=\ln \left(\prod_{k=1}^{n} p\left(\mathbf{x}_{k}^{\prime} | \boldsymbol{\mu}^{\prime}\right)\right) \\
+	&=\sum_{k=1}^{n} \ln \left[p\left(A \mathbf{x}_{k} | A \boldsymbol{\mu}\right)\right] \\
+	&=-\frac{n}{2} \ln \left[(2 \pi)^{d}\left|A \Sigma A^{\T}\right|\right]
+	-\sum_{k=1}^{n} \frac{1}{2}\left((\mathbf{x}_k-\boldsymbol{\mu})^{\T} A^{\T}\right)
+	\left(A \Sigma A^{\T}\right)^{-1}
+	\left(A\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)\right) \\
+	&=-\frac{n}{2} \ln \left[(2 \pi)^{d}\left|A \Sigma A^{\T}\right|\right]-\sum_{k=1}^{n} \frac{1}{2}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)^{\T}\left(A^{\T}\left(A^{-1}\right)^{\T}\right) \Sigma^{-1}\left(A^{-1} A\right)\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right) \\
+	&=-\frac{n}{2} \ln \left[(2 \pi)^{d}\left|A \Sigma A^{\T}\right|\right]-\sum_{k=1}^{n} \frac{1}{2}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)^{\T} \Sigma^{-1}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)
+	\end{aligned}\]
+	类似地可以得到$\vmu'$的高斯密度
+	\[\begin{aligned}
+	p\left(\boldsymbol{\mu}^{\prime}\right)
+	&=\frac{1}{(2 \pi)^{d / 2}\left|\Sigma_{0}^{\prime}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(\boldsymbol{\mu}^{\prime}-\mathbf{m}_{0}'\right)^{\T} \Sigma_{0}^{\prime -1}\left(\boldsymbol{\mu}^{\prime}-\mathbf{m}_{0}'\right)\right] \\
+	&=\frac{1}{(2 \pi)^{d / 2}\left|\Sigma_{0}^{\prime}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(A \boldsymbol{\mu}-A \mathbf{m}_{0}\right)^{\T}\left(A \Sigma_{0} A^{\T}\right)^{-1}\left(A \boldsymbol{\mu}-A \mathbf{m}_{0}\right)\right] \\
+	&=\frac{1}{(2 \pi)^{d / 2}\left|\Sigma_{0}^{\prime}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)^{\T} A^{\T}\left(A^{-1}\right)^{\T} \Sigma_{0}^{-1} A^{-1} A\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)\right] \\
+	&=\frac{1}{(2 \pi)^{d / 2}\left|\Sigma_{0}^{\prime}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)^{\T} \Sigma_{0}^{-1}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)\right]
+	\end{aligned}\]
+	新的MAP估计为
+	\[\begin{aligned}
+	\hat{\boldsymbol{\mu}}^{\prime}=& \underset{\boldsymbol{\mu}}{\arg \max }\left\{\left[-\frac{n}{2} \ln \left[(2 \pi)^{d}\left|A \Sigma A^{\T}\right|\right]
+	-\sum_{k=1}^{n} \frac{1}{2}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)^{\T} \Sigma^{-1}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)\right]\right.\\
+	&\left.\cdot\left[\frac{1}{(2 \pi)^{d / 2}\left|A \Sigma_0 A^{\T}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)^{\T} \Sigma_{0}^{-1}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)\right]\right]\right\}
+	\end{aligned}\]
+	与(a)比较知，$\hat{\vmu}$和$\hat{\vmu}'$的差异均在常数部分，因此MAP可以对变换后的$\vmu'$做出正确估计。
+\end{itemize}
+\end{answer}
+
+\begin{question}[\textsection 3 Q38]
+令$p_\vx(\vx\mid\omega_i),i=1,2$为任意的概率密度函数，均值为$\vmu_i$，协方差矩阵为$\Sigma_i$，其中并不要求$p_\vx(\vx\mid\omega_i)$必须为正态概率密度。
+令$y=\vw^\T\vx$表示投影，并且设投影后的结果的概率密度函数为$p(y\mid\omega_i)$，其均值为$\mu_i$，方差为$\sigma^2_i$。
+\begin{itemize}
+	\item [(a)] 证明准则函数
+	\[J_1(\vw)=\frac{(\mu_1-\mu_2)^2}{\sigma_1^2+\sigma_2^2}\]
+	当
+	\[\vw=(\Sigma_1+\Sigma_2)^{-1}(\vmu_1-\vmu_2)\]
+	时取得最大值。
+	\item [(b)] 如果$P(\omega_i)$为$\omega_i$的先验概率，证明
+	\[J_2(\vw)=\frac{(\mu_1-\mu_2)^2}{P(\omega_1)\sigma_1^2+P(\omega_2)\sigma_2^2}\]
+	当
+	\[\vw=[P(\omega_1)\Sigma_1+P(\omega_2)\Sigma_2]^{-1}(\vmu_1-\vmu_2)\]
+	时取得最大值。
+	\item [(c)] 在(a)和(b)之间，哪个与公式(96)的联系更密切，请解释为什么。
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 对于$i=1,2$有
+	\[\begin{aligned}
+	\mu_{i} &=\frac{1}{n_{i}} \sum_{y \in \mathcal{Y}_{i}} y=\frac{1}{n_{i}} \sum_{\mathbf{x} \in \mathcal{D}_{i}} \mathbf{w}^{\T} \mathbf{x}=\mathbf{w}^{\T} \boldsymbol{\mu}_{i} \\
+	\sigma_{i}^{2} &=\sum_{y \in \mathcal{Y}_{i}}\left(y-\mu_{i}\right)^{2}=\mathbf{w}^{\T}\left[\sum_{\mathbf{x} \in \mathcal{D}_{i}}\left(\mathbf{x}-\boldsymbol{\mu}_{i}\right)\left(\mathbf{x}-\boldsymbol{\mu}_{i}\right)^{\T}\right] \mathbf{w}=\vw^\T\Sigma_i\vw \\
+	\Sigma_{i} &=\sum_{\mathbf{x} \in \mathcal{D}_{i}}\left(\mathbf{x}-\boldsymbol{\mu}_{i}\right)\left(\mathbf{x}-\boldsymbol{\mu}_{i}\right)^{\T}
+	\end{aligned}\]
+	有总类内散度矩阵$S_W$及总类间散度矩阵$S_B$
+	\[\begin{aligned}
+	S_W &=\Sigma_{1}+\Sigma_{2} \\
+	S_B &=\left(\boldsymbol{\mu}_{1}-\boldsymbol{\mu}_{2}\right)\left(\boldsymbol{\mu}_{1}-\boldsymbol{\mu}_{2}\right)^{\T}
+	\end{aligned}\]
+	进而
+	\[J_{1}(\mathbf{w})=\frac{(\mu_1-\mu_2)^2}{\sigma_1^2+\sigma_2^2}=\frac{\mathbf{w}^{\T} S_B \mathbf{w}}{\mathbf{w}^{\T} S_W \mathbf{w}}\]
+	即广义瑞利商。
+	由课本公式(106)，可以得到$J_1(\vw)$在$\mathbf{w}= S_W^{-1}\left(\boldsymbol{\mu}_{1}-\boldsymbol{\mu}_{2}\right)$得到最大值，即在
+	\[\vw=(\Sigma_1+\Sigma_2)^{-1}(\vmu_1-\vmu_2)\]
+	时取得最大值。
+	\item [(b)] 同(a)理，用广义瑞利商表示有
+	\[J_2(\vw)=\frac{(\mu_1-\mu_2)^2}{P(\omega_1)\sigma_1^2+P(\omega_2)\sigma_2^2}=
+	\frac{\vw^\T S_B\vw}{\vw^\T S_W' \vw}\]
+	其中$S_W'=P(\omega_1)\sigma_1^2+P(\omega_2)\sigma_2^2$。
+	同理有$J_2(\vw)$在
+	\[\vw=S_W'^{-1}\left(\boldsymbol{\mu}_{1}-\boldsymbol{\mu}_{2}\right)=
+	[P(\omega_1)\Sigma_1+P(\omega_2)\Sigma_2]^{-1}(\vmu_1-\vmu_2)\]
+	时取得最大值。
+	\item [(c)] 在公式(96)中，令$\tilde{m}_i=\mu_i$和$\tilde{s}_i^2=\sigma_i^2$，可以得到(a)中的式子，即(96)与(a)联系更密切。
+\end{itemize}
+\end{answer}
+
+\end{document}
