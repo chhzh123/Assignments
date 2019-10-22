@@ -1,7 +1,7 @@
 \documentclass[a4paper, 11pt]{article}
 \usepackage[UTF8]{ctex}
 \usepackage[cpp,table]{mypackage}
-\usepackage{cancel}
+\usepackage{cancel,ulem}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{geometry}
@@ -117,16 +117,17 @@
 \end{itemize}
 搜索过程如下，用中括号表示论域，没有中括号则代表赋值。
 注意搜索限制按照字母序进行搜索，因此可能出现未搜索到对应限制（未进行论域删减），就提前终止了。
+删除线划掉的代表论域已经失效。
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|c|}\hline
     Depth & A & B & C & D & E \\\hline
     0 & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\\hline
-    1 & 1 & [1, 2, 3, 4] & [1, 2, 3, 4] & DWO & [1, 2, 3, 4]\\ \hline
+    1 & 1 & \sout{[1, 2, 3, 4]} & \sout{[1, 2, 3, 4]} & DWO & \sout{[1, 2, 3, 4]}\\ \hline
     1 & 2 & [2, 3, 4] & [1, 3, 4] & [1] & [1, 2, 3, 4]\\ \hline
-    2 & 2 & [2, 3, 4] & [1, 3, 4] & 1 & DWO\\ \hline
+    2 & 2 & \sout{[2, 3, 4]} & \sout{[1, 3, 4]} & 1 & DWO\\ \hline
     1 & 3 & [3, 4] & [1, 2, 4] & [1, 2] & [1, 2, 3, 4]\\ \hline
     2 & 3 & 3 & [1, 2, 4] & [1, 2] & [1, 2, 3, 4]\\ \hline
-    3 & 3 & 3 & [1, 2, 4] & 1 & DWO\\ \hline
+    3 & 3 & 3 & \sout{[1, 2, 4]} & 1 & DWO\\ \hline
     3 & 3 & 3 & [1, 4] & 2 & [1]\\ \hline
     4 & 3 & 3 & [4] & 2 & 1\\ \hline
     5 & 3 & 3 & 4 & 2 & 1\\ \hline
@@ -175,31 +176,34 @@
 \begin{answer}
     按照子句形式的转换顺序，有
     \begin{itemize}
-        \item 消除蕴含
-    \[\lnot(\exists x\forall y P(x,y)\lor\exists x\forall y Q(x,y))\lor \exists x\forall y(P(x,y)\lor Q(x,y))\]
+        \item 改写为归结的等价形式（消除蕴含）
+        \[(\exists x\forall y P(x,y)\lor\exists x\forall y Q(x,y))\land\lnot
+        (\exists x\forall y(P(x,y)\lor Q(x,y)))\]
         \item 否定内移
-    \[(\forall x\exists y (\lnot P(x,y))\land\forall x\exists y (\lnot Q(x,y)))\lor (\exists x\forall y(P(x,y)\lor Q(x,y)))\]
+        \[(\exists x\forall y P(x,y)\lor\exists x\forall y Q(x,y))\land
+        (\forall x\exists y (\lnot P(x,y)\land \lnot Q(x,y)))\]
         \item 标准化变量
-    \[(\forall x\exists y (\lnot P(x,y))\land\forall z\exists w (\lnot Q(z,w)))\lor (\exists a\forall b(P(a,b)\lor Q(a,b)))\]
+        \[(\exists x\forall y P(x,y)\lor\exists z\forall w Q(z,w))\land
+        (\forall a\exists b (\lnot P(a,b)\land \lnot Q(a,b)))\]
         \item Skolemize
-    \[(\forall x(\lnot P(x,f(x)))\land\forall z(\lnot Q(z,g(z))))\lor (\forall b(P(a,b)\lor Q(a,b)))\]
+        \[(\forall y P(x,y)\lor \forall w Q(z,w))\land
+        (\forall a (\lnot P(a,f(a))\land \lnot Q(a,f(a))))\]
         \item 改为前缀形式
-    \[\forall x\forall z\forall b(\lnot P(x,f(x))\land\lnot Q(z,g(z)))\lor (P(a,b)\lor Q(a,b))\]
-        \item 分配律
-    \[\forall x\forall z\forall b ((\lnot P(x,f(x))\lor P(a,b)\lor Q(a,b))
-    \land(\lnot Q(z,g(z))\lor P(a,b)\lor Q(a,b)))\]
+        \[\forall y\forall w\forall a ((P(x,y)\lor Q(z,w))\land
+        (\lnot P(a,f(a))\land \lnot Q(a,f(a))))\]
         \item 变成子句形式
         \begin{itemize}
-            \item [1.] $\lnot P(x,f(x))\lor P(a,b)\lor Q(a,b)$
-            \item [2.] $\lnot Q(z,g(z))\lor P(a,b)\lor Q(a,b)$
+            \item [1.] $P(x,y),Q(z,w)$
+            \item [2.] $\lnot P(a,f(a))$
+            \item [3.] $\lnot Q(a,f(a))$
         \end{itemize}
     \end{itemize}
     归结过程如下
     \begin{enumerate}
-        \item [3.] $R[1a,2b]\{x=a,f(x)=b\}$：$(\not Q(z,g(z)),Q(a,b))$
-        \item [4.] $R[3a,3b]\{z=a,g(z)=b\}$：$()$
+        \item [4.] $R[1a,2]\{x=a,y=f(a)\}$：$(Q(z,w))$
+        \item [5.] $R[3,4]\{z=a,w=f(a)\}$：$()$
     \end{enumerate}
-    总结即当$x=a,f(x)=b,z=a,g(z)=b$时得到归结结果，题目中的式子成立。
+    总结即当$x=a,y=f(a),z=a,w=f(a)$时得到归结结果，题目中的式子成立。
 \end{answer}
 
 \begin{question}\normalfont
@@ -212,7 +216,7 @@
 \begin{answer}
 \begin{itemize}
     \item [a.] 凶手既可以说真话也可以说假话，而不是凶手则一定说真话，则凶手与他说的话之间呈\emph{或}的关系。
-    简记Arthur, Bertram, Carleton, Victor为A, B, C, V，并设谓词$M(x)$代表$x$为凶手，$F(x)$代表$x$为V的朋友，$O(x)$代表$x$有不在场证明。
+    简记Arthur, Bertram, Carleton, Victor为A, B, C, V，并设谓词$M(x)$代表$x$为凶手，$F(x)$代表$x$为V的朋友，$O(x)$代表$x$有不在场证明，$x\in D=\{A,B,C\}$。
     则由题目信息，可给出下列公式
     \[\begin{aligned}
         & M(A)\lor(F(B)\land\lnot F(C))\\
@@ -251,8 +255,35 @@
     \item [b.] 如果凶手可能不止一个，则只有1-7条子句仍继续符合。下面给出可能的解释：
     \begin{itemize}
         \item 当$A$为清白，$B,C$为凶手时：$A$说真话，$B$是朋友，$C$不是朋友；$B$说假话，$B$当天在场且$B$是朋友；$C$可说真话可说假话。
+        形式化的解释$\Im$如下，用\cmark代表True，用\xmark代表False。
+        \begin{center}
+            \begin{tabular}{|c|c|c|c|}\hline
+                 & A & B & C\\\hline
+                $I(M)$ & \xmark & \cmark & \cmark\\\hline
+                $I(O)$ & \xmark & \xmark & \xmark\\\hline
+                $I(F)$ & \cmark & \cmark & \xmark\\\hline
+            \end{tabular}
+        \end{center}
         \item 当$B$为清白，$A,C$为凶手时：$B$说真话，$B$不在场，且$B$不是朋友；$A$说假话，$B$不是朋友，$C$可以是朋友也可以不是；$C$说假话，$B$不在场，$A$可在场可不在场。
+        一种可能解释如下
+        \begin{center}
+            \begin{tabular}{|c|c|c|c|}\hline
+                 & A & B & C\\\hline
+                $I(M)$ & \cmark & \xmark & \cmark\\\hline
+                $I(O)$ & \xmark & \cmark & \xmark\\\hline
+                $I(F)$ & \cmark & \xmark & \cmark\\\hline
+            \end{tabular}
+        \end{center}
         \item 当$C$为清白，$A,B$为凶手时：$C$说真话，$A$在场，$B$在场；$B$说假话，$B$在场，但$B$是否是朋友不确定；$A$可说真话也可说假话，$B,C$是否朋友不确定。
+        一种可能解释如下
+        \begin{center}
+            \begin{tabular}{|c|c|c|c|}\hline
+                 & A & B & C\\\hline
+                $I(M)$ & \cmark & \cmark & \xmark\\\hline
+                $I(O)$ & \xmark & \xmark & \xmark\\\hline
+                $I(F)$ & \cmark & \cmark & \xmark\\\hline
+            \end{tabular}
+        \end{center}
     \end{itemize}
 \end{itemize}
 \end{answer}
