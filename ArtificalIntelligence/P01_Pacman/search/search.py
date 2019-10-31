@@ -72,19 +72,19 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
-def auxiliaryDFS(problem,curr,actions,visited,flag):
+def auxiliaryDFS(problem,curr,actions,visited):
+    visited.append(curr)
     if problem.isGoalState(curr):
-        flag = True
-        return
+        return True, actions
     for succ in problem.getSuccessors(curr):
         if succ[0] in visited:
             continue
         actions.push(succ[1])
-        visited.append(succ[0])
-        auxiliaryDFS(problem,succ[0],actions,visited,flag)
+        flag, actions = auxiliaryDFS(problem,succ[0],actions,visited)
         if flag:
-            return
+            return True, actions
         actions.pop()
+    return False, actions
 
 def depthFirstSearch(problem):
     """
@@ -103,11 +103,7 @@ def depthFirstSearch(problem):
     # print "Start:", problem.getStartState() # (35, 1)
     # print "Is the start a goal?", problem.isGoalState(problem.getStartState()) # False
     # print "Start's successors:", problem.getSuccessors(problem.getStartState()) # [((35, 2), 'North', 1), ((34, 1), 'West', 1)] # (successor, action, stepCost)
-    start = problem.getStartState()
-    actions = util.Queue()
-    visited = []
-    flag = False
-    auxiliaryDFS(problem,start,actions,visited,flag)
+    _, actions = auxiliaryDFS(problem,problem.getStartState(),util.Stack(),[])
     return actions.list
 
 
@@ -119,13 +115,13 @@ def breadthFirstSearch(problem):
     visited = []
     while not queue.isEmpty():
         curr, actions = queue.pop()
+        if curr in visited:
+            continue
+        visited.append(curr)
         if problem.isGoalState(curr):
             break
         for succ in problem.getSuccessors(curr):
-            if succ[0] in visited:
-                continue
             queue.push((succ[0],actions + [succ[1]]))
-            visited.append(succ[0])
     return actions
 
 def uniformCostSearch(problem):
@@ -136,13 +132,14 @@ def uniformCostSearch(problem):
     visited = []
     while not queue.isEmpty():
         cost, curr, actions = queue.pop()
+        if curr in visited:
+            continue
+        visited.append(curr)
         if problem.isGoalState(curr):
             break
         for succ in problem.getSuccessors(curr):
-            if succ[0] in visited:
-                continue
-            queue.push((cost+succ[2],succ[0],actions+[succ[1]]),cost+succ[2])
-            visited.append(succ[0])
+            priority = cost + succ[2]
+            queue.push((cost+succ[2],succ[0],actions+[succ[1]]),priority)
     return actions
 
 def nullHeuristic(state, problem=None):
@@ -160,14 +157,14 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     visited = []
     while not queue.isEmpty():
         cost, curr, actions = queue.pop()
+        if curr in visited:
+            continue
+        visited.append(curr)
         if problem.isGoalState(curr):
             break
         for succ in problem.getSuccessors(curr):
-            if succ[0] in visited:
-                continue
             priority = cost + succ[2] + heuristic(succ[0],problem)
             queue.push((cost+succ[2],succ[0],actions+[succ[1]]),priority)
-            visited.append(succ[0])
     return actions
 
 # Abbreviations

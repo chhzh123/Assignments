@@ -32,7 +32,7 @@ For the codes, please refer to the attached files.
 \texttt{python pacman.py -l bigMaze -z .5 -p SearchAgent -a fn=astar,heuristic=manhattanHeuristic}
 
 \begin{lstlisting}
-  def aStarSearch(problem, heuristic=nullHeuristic):
+def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     start = problem.getStartState()
     queue = util.PriorityQueue()
@@ -40,14 +40,14 @@ For the codes, please refer to the attached files.
     visited = []
     while not queue.isEmpty():
         cost, curr, actions = queue.pop()
+        if curr in visited:
+            continue
+        visited.append(curr)
         if problem.isGoalState(curr):
             break
         for succ in problem.getSuccessors(curr):
-            if succ[0] in visited:
-                continue
             priority = cost + succ[2] + heuristic(succ[0],problem)
             queue.push((cost+succ[2],succ[0],actions+[succ[1]]),priority)
-            visited.append(succ[0])
     return actions
 \end{lstlisting}
 
