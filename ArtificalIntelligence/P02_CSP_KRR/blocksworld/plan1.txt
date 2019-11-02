@@ -1,0 +1,5 @@
+move(b2, b1, 2)
+move(b1, b3, b2)
+move(b3, 1, 3)
+move(b1, b2, 1)
+move(b3, 3, b1)

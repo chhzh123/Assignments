@@ -1,6 +1,7 @@
 use_module(library(lists)).
 
-object(X) :- table(X) ; block(X).
+object(X) :-
+    block(X) ; table(X).
 
 % can(Action,Precondition)
 can(move(Block,From,To),[clear(Block),clear(To),on(Block,From)]) :-
@@ -14,24 +15,6 @@ can(move(Block,From,To),[clear(Block),clear(To),on(Block,From)]) :-
 % STRIPS (Action,Effect)
 adds(move(X,From,To),[on(X,To),clear(From)]).
 deletes(move(X,From,To),[on(X,From),clear(To)]).
-
-% facts
-block(b1).
-block(b2).
-block(b3).
-% block(b4).
-% block(b5).
-% block(b6).
-% block(b7).
-% block(b8).
-table(1).
-table(2).
-table(3).
-% table(4).
-% table(5).
-% table(6).
-% table(7).
-% table(8).
 
 % BFS planner
 plan(State,Goals,[]) :-
@@ -97,10 +80,47 @@ delete_all([X|L1],L2,Diff) :-
 delete_all([X|L1],L2,[X|Diff]) :-
     delete_all(L1,L2,Diff).
 
-% Start = [clear(2),clear(4),clear(b),clear(c),on(a,1),on(b,3),on(c,a)], plan(Start,[on(a,b),on(b,c)],_,Plan,_).
-% Start = [clear(b2),clear(2),clear(3),on(b3,1),on(b1,b3),on(b2,b1)], Goal = [on(b1,1),on(b3,b1),on(b2,2),clear(b3),clear(b2),clear(3)], plan(Start,Goal,Plan).
-% Start = [clear(b1),clear(b3),clear(3),clear(4),clear(5),on(b2,1),on(b5,b2),on(b1,b5),on(b4,2),on(b3,b4)], Goal = [clear(1),clear(b2),clear(3),clear(b4),clear(5),on(b3,2),on(b1,b3),on(b2,b1),on(b5,4),on(b4,b5)], plan(Start,Goal,Plan).
-% Start = [clear(b1),clear(b3),clear(3),clear(4),clear(5),on(b2,1),on(b5,b2),on(b1,b5),on(b4,2),on(b3,b4)], Goal = [clear(1),clear(b4),clear(3),clear(4),clear(5),on(b2,2),on(b1,b2),on(b5,b1),on(b3,b5),on(b4,b3)]
-% Start = [clear(b1),clear(2),clear(b6),clear(4),clear(b4),clear(6),on(b1,1),on(b3,3),on(b2,b3),on(b6,b2),on(b5,5),on(b4,b5)], Goal = [clear(b6),clear(2),clear(3),clear(4),clear(5),clear(6),on(b5,1),on(b3,b5),on(b1,b3),on(b4,b1),on(b2,b4),on(b6,b2)]
-% Start = [clear(b1),clear(2),clear(b6),clear(4),clear(b4),clear(b8),clear(7),clear(8),on(b1,1),on(b3,3),on(b2,b3),on(b6,b2),on(b5,5),on(b4,b5),on(b7,6),on(b8,b7)], Goal = [clear(b7),clear(2),clear(3),clear(4),clear(5),clear(6),clear(7),clear(8),on(b5,1),on(b8,b5),on(b6,b8),on(b3,b6),on(b1,b3),on(b4,b1),on(b2,b4),on(b7,b2)]
-% plan(Start,Goal,Plan)
+% below(X,X,_).
+% X is below Y
+below(X,Y,State) :-
+    X == Y ;
+    (X \== Y,
+    block(X),
+    member(on(Z,X),State),
+    below(Z,Y,State)).
+
+isGoalPos(X, State, Goals) :-
+    table(X) ;
+    (member(on(X,Y),State),
+    member(on(X,Y),Goals),
+    isGoalPos(Y,State,Goals)).
+
+% Best-first search
+:- op(300,xfy,->).
+
+s(Goals->NextAction,NewGoals->Action,1) :- % all costs are 1
+    member(Goal,Goals),
+    achieves(Action,Goal),
+    can(Action,Condition),
+    preserves(Action,Goals),
+    regress(Goals,Action,NewGoals).
+
+goal(Goals->Action) :-
+    start(State),
+    satisfied(State,Goals).
+
+h1(H1,State,Goals) :-
+    findall(X,(block(X),not(isGoalPos(X,State,Goals))),NotGoalPos),
+    length(NotGoalPos,H1),
+    !.
+
+h2(H2,State,Goals) :-
+    findall(X,(block(X),not(isGoalPos(X,State,Goals)),below(Y,X,State),below(Y,X,Goals)),NotGoalPos),
+    length(NotGoalPos,H2),
+    !.
+
+h(Goals->Action,H) :-
+    start(State),
+    h1(H1,State,Goals),
+    h2(H2,State,Goals),
+    H is H1 + H2.
