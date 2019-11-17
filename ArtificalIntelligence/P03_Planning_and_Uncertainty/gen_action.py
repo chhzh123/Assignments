@@ -98,29 +98,6 @@ for action,rotate in [("R",rotate_up),("R_p",rotate_down),("U",rotate_left),("U_
     for block in [block1,block2,block3,block4]:
         for i in range(3):
             new_index[get_new_color(color_index[block-1][i],rotate)] = color_index[block-1][i]
-    # print("    :parameters (?{} ?{} ?{}".format(color_index[block1-1][0],color_index[block1-1][1],color_index[block1-1][2]))
-    # print("                 ?{} ?{} ?{}".format(color_index[block2-1][0],color_index[block2-1][1],color_index[block2-1][2]))
-    # print("                 ?{} ?{} ?{}".format(color_index[block3-1][0],color_index[block3-1][1],color_index[block3-1][2]))
-    # print("                 ?{} ?{} ?{}".format(color_index[block4-1][0],color_index[block4-1][1],color_index[block4-1][2]))
-    # print("    )")
-    # print("    :precondition (and")
-    # print("        (color{} ?{} ?{} ?{})".format(str(block1),color_index[block1-1][0],color_index[block1-1][1],color_index[block1-1][2]))
-    # print("        (color{} ?{} ?{} ?{})".format(str(block2),color_index[block2-1][0],color_index[block2-1][1],color_index[block2-1][2]))
-    # print("        (color{} ?{} ?{} ?{})".format(str(block3),color_index[block3-1][0],color_index[block3-1][1],color_index[block3-1][2]))
-    # print("        (color{} ?{} ?{} ?{})".format(str(block4),color_index[block4-1][0],color_index[block4-1][1],color_index[block4-1][2]))
-    # print("    )")
-    # print("    :effect (and")
-    # print("        (not (color{} ?{} ?{} ?{}))".format(str(block1),color_index[block1-1][0],color_index[block1-1][1],color_index[block1-1][2]))
-    # print("        (not (color{} ?{} ?{} ?{}))".format(str(block2),color_index[block2-1][0],color_index[block2-1][1],color_index[block2-1][2]))
-    # print("        (not (color{} ?{} ?{} ?{}))".format(str(block3),color_index[block3-1][0],color_index[block3-1][1],color_index[block3-1][2]))
-    # print("        (not (color{} ?{} ?{} ?{}))".format(str(block4),color_index[block4-1][0],color_index[block4-1][1],color_index[block4-1][2]))
-    # print("        (color{} ?{} ?{} ?{})".format(str(block1),new_index[color_index[block1-1][0]],new_index[color_index[block1-1][1]],new_index[color_index[block1-1][2]]))
-    # print("        (color{} ?{} ?{} ?{})".format(str(block2),new_index[color_index[block2-1][0]],new_index[color_index[block2-1][1]],new_index[color_index[block2-1][2]]))
-    # print("        (color{} ?{} ?{} ?{})".format(str(block3),new_index[color_index[block3-1][0]],new_index[color_index[block3-1][1]],new_index[color_index[block3-1][2]]))
-    # print("        (color{} ?{} ?{} ?{})".format(str(block4),new_index[color_index[block4-1][0]],new_index[color_index[block4-1][1]],new_index[color_index[block4-1][2]]))
-    # print("    )")
-    # print(")")
-    # print()
     print("    :effect (and")
     for block in [block1,block2,block3,block4]:
         print("        (forall (?{1} ?{2} ?{3} - color) (when (color{0} ?{1} ?{2} ?{3})".format(str(block),color_index[block-1][0],color_index[block-1][1],color_index[block-1][2]))
@@ -130,6 +107,7 @@ for action,rotate in [("R",rotate_up),("R_p",rotate_down),("U",rotate_left),("U_
         print("                (color{0} ?{1} ?{2} ?{3})".format(str(new_block),new_index[color_index[new_block-1][0]],new_index[color_index[new_block-1][1]],new_index[color_index[new_block-1][2]]))
         print("            ))")
         print("        )")
+    print("        (increase (cost) 1)") # weighted A*
     print("    )")
     print(")")
     print()

@@ -14,6 +14,7 @@
 ; fblrud
 
 (:types color)
+(:functions (cost) - number)
 
 (:predicates
     (color1 ?f ?l ?d - color)
@@ -52,6 +53,7 @@
                 (color4 ?u8 ?r8 ?b8)
             ))
         )
+        (increase (cost) 1)
     )
 )
 
@@ -81,6 +83,7 @@
                 (color6 ?u8 ?r8 ?b8)
             ))
         )
+        (increase (cost) 1)
     )
 )
 
@@ -110,6 +113,7 @@
                 (color6 ?r8 ?b8 ?u8)
             ))
         )
+        (increase (cost) 1)
     )
 )
 
@@ -139,6 +143,7 @@
                 (color7 ?r8 ?b8 ?u8)
             ))
         )
+        (increase (cost) 1)
     )
 )
 
@@ -168,6 +173,7 @@
                 (color2 ?f6 ?u6 ?r6)
             ))
         )
+        (increase (cost) 1)
     )
 )
 
@@ -197,6 +203,7 @@
                 (color5 ?f6 ?u6 ?r6)
             ))
         )
+        (increase (cost) 1)
     )
 )
 

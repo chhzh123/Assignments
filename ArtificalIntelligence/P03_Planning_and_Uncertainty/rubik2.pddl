@@ -2,6 +2,7 @@
     (:domain rubik)
     (:objects r w b g o y - color)
     (:init
+        (= (cost) 0)
         (color1 r b w)
         (color2 b o y)
         (color3 g w r)
@@ -11,6 +12,7 @@
         (color7 b r y)
         (color8 g o w)
     )
+    (:metric minimize (cost))
     (:goal (and
         (color1 b w r)
         (color2 b y r)
