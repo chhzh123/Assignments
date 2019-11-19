@@ -3,10 +3,10 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{geometry}
-\usepackage{listings}
+\usepackage{url,hyperref}
 \geometry{scale=0.8}
 
-\title{	
+\title{
 \normalfont \normalsize
 \textsc{School of Data and Computer Science, Sun Yat-sen University} \\ [25pt] %textsc small capital letters
 \rule{\textwidth}{0.5pt} \\[0.4cm] % Thin top horizontal rule
@@ -23,7 +23,7 @@
 \section{$2\times 2$ Rubik's Cube}
 Please solve the $2\times 2$ Rubik's Cube by using FF planner. Here are 4 cases for you to verify the correctness of your programs (\texttt{pddl} files). You should hand in 5 files, including a domain file (\texttt{cube\_domain.pddl}) and 4 data files (\texttt{cube1.pddl},\texttt{cube2.pddl},\texttt{cube3.pddl},\texttt{cube4.pddl}).
 For more information about $2\times 2$ Rubik's Cube, such as actions R, U and F, please refer to \url{https://rubiks-cube-solver.com/2x2/}.
- 
+
 
 
 \begin{figure}[ht]
@@ -43,7 +43,7 @@ For more information about $2\times 2$ Rubik's Cube, such as actions R, U and F,
 
 \begin{figure}[ht]
   \centering
-  
+
   \includegraphics[width=8cm]{fig/goal}
   \caption{goal state}
 \end{figure}
@@ -51,7 +51,7 @@ For more information about $2\times 2$ Rubik's Cube, such as actions R, U and F,
 \newpage
 \section{Diagnosing by Bayesian Networks}
 \label{sec:bayesian-networks}
-\textbf{2.1 Variables and their domais}
+\subsection{2.1 Variables and their domais}
 \begin{lstlisting}{language=Python}
 (1)PatientAge:['0-30','31-65','65+']
 (2)CTScanResult:['Ischemic Stroke','Hemmorraghic Stroke']
@@ -61,11 +61,12 @@ For more information about $2\times 2$ Rubik's Cube, such as actions R, U and F,
 (6)Mortality:['True', 'False']
 (7)Disability: ['Negligible', 'Moderate', 'Severe']
 \end{lstlisting}
-\textbf{2.2 CPTs}
 
+\subsection{2.2 CPTs}
 \textbf{Note:} [CTScanResult, MRIScanResult,StrokeType] means:
 
-P(StrokeType='...' $|$ CTScanResult='...' $\land$  MRIScanResult='...') 
+P(StrokeType='...' $|$ CTScanResult='...' $\land$  MRIScanResult='...')
+
 \begin{lstlisting}{language=Python}
 (1)
 [PatientAge]
@@ -93,24 +94,24 @@ P(StrokeType='...' $|$ CTScanResult='...' $\land$  MRIScanResult='...')
 ['Not used',0.5]
 
 (5)
-[CTScanResult, MRIScanResult,StrokeType])
+[CTScanResult, MRIScanResult,StrokeType]
 
 ['Ischemic Stroke','Ischemic Stroke','Ischemic Stroke',0.8],
-['Ischemic Stroke','Hemmorraghic Stroke','Ischemic Stroke',0.5],  
+['Ischemic Stroke','Hemmorraghic Stroke','Ischemic Stroke',0.5],
 [ 'Hemmorraghic Stroke','Ischemic Stroke','Ischemic Stroke',0.5],
-[ 'Hemmorraghic Stroke','Hemmorraghic Stroke','Ischemic Stroke',0], 
+[ 'Hemmorraghic Stroke','Hemmorraghic Stroke','Ischemic Stroke',0],
 
 ['Ischemic Stroke','Ischemic Stroke','Hemmorraghic Stroke',0],
-['Ischemic Stroke','Hemmorraghic Stroke','Hemmorraghic Stroke',0.4], 
+['Ischemic Stroke','Hemmorraghic Stroke','Hemmorraghic Stroke',0.4],
 [ 'Hemmorraghic Stroke','Ischemic Stroke','Hemmorraghic Stroke',0.4],
 [ 'Hemmorraghic Stroke','Hemmorraghic Stroke','Hemmorraghic Stroke',0.9],
 
 ['Ischemic Stroke','Ischemic Stroke','Stroke Mimic',0.2],
-['Ischemic Stroke','Hemmorraghic Stroke','Stroke Mimic',0.1],    
+['Ischemic Stroke','Hemmorraghic Stroke','Stroke Mimic',0.1],
 [ 'Hemmorraghic Stroke','Ischemic Stroke','Stroke Mimic',0.1],
 [ 'Hemmorraghic Stroke','Hemmorraghic Stroke','Stroke Mimic',0.1],
 
-(6) 
+(6)
 [StrokeType, Anticoagulants, Mortality]
 
 ['Ischemic Stroke', 'Used', 'False',0.28],
@@ -182,7 +183,7 @@ p5 = P(Disability='Negligible')
 
 \item For task2, I will grade your codes in VE implementation, correctness of 5 cases and algorithm efficiency.
 
-\item Please send \textbf{P03\_YourNumber.zip} which should contain the codes and results of the above two problems to the mailbox (\textbf{ai\_201901@foxmail.com}) before the deadline (\textbf{2019/11/27 23:59}). 
+\item Please send \textbf{P03\_YourNumber.zip} which should contain the codes and results of the above two problems to the mailbox (\textbf{ai\_201901@foxmail.com}) before the deadline (\textbf{2019/11/27 23:59}).
 \item Last but not least, you are not alone! If you find yourself stuck on something, contact the TA for help.
 \end{enumerate}
 
