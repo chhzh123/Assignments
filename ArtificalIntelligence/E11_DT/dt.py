@@ -6,11 +6,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level = logging.INFO)
-handler = logging.FileHandler("DT-prepruning2.log")
+handler = logging.FileHandler("DT-prepruning-8.log")
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+logger.info("No 'fnlwgt', depth 5, no shuffle, 0.9 train data")
 
 
 # %%
@@ -26,8 +27,9 @@ def preprocessing(data):
     """
     Select some useful attributes
     """
-    # attributes = ["workclass","education","marital-status","occupation","relationship","race","sex","native-country","salary"]
+    # attributes = ["workclass","education","marital-status","occupation","relationship","race","sex","native-country","salary"] # discrete
     attributes = list(attr_dict.keys())
+    # Since `fnlwgt` is tightly connected with `race`, `age`, `sex`, etc, which does not provide any more information, thus I simply remove the attribute here (also in order to shorten the training time).
     attributes.remove("fnlwgt")
     return data[attributes]
 
@@ -48,7 +50,7 @@ fill_data(train_data)
 fill_data(test_data)
 
 # Generate validation set (for pre-pruning)
-train_data = train_data.sample(frac=1).reset_index(drop=True)
+# train_data = train_data.sample(frac=1).reset_index(drop=True) # shuffle the data
 cut = int(0.9 * len(train_data))
 # cut = int(len(train_data))
 train_data, validation_data = train_data[:cut], train_data[cut:]
@@ -218,7 +220,8 @@ class ID3:
                 node.setBranch(a_best,flag,leafnode,branch_value=max_gain[1])
         acc_with_partition = self.validation()
 
-        if depth > 5 and acc_without_partition >= acc_with_partition: # pre-pruning
+        # pre-pruning (to make sure it has generated sufficient nodes, depth is set here)
+        if depth > 5 and acc_without_partition >= acc_with_partition:
             cnt_leaves -= num_leaves
             print("Prune at {}: {} (without) >= {} (with)".format(a_best,acc_without_partition,acc_with_partition))
             logger.info("Prune at {}: {} (without) >= {} (with)".format(a_best,acc_without_partition,acc_with_partition))

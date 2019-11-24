@@ -3,10 +3,10 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{geometry}
-\usepackage{listings}
 \geometry{scale=0.8}
 \usepackage{hyperref}
 
+\lstset{texcl=true}
 
 \title{
 \normalfont \normalsize
@@ -139,8 +139,27 @@ CART (Classification and Regression Trees) is very similar to C4.5, but it diffe
 \end{itemize}
 
 \section{Codes and Results}
-\begin{lstlisting}
+I firstly run my code in jupyter notebook (\verb'decision_tree.ipynb'), then generate the python script file \verb'dt.py'.
+Since it's hard to insert my code in \LaTeX, so please directly refer to my source file \verb'dt.py'.
+Only \verb'pandas' and \verb'numpy' are used for my decision tree, which can be viewed in \verb'requirements.txt'.
 
-\end{lstlisting}
+Some \textbf{preprocessing} techniques are used, for example, I remove the \verb'fnlwgt' attribute since it does not give more information, and I fill the \verb'?' with the most value in that column.
+
+Discrete and \textbf{continuous} attributes are both support, but the processing method may be different.
+I leverage the bipartition techniques proposed in \emph{Watermelon Book (Zhihua Zhou)} to tackle the continuous attributes.
+
+Moreover, \textbf{pre-pruning} is used to avoid overfitting.
+I directly cut 10\% of the train data as the validation set for pre-pruning testing.
+
+% \lstinputlisting{dt.py}
+
+The results are shown below.
+The best try gives 84.23\% accuracy on the test set, which is also in the range of the official accuracy provided in \verb'adult.names'.
+The running log can be found in \verb'*.log'.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/result-no-fnlwgt-d5-no-shuffle.png}
+\end{figure}
 
 \end{document}
