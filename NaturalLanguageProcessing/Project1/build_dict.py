@@ -1,8 +1,7 @@
 import sys, time, os
-import pkuseg
+import jieba
 
 # stage 1
-seg = pkuseg.pkuseg()
 words = {}
 
 for i in range(1,1001):
@@ -10,7 +9,7 @@ for i in range(1,1001):
 	intext = file.read()
 	while '\n\n' in intext:
 		intext = intext.replace('\n\n','\n')
-	text = seg.cut(intext)
+	text = jieba.lcut(intext,cut_all=False)
 	for word in text:
 		cnt = words.get(word,-1)
 		if cnt == -1:
@@ -19,11 +18,12 @@ for i in range(1,1001):
 			words[word] += 1
 	res = " ".join(text)
 	res = res.replace('。 ','。\n').replace('。\n” ','。 ”\n')
-	outfile = open("dict/{}.txt".format(str(i)),"w",encoding="utf-8")
+	outfile = open("dict_jieba/{}.txt".format(str(i)),"w",encoding="utf-8")
 	outfile.write(res)
 	if i % 100 == 0:
 		print("Finish {}/1000".format(str(i)),flush=True)
 
+sys.exit()
 outfile = open("dict/dict_tmp.txt","w",encoding="utf-8")
 outfile.write(str(words))
 
