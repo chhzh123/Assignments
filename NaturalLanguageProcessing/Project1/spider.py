@@ -10,11 +10,16 @@ send_headers = {
             "Accept-Language": "zh-CN,zh;q=0.8"
             }
 
-url_file_name = "url.txt"
+news_path = "news_original_2"
+news_processed_path = "news_supplement"
+url_file_name = "url_supplement.txt"
 urls = []
 
-if not os.path.isfile("url.txt"):
-# if True:
+"""
+# Stage 1
+Download tech webpage urls from NetEase
+"""
+if not os.path.isfile(url_file_name):
 	for section in ["it_2016","gd2016"]:
 		for i in range(1,21):
 			index_url = 'http://tech.163.com/special/' + section + ("/" if i == 1 else "_{:>02d}/".format(i))
@@ -57,8 +62,11 @@ else:
 	for line in url_file:
 		urls.append(line.split(","))
 
-news_path = "news"
-
+# sys.exit()
+"""
+# Stage 2
+Download news from these url links
+"""
 def crawl(url,outfile_name):
 	html = requests.get(url,timeout=30,headers=send_headers)
 	soup = BeautifulSoup(html.content,"lxml")
@@ -78,49 +86,48 @@ def crawl(url,outfile_name):
 	outfile.write("\n\n".join(all_text))
 	print("Finish {}".format(outfile_name),flush=True)
 
-# if __name__ == "__main__":
-# 	start_time = time.time()
+if __name__ == "__main__":
+	if not os.path.isfile(news_path + "\\1.txt"):
 
-# 	pool = multiprocessing.Pool()
-# 	for (i,(url,title)) in enumerate(urls,1):
-# 		if i > 1000:
-# 			break
-# 		outfile_name = news_path + "\\" + str(i) + ".txt"
-# 		# if os.path.isfile(outfile_name):
-# 		# 	continue
-# 		pool.apply_async(crawl,args=(url,outfile_name))
+		start_time = time.time()
 
-# 	pool.close()
-# 	pool.join()
+		# use multithreading to accelerate
+		pool = multiprocessing.Pool()
+		for (i,url_pack) in enumerate(urls,1):
+			url, title = url_pack[0], url_pack[1]
+			# if i > 1000:
+			# 	break
+			outfile_name = news_path + "\\" + str(i) + ".txt"
+			# if os.path.isfile(outfile_name):
+			# 	continue
+			pool.apply_async(crawl,args=(url,outfile_name))
 
-# 	end_time = time.time()
-# 	print("Time: {}s".format(end_time - start_time))
+		pool.close()
+		pool.join()
 
-# 	not_done = []
-# 	for (i,(url,title)) in enumerate(urls,1):
-# 		if i > 1000:
-# 			break
-# 		outfile_name = news_path + "\\" + str(i) + ".txt"
-# 		if os.path.isfile(outfile_name):
-# 			continue
-# 		not_done.append(i)
-# 	print(not_done)
+		end_time = time.time()
+		print("Time: {}s".format(end_time - start_time))
 
-# crawl(url=urls[1][0],outfile_name=news_path + "\\" + str(2) + ".txt")
-
-for (i,(url,title)) in enumerate(urls,1):
-	if i > 1000:
-		break
-	infile_name = news_path + "\\" + str(i) + ".txt"
-	if os.path.isfile(infile_name):
-		infile = open(infile_name,"r",encoding="utf-8")
-		outfile = open("news_new" + "\\" + str(i) + ".txt","w",encoding="utf-8")
-		for line in infile:
-			newtext = line
-			if "_网易科技" in line:
-				newtext = newtext.replace("_网易科技","")
-			newtext = newtext.lstrip()
-			newtext = newtext.rstrip()
-			outfile.write(newtext + "\n")
-	if i % 100 == 0:
-		print("Finish {}/1000".format(i))
+	"""
+	# Stage 3
+	Delete all the empty space in the news
+	"""
+	for (i,url_pack) in enumerate(urls,1):
+		url, title = url_pack[0], url_pack[1]
+		infile_name = news_path + "\\" + str(i) + ".txt"
+		if os.path.isfile(infile_name):
+			infile = open(infile_name,"r",encoding="utf-8")
+			outfile = open(news_processed_path + "\\" + str(i) + ".txt","w",encoding="utf-8")
+			for line in infile:
+				newtext = line
+				if "_网易科技" in line:
+					newtext = newtext.replace("_网易科技","。")
+				elif "@@LinkCard" in line or "原标题" in line:
+					continue
+				elif "网易科技讯" in line:
+					newtext = newtext.replace("网易科技讯","")
+				newtext = newtext.lstrip()
+				newtext = newtext.rstrip()
+				outfile.write(newtext + "\n")
+		if i % 100 == 0:
+			print("Finish {}/{}".format(i,len(urls)))

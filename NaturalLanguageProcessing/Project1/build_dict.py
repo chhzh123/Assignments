@@ -1,41 +1,30 @@
 import sys, time, os
 import jieba
 
-# stage 1
-words = {}
+"""
+# Stage 1
+Cut Chinese words
+"""
 
-for i in range(1,1001):
-	file = open("news/{}.txt".format(str(i)),"r",encoding="utf-8")
-	intext = file.read()
-	while '\n\n' in intext:
-		intext = intext.replace('\n\n','\n')
-	text = jieba.lcut(intext,cut_all=False)
-	for word in text:
-		cnt = words.get(word,-1)
-		if cnt == -1:
-			words[word] = 1
-		else:
-			words[word] += 1
-	res = " ".join(text)
-	res = res.replace('。 ','。\n').replace('。\n” ','。 ”\n')
-	outfile = open("dict_jieba/{}.txt".format(str(i)),"w",encoding="utf-8")
-	outfile.write(res)
-	if i % 100 == 0:
-		print("Finish {}/1000".format(str(i)),flush=True)
+news_paths = ["news","news_supplement"]
+output_path = "dict_jieba"
+
+cnt = 0
+for news_path in news_paths:
+	for file_name in os.listdir(news_path):
+		if file_name == "dict.txt":
+			continue
+		cnt += 1
+		file = open("{}/{}".format(news_path,file_name),"r",encoding="utf-8")
+		intext = file.read()
+		while '\n\n' in intext: # remove empty lines
+			intext = intext.replace('\n\n','\n')
+		text = jieba.lcut(intext,cut_all=False)
+		res = " ".join(text)
+		res = res.replace('。 ','。\n').replace('。\n” ','。 ”\n') # seperate sentences
+		outfile = open("{}/{}.txt".format(output_path,cnt),"w",encoding="utf-8")
+		outfile.write(res)
+		if cnt % 100 == 0:
+			print("Finish {}".format(cnt),flush=True)
 
 sys.exit()
-outfile = open("dict/dict_tmp.txt","w",encoding="utf-8")
-outfile.write(str(words))
-
-# stage 2
-infile = open("dict/dict_tmp.txt",encoding="utf-8")
-d = eval(infile.read())
-newd = sorted(d,key=d.__getitem__,reverse=True)
-outfile = open("dict/dict.txt","w",encoding="utf-8")
-for punc in ['，','。','、','“','”','：','（','）','(',')','；','"','《','》','？','+','/',':','・','!','！','-','’','‘','=','<','>','_','……','[',']',';','|','×']:
-	try:
-		newd.remove(punc)
-	except:
-		pass
-for i,word in enumerate(newd,1):
-	outfile.write("{} {} {}\n".format(i,word,d[word]))
