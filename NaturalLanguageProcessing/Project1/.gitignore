@@ -1,3 +1,7 @@
 url.txt
 news*
 dict*
+checkpoint
+!questions.txt
+!answer.txt
+!stopwords.txt
