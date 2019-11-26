@@ -44,16 +44,20 @@ Using the situation calculus, complete the following.
     \[Contains(p_1,5,s_0)\land Contains(p_2,0,s_0)\land volume(p_1)=5\land volume(p_2)=2\]
     \item [(b)] 动作$empty(p)$
     \[\begin{aligned}
-        \text{Pre:}\quad & \forall w.Contains(p,w,s)\land w\ne 0\\
+        \text{Pre:}\quad & \forall w.(Contains(p,w,s)\land w\ne 0)\\
         \text{Eff:}\quad & Contains(p,0,do(empty(p),s))
     \end{aligned}\]
     动作$transfer(p,p')$
     \[\begin{aligned}
-        \text{Pre:}\quad & p\ne p'\land (\forall w.Contains(p,w,s)\land w\ne 0)\land (\forall w'.Contains(p',w',s)\land w'\ne volume(p'))\\
-        \text{Eff:}\quad & \forall w,w'.Contains(p,w,s)\land Contains(p',w',s)\\
+        \text{Pre:}\quad & \forall w,w'.(p\ne p'\bigwedge Contains(p,w,s)\land w\ne 0\bigwedge Contains(p',w',s)\land w'\ne volume(p'))\\
+        \text{Eff:}\quad & \quad (w > volume(p')-w'\\
         &\quad \land Contains(p,w-volume(p')+w',do(transfer(p,p'),s))\\
-        &\quad \land Contains(p',volume(p'),do(transfer(p,p'),s))
+        &\quad \land Contains(p',volume(p'),do(transfer(p,p'),s)))\\
+        &\bigvee (w <= volume(p') -w'\\
+        &\quad \land Contains(p,0,do(transfer(p,p'),s))\\
+        &\quad \land Contains(p',volume(p')-w'+w,do(transfer(p,p'),s)))
     \end{aligned}\]
+    因$transfer(p,p')\equiv \text{Pre}\to \text{Eff}$，故$\text{Eff}$的量词$\forall w,w'$在此省略。
     \item [(c)] 目标情形如下
     \[\exists s.Contains(p_2,1,s)\]
     \item [(d)] 目标情形可以表示如下
@@ -142,22 +146,22 @@ c\\\hline
     由$S_2$可得
     \[\begin{aligned}
         G&=\{clear(a),clear(c),on(a,b),onTable(b),onTable(c)\}\\
-        G_P&=\{\underline{clear(a),on(a,b),onTable(c)}\}\\
-        G_N&=\{\textcolor{blue}{\underline{clear(c)}},\textcolor{purple}{\underline{onTable(b)}}\}\\
-        A&=\{moveToTable(b,c),moveFromTable(a,b)\}\\
-        G_1&=G_P\cup Pre(A)=\{\underline{clear(a),on(a,b),onTable(c)},on(b,c),clear(b),onTable(a)\}
+        G_P&=\{clear(a),on(a,b),onTable(c)\}\\
+        G_N&=\{\textcolor{purple}{clear(c),onTable(b)}\}\\
+        A&=\{[\underline{on(b,c),clear(b)}]moveToTable(b,c)[\textcolor{purple}{clear(c),onTable(b)}]\}\\
+        G_1&=G_P\cup Pre(A)=\{clear(a),on(a,b),onTable(c),\underline{on(b,c),clear(b)}\}
     \end{aligned}\]
-    \[CountActions(G,S_2)=2+CountActions(G_1,S_1)\]
+    \[CountActions(G,S_2)=1+CountActions(G_1,S_1)\]
     由$S_1$可得
     \[\begin{aligned}
-        G_P&=\{\underline{clear(a),on(a,b),onTable(c)},on(b,c)\}\\
-        G_N&=\{\textcolor{red}{clear(b),onTable(a)}\}\\
-        A&=\{\textcolor{red}{moveToTable(a,b)}\}\\
-        G_2&=G_P\cup Pre(A)=\{\underline{clear(a),on(a,b),onTable(c)},on(b,c)\}
+        G_P&=\{clear(a),on(a,b),onTable(c),on(b,c)\}\\
+        G_N&=\{\textcolor{red}{clear(b)}\}\\
+        A&=\{[\underline{on(a,b),clear(a)}]moveToTable(a,b)[\textcolor{red}{clear(b)},onTable(a)]\}\\
+        G_2&=G_P\cup Pre(A)=\{\underline{clear(a),on(a,b)},onTable(c),on(b,c)\}
     \end{aligned}\]
     \[CountActions(G_1,S_1)=1+CountActions(G_2,S_0)\]
     进而得到
-    \[CountActions(G,S_2)=2+1+0=3\]
+    \[CountActions(G,S_2)=1+1+0=2\]
 \end{itemize}
 \end{answer}
 
@@ -188,7 +192,7 @@ Consider the following example: Metastatic cancer is a possible cause of a brain
 \end{figure}
     \item [(b)] 给定$b$和$c$的前提下，$d$与$a$和$e$独立，即
     \[P(d\mid a,b,c,e)=P(d\mid b,c)\]
-    \item [(c)] 详细的代入过程已忽略，只给出核心步骤及最终结果。
+    \item [(c)] 题目要求$P(A,B,C,\lnot d,e)$的联合概率，详细的代入过程已忽略，只给出核心步骤及最终结果。
     \[\begin{aligned}
         &P(a,b,c,\lnot d,e) &=& P(a) P(b\mid a) P(c\mid a) P(\lnot d\mid b,c) P(e\mid c) &= 0.00512\\
         &P(a,b,\lnot c,\lnot d,e) &=& P(a) P(b\mid a) P(\lnot c\mid a) P(\lnot d\mid b,\lnot c) P(e\mid \lnot c) &= 0.01536\\
@@ -237,27 +241,45 @@ P(c \mid \neg a, \neg b) &=0.4 \quad P(f \mid \neg c)&= 0.9
 \begin{answer}
 \begin{itemize}
     \item [(a)] 相关变量有$a,b,c,e$，无关变量为$d,f$，记$A,B,C,E$的CPT分别为$f_1(A)$，$f_2(B)$，$f_3(A,B,C)$，$f_4(C,E)$，按照$A,B,C$的顺序消除。
-    \[f_5(B,C)=\sum_a f_1(a)f_2(B,C)=\text{\begin{tabular}{|c|c|c|}\hline
+    \[f_5(B,C)=\sum_a f_1(a)f_2(a,B,C)=\text{\begin{tabular}{|c|c|c|}\hline
         $c$ & $b$ & $0.16$\\\hline
         $c$ & $\lnot b$ & $0.76$\\\hline
         $\lnot c$ & $b$ & $0.04$\\\hline
         $\lnot c$ & $\lnot b$ & $0.04$\\\hline
     \end{tabular}}\]
-    \[f_6(C)=\sum_b f(B)f_5(B,C)=\text{\begin{tabular}{|c|c|}\hline
+    \[f_6(C)=\sum_b f(b)f_5(b,C)=\text{\begin{tabular}{|c|c|}\hline
         $c$ & $0.64$\\\hline
         $\lnot c$ & $0.36$\\\hline
     \end{tabular}}\]
-    \[f_7(E)=\sum_c f_6(C)f_4(C,E)=\text{\begin{tabular}{|c|c|}\hline
+    \[f_7(E)=\sum_c f_6(c)f_4(c,E)=\text{\begin{tabular}{|c|c|}\hline
         $e$ & $0.52$\\\hline
         $\lnot e$ & $0.48$\\\hline
     \end{tabular}}\]
     故$P(e)=0.52$。
-    \item [(b)] $f_5(B,C)$和$f_6(C)$都可以复用，具体步骤如下
+    \item [(b)] 相关变量为$a,b,c,e,f$，无关变量为$d$。
+    $f_5(B,C)$和$f_6(C)$都可以复用，其他不同的因子为$f_9(C)$，$f_{10}(C,E)$，$f_{11}(E)$，具体步骤如下：
     \begin{enumerate}
-        \item 限制$F$为$\lnot f$，用$f_9(C)=f_8(C,\lnot f)$代替$f_8(C,F)$
-        \item 消除$A,B$依次得到$f_5(B,C)$和$f_6(C)$
-        \item 相乘有$f_{10}(C)=f_6(C)f_9(C)$
-        \item 最后做消除$f_{11}(E)=\sum_c f_{10}(C)f_4(C,E)$
+        \item 限制$F$为$\lnot f$，用
+        \[f_9(C)=f_8(C,\lnot f)=\text{\begin{tabular}{|c|c|}\hline
+            $c$ & $0.8$\\\hline
+            $\lnot c$ & $0.1$\\\hline
+        \end{tabular}}\]
+        代替$f_8(C,F)$
+        \item 消除$A,B$依次得到$f_5(B,C)$和$f_6(C)$（复用(a)的结果）
+        \item 消除$C$，所有含$C$的因子$f_6(C),f_9(C),f_4(C,E)$相乘有
+        \[f_{10}(C,E)=f_4(C,E)\times f_6(C)\times f_9(C)=\text{\begin{tabular}{|c|c|c|}\hline
+            $c$ & $e$ & $0.3584$\\\hline
+            $c$ & $\lnot e$ & $0.1536$\\\hline
+            $\lnot c$ & $e$ & $0.072$\\\hline
+            $\lnot c$ & $\lnot e$ & $0.0288$\\\hline
+        \end{tabular}}\]
+        \item 最后消除$C$，得到
+        \[f_{11}(E)=\sum_c f_{10}(c,E)=\text{\begin{tabular}{|c|c|}\hline
+            $e$ & $0.3656$\\\hline
+            $\lnot e$ & $0.1824$\\\hline
+        \end{tabular}}\]
+        \item 归一化得到
+        \[P(e\mid\lnot f)=0.3656/(0.3656+0.1824)=0.66715\]
     \end{enumerate}
 \end{itemize}
 \end{answer}
