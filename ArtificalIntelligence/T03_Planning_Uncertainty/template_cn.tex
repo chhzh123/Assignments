@@ -241,13 +241,13 @@ P(c \mid \neg a, \neg b) &=0.4 \quad P(f \mid \neg c)&= 0.9
 \begin{answer}
 \begin{itemize}
     \item [(a)] 相关变量有$a,b,c,e$，无关变量为$d,f$，记$A,B,C,E$的CPT分别为$f_1(A)$，$f_2(B)$，$f_3(A,B,C)$，$f_4(C,E)$，按照$A,B,C$的顺序消除。
-    \[f_5(B,C)=\sum_a f_1(a)f_2(a,B,C)=\text{\begin{tabular}{|c|c|c|}\hline
+    \[f_5(B,C)=\sum_a f_1(a)f_3(a,B,C)=\text{\begin{tabular}{|c|c|c|}\hline
         $c$ & $b$ & $0.16$\\\hline
         $c$ & $\lnot b$ & $0.76$\\\hline
         $\lnot c$ & $b$ & $0.04$\\\hline
         $\lnot c$ & $\lnot b$ & $0.04$\\\hline
     \end{tabular}}\]
-    \[f_6(C)=\sum_b f(b)f_5(b,C)=\text{\begin{tabular}{|c|c|}\hline
+    \[f_6(C)=\sum_b f_2(b)f_5(b,C)=\text{\begin{tabular}{|c|c|}\hline
         $c$ & $0.64$\\\hline
         $\lnot c$ & $0.36$\\\hline
     \end{tabular}}\]
@@ -257,7 +257,7 @@ P(c \mid \neg a, \neg b) &=0.4 \quad P(f \mid \neg c)&= 0.9
     \end{tabular}}\]
     故$P(e)=0.52$。
     \item [(b)] 相关变量为$a,b,c,e,f$，无关变量为$d$。
-    $f_5(B,C)$和$f_6(C)$都可以复用，其他不同的因子为$f_9(C)$，$f_{10}(C,E)$，$f_{11}(E)$，具体步骤如下：
+    $f_1(A),f_2(B),f_3(A,B,C),f_5(B,C)$和$f_6(C)$都可以复用，其他不同的因子为$f_9(C)$，$f_{10}(C,E)$，$f_{11}(E)$，具体步骤如下：
     \begin{enumerate}
         \item 限制$F$为$\lnot f$，用
         \[f_9(C)=f_8(C,\lnot f)=\text{\begin{tabular}{|c|c|}\hline
