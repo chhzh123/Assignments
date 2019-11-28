@@ -1,9 +1,10 @@
-import sys, os, time
+import sys, os, time, platform
 import requests
 import bs4
 from bs4 import BeautifulSoup
 import multiprocessing
 
+sep = "\\" if 'Windows' in platform.system() else "/"
 send_headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36",
             "Connection": "keep-alive",
@@ -87,7 +88,8 @@ def crawl(url,outfile_name):
 	print("Finish {}".format(outfile_name),flush=True)
 
 if __name__ == "__main__":
-	if not os.path.isfile(news_path + "\\1.txt"):
+
+	if not os.path.isfile(news_path + "{}1.txt".format(sep)):
 
 		start_time = time.time()
 
@@ -97,7 +99,7 @@ if __name__ == "__main__":
 			url, title = url_pack[0], url_pack[1]
 			# if i > 1000:
 			# 	break
-			outfile_name = news_path + "\\" + str(i) + ".txt"
+			outfile_name = news_path + sep + str(i) + ".txt"
 			# if os.path.isfile(outfile_name):
 			# 	continue
 			pool.apply_async(crawl,args=(url,outfile_name))
@@ -114,10 +116,10 @@ if __name__ == "__main__":
 	"""
 	for (i,url_pack) in enumerate(urls,1):
 		url, title = url_pack[0], url_pack[1]
-		infile_name = news_path + "\\" + str(i) + ".txt"
+		infile_name = news_path + sep + str(i) + ".txt"
 		if os.path.isfile(infile_name):
 			infile = open(infile_name,"r",encoding="utf-8")
-			outfile = open(news_processed_path + "\\" + str(i) + ".txt","w",encoding="utf-8")
+			outfile = open(news_processed_path + sep + str(i) + ".txt","w",encoding="utf-8")
 			for line in infile:
 				newtext = line
 				if "_网易科技" in line:

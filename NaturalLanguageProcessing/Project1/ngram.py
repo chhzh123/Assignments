@@ -16,9 +16,13 @@ generated_path = "dict_no_stop_jieba"
 stopwords = [word[:-1] for word in open("stopwords.txt","r",encoding="utf-8")] # delete \n
 
 answer_file_name = "myanswer/myanswer-{}gram-top{}.txt".format(N,K)
-word_counter_file_name = "word_counter.pkl"
-ngram_counter_file_name = "ngram_counter_{}.pkl".format(N)
-ngram_counter_pre_file_name = "ngram_pre_counter_{}.pkl".format(N)
+word_counter_file_name = "checkpoint/word_counter.pkl"
+ngram_counter_file_name = "checkpoint/ngram_counter_{}.pkl".format(N)
+ngram_counter_pre_file_name = "checkpoint/ngram_pre_counter_{}.pkl".format(N)
+if not os.path.exists("checkpoint"):
+    os.mkdir("checkpoint")
+if not os.path.exists("myanswer"):
+    os.mkdir("myanswer")
 
 """
 # Stage 1

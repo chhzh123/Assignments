@@ -99,7 +99,7 @@ def crawl(url,outfile_name)
 % 可以使用已有的一些中文分词工具。
 
 新闻数据预处理在前一节已经完成了一部分，因此这里着重于中文的分词。
-采用结巴分词(\verb'cut')工具，完整代码可见\verb'build_dict.py'。
+采用结巴分词(\verb'cut')工具，完整代码可见\verb'cut.py'。
 
 核心代码如下所示。
 \begin{lstlisting}
@@ -483,7 +483,7 @@ def predict(device, net, question_str, n_word, word_to_int, int_to_word, top_k=5
 
 \subsection{LSTM模型}
 \label{sub:lstm}
-LSTM模型中使用的超参数如表\ref{tab:lstm_hyperparam}所示。
+LSTM模型中使用的超参数如表\ref{tab:lstm_hyperparam}所示，训练时间与超参数选择相关，由8分钟到18分钟不等。
 \begin{table}[H]
 \caption{LSTM模型超参数}
 \label{tab:lstm_hyperparam}
@@ -501,12 +501,19 @@ LSTM隐态维度\cite{bib:pytorch_lstm} & \verb'lstm_size' & 128\\\hline
 \end{table}
 
 训练过程中的损失函数变化如图\ref{fig:lstm-loss}所示，可以看到损失函数在不断下降，说明模型在不断变好。
-在训练过程中取checkpoint模型进行预测可得到预测率在不断提升，这说明模型没有过拟合。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/train_loss.pdf}
 \caption{LSTM训练损失(loss)变化}
 \label{fig:lstm-loss}
+\end{figure}
+
+对应的Top 1、Top 3、Top 5预测准确率如图\ref{fig:lstm-acc}所示，训练到后期模型已经开始有过拟合的趋势（Top 3和Top 5准确率下降）。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/acc-iter.pdf}
+\caption{LSTM训练预测准确率变化}
+\label{fig:lstm-acc}
 \end{figure}
 
 实际推断样例如图\ref{fig:lstm-top1}和图\ref{fig:lstm-top5}所示（完整结果可见\verb'myanswer-lstm.txt'），可以看到LSTM模型的Top 1的准确率并不高，只有11\%；而Top 5的预测准确率才超过传统的统计模型。
@@ -565,15 +572,33 @@ LSTM隐态维度\cite{bib:pytorch_lstm} & \verb'lstm_size' & 128\\\hline
 这次项目让我对整个数据收集、处理、分析、建模的全过程有了深入的了解，同时也对自然语言处理的原理和理论有了更进一步的理解。
 
 从这次项目中得到最大的体会就是\textcolor{red}{\textbf{有多大的人工，就有多大的智能}}。
-软件2.0时代，随着数据规模的不断增大，其实神经网络的效果会变得更好。
+在软件2.0时代\cite{bib:software}，我们输入给程序的不再是算法，更加关键的是训练数据；以前程序编译出来的是机器指令，而现在则变成了网络的学习参数。
+以前算法决定了模型的性能，而现在则是\textbf{数据规模、模型复杂性}决定了其性能。
+随着输入数据规模的不断增大，神经网络训练出来的效果也会变得更好。
 
-无论是统计模型还是神经网络模型都是无关语法的，更加容易搭建且达到很高的精度。
+从这次实验中也可以看出，无论是统计模型还是神经网络模型其实都是无关语法的，不需太多前置知识，更加容易搭建且达到很高的精度。
+相比起n-gram，神经网络模型更加是小白都可以搭。
+只要模型没有问题，什么数据丢进去训练就好了（甚至不需要做停止词消除或其他的一些预处理，尽管会有影响），神经网络总能拟合到一个不错的结果，关键在于\textbf{超参数的选择与调整}上。
+这体现了神经网络强大的拟合能力，也体现了软件2.0时代与软件1.0时代的巨大区别。
 
-主要遇到的问题如下：
+关于这两个模型的问题在前文实验中已经提及，这里再进行总结：
 \begin{itemize}
-\item 推理能力：有点偏阅读理解的范畴，复现
-\item 泛化能力
+\item 准确率：这是衡量模型性能最重要的指标，由于训练样本太小，测试样本也太小，其实是很难看出什么的。
+但有一个明显的趋势在于，当数据量加大时，对于两个模型来说都有着巨大的提升空间。
+只要语料及词表足够大，这两种模型应该都能达到很好的预测效果。
+\item 推理能力：无论是n-gram还是LSTM其实都是按照既定的统计方法进行预测，它并不具有真正的智慧，或者说不具有推理能力。
+比如前文举的几个案例分析，都是句子中的前半句提及了某样事物，后半句就进行复现，对于人类来说这是很明显的事情，但对于机器来说却非常困难。
+即便是LSTM已经将过往历史很好地进行记录，但是遇到这种问题还是有些捉襟见肘。
+不过这有点偏阅读理解的范畴，可能有一些更好的语言模型进行处理，这可以是后续的研究方向。
+\item 泛化能力：虽然2-gram在本次实验中取得很好的成绩，但这明显是一种鼠目寸光、断章取义的行为，只通过前后两个词而不是通过整个句子的意思来填空显然是不可取的。
+虽然LSTM能够对整个句子进行分析，但一旦句子变得很长，它也很难分析清楚前后关系。
+另外，对于这两个模型来说，一个很重要的问题都是没有办法很好解决不在词表中的词语，但显然我们也不可能建立一个足够大的词库涵盖所有的情况，因此需要有更好的方法来处理这种没出现过的情况。
+泛化也和推理密切相关，想像``太阳从东边升起''这一句子，将中间一词``东''挖去，如果机器通过足够多的统计数据知道\emph{太阳}和\emph{东}必然一起出现，那之后的例子中这两者在一起的概率都会被设得很大。
+但是如果在这一个句子后面加一些内容，如``太阳从[MASK]边升起是错的''，这时就不能填\emph{东}了，而需要通过后文的推理得出填写其他的词语。（不过这可能扯得有点远了，会涉及到知识表示与推理的内容）
 \end{itemize}
+
+总的来说，本次实验既让我熟悉了大数据分析的整个流程，又加深了对自然语言处理语言模型的理解。
+虽然步骤非常繁杂，但整个过程还是非常有趣的。
 
 \begin{thebibliography}{99}
 \bibitem{bib:stopword} 中文常用停止词列表，\url{https://github.com/goto456/stopwords}
@@ -583,6 +608,7 @@ LSTM隐态维度\cite{bib:pytorch_lstm} & \verb'lstm_size' & 128\\\hline
 \bibitem{bib:gradient_clipping} How to Avoid Exploding Gradients With Gradient Clipping, \url{https://machinelearningmastery.com/how-to-avoid-exploding-gradients-in-neural-networks-with-gradient-clipping/}
 \bibitem{bib:text_generation} Text Generation With Pytorch, \url{https://machinetalk.org/2019/02/08/text-generation-with-pytorch/}
 \bibitem{bib:lstm} Language Modelling and Text Generation using LSTMs - Deep Learning for NLP, \url{https://medium.com/@shivambansal36/language-modelling-text-generation-using-lstms-deep-learning-for-nlp-ed36b224b275}
+\bibitem{bib:software} Kunle Olukotun, \emph{Designing Computer Systems for Software 2.0}, ISCA Keynote, 2018
 \end{thebibliography}
 
 \end{document}
