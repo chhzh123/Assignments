@@ -27,4 +27,9 @@ for news_path in news_paths:
 		if cnt % 100 == 0:
 			print("Finish {}".format(cnt),flush=True)
 
-sys.exit()
+"""
+# Stage 2
+Generate word dictionary
+"""
+
+# This part has been moved to ngram.py, please refer to that.
