@@ -1,0 +1,450 @@
+﻿\documentclass[a4paper, 11pt]{article}
+\usepackage[python]{mypackage}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{scale=0.8}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{color}
+\numberwithin{equation}{subsection}
+\setenumerate[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt}
+\setitemize[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt}
+\setdescription{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt}
+
+\title{
+\normalfont \normalsize
+\textsc{School of Data and Computer Science, Sun Yat-sen University} \\ [25pt] %textsc small capital letters
+\rule{\textwidth}{0.5pt} \\[0.4cm] % Thin top horizontal rule
+\huge  E13 EM Algorithm\\ % The assignment title
+\rule{\textwidth}{2pt} \\[0.5cm] % Thick bottom horizontal rule
+\author{17341015 Hongzheng Chen}
+\date{\normalsize\today}
+}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Chinese Football Dataset}
+The following Chinese Football Dataset has recored the performance of 16 AFC football teams between 2005 and 2018.
+\begin{lstlisting}[language={Java},
+	frame=shadowbox,
+	breaklines=true,
+	numbers=left,
+	basicstyle=\footnotesize]
+Country	2006WorldCup 2010WorldCup 2014WorldCup 2018WorldCup 2007AsianCup 2011AsianCup 2015AsianCup
+China	50	50	50	40	9	9	5
+Japan	28	9	29	15	4	1	5
+South_Korea	17	15	27	19	3	3	2
+Iran	25	40	28	18	5	5	5
+Saudi_Arabia	28	40	50	26	2	9	9
+Iraq	50	50	40	40	1	5	4
+Qatar	50	40	40	40	9	5	9
+United_Arab_Emirates	50	40	50	40	9	9	3
+Uzbekistan	40	40	40	40	5	4	9
+Thailand	50	50	50	40	9	17	17
+Vietnam	50	50	50	50	5	17	17
+Oman	50	50	40	50	9	17	9
+Bahrain	40	40	50	50	9	9	9
+North_Korea	40	32	50	50	17	9	9
+Indonesia	50	50	50	50	9	17	17
+Australia	16	21	30	30	9	2	1
+\end{lstlisting}
+
+The scoring rules are below:
+\begin{itemize}
+	\item For the FIFA World Cup, teams score the same with their rankings if they enter the World Cup; teams score 50 for failing to entering the Asia Top Ten; teams score 40 for entering the Asia Top Ten but not entering the World Cup.
+	\item For the AFC Asian Cup, teams score the same with their rankings if they finally enter the top four; teams score 5 for entering the top eight but not the top four, and 9 for entering the top sixteen but not top eight; teams score 17 for not passing the group stages.
+\end{itemize}
+
+We aim at classifying the above 16 teams into 3 classes according to their performance: the first-class, the second-class and the third-class. \textcolor{blue}{In our opinion, teams of Australia, Iran, South Korea and Japan belong to the first-class, while the Chinese football team belongs to the third-class.}
+
+
+
+\section{EM}
+\subsection{The Gaussian Distribution}
+The Gaussian, also known as the normal distribution, is a widely used model for the distribution of continuous variables. In the case of a single variable $x$, the Gaussian distribution can be written in the form
+\begin{equation}
+\mathcal N(x|\mu,\sigma^2)=\frac{1}{(2\pi\sigma^2)^{1/2}}\exp\left\{-\frac{1}{2\sigma^2}(x-\mu)^2\right\}
+\end{equation}
+where $\mu$ is the mean and $\sigma^2$ is the variance.
+
+For a $D$-dimensional vector $\mathbf x$, the multivariate Gaussian distribution takes the form
+\begin{equation}
+\mathcal N(\mathbf x|\boldsymbol\mu,\boldsymbol\Sigma)=\frac{1}{(2\pi)^{D/2}}\frac{1}{|\boldsymbol\Sigma|^{1/2}}\exp\left\{-\frac{1}{2}(\mathbf x-\boldsymbol\mu)^{\mathrm T}\boldsymbol\Sigma^{-1}(\mathbf x-\boldsymbol\mu)\right\}
+\end{equation}
+where $\boldsymbol\mu$ is a $D$-dimensional mean vector, $\boldsymbol\Sigma$ is a $D\times D$ covariance matrix, and $|\boldsymbol\Sigma|$ denotes the determinant of $|\boldsymbol\Sigma|$.
+\subsection{Mixtures of Gaussians}
+\subsubsection{Introduction}
+While the Gaussian distribution has some important analytical properties, it suffers from significant limitations when it comes to modelling real data sets. Consider the example shown in Figure \ref{fig:fig1}. This is known as the ‘Old Faithful’ data set, and comprises 272 measurements of the eruption of the Old Faithful geyser at Yel-lowstone National Park in the USA. Each measurement comprises the duration of the eruption in minutes (horizontal axis) and the time in minutes to the next eruption (vertical axis). We see that the data set forms two dominant clumps, and that a simple Gaussian distribution is unable to capture this structure, whereas a linear superposition of two Gaussians gives a better characterization of the data set.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=17cm]{fig/fig1.png}
+\caption{Example of a Gaussian mixture distribution}
+\label{fig:fig1}
+\end{figure}
+
+Such superpositions, formed by taking linear combinations of more basic distributions such as Gaussians, can be formulated as probabilistic models known as \emph{mixture distributions}. In Figure \ref{fig:fig1} we see that a linear combination of Gaussians can give rise to very complex densities. By using a sufficient number of Gaussians, and by adjusting their means and covariances as well as the coefficients in the linear combination, almost any continuous density can be approximated to arbitrary accuracy.
+
+We therefore consider a superposition of $K$ Gaussian densities of the form
+\begin{equation}\label{equ:mixture}
+p(\mathbf x)=\sum_{k=1}^K\pi_k\mathcal N(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)
+\end{equation}
+which is called a mixture of Gaussians. Each Gaussian density  $\mathcal N(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)$ is called a component of the mixture and has its own mean $\boldsymbol\mu_k$ and covariance $\boldsymbol\Sigma_k$.
+
+The parameters $\pi_k$ in (\ref{equ:mixture}) are called \emph{mixing coefficients}. If we integrate both sides of (\ref{equ:mixture}) with respect to $\mathbf x$, and note that both $p(\mathbf x)$ and the individual Gaussian
+components are normalized, we obtain
+\begin{equation}\label{equ:sum}
+\sum_{k=1}^{K}\pi_k=1.
+\end{equation}
+Also, the requirement that $p(\mathbf x)\geq 0$, together with $\mathcal N(\mathbf x|\mu_k,\Sigma_k)\geq 0$, implies $\pi_k\geq 0$ for all $k$. Combining this with condition (\ref{equ:sum}) we obtain
+\begin{equation}
+0\leq\pi_k\leq 1.
+\end{equation}
+
+We therefore see that the mixing coefficients satisfy the requirements to be probabilities.
+
+From the sum and product rules, the marginal density is given by
+
+\begin{equation}
+p(\mathbf x)=\sum_{k=1}^K p(k)p(\mathbf x|k)
+\end{equation}
+which is equivalent to (\ref{equ:mixture}) in which we can view $\pi_k=p(k)$ as the prior probability of picking the $k^{th}$ component, and the density $\mathcal N(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)= p(\mathbf x|k)$ as the probability of $\mathbf x$ conditioned on $k$. From Bayes' theorem these are given by
+\begin{equation}
+\gamma_k(\mathbf x)=p(k|\mathbf x)=\frac{p(k)p(\mathbf x|k)}{\sum_lp(l)p(\mathbf x|l)}=\frac{\pi_k\mathcal N(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)}{\boldsymbol\sum_l\pi_k\mathcal N(\mathbf x|\boldsymbol\mu_l,\boldsymbol\Sigma_l)}.
+\end{equation}
+The form of the Gaussian mixture distribution is governed by the parameters $\pi$, $\boldsymbol\mu$ and $\boldsymbol\Sigma$, where we have used the notation $\boldsymbol\pi=\{\pi_1,...,\pi_K\}$, $\boldsymbol\mu=\{\boldsymbol\mu_1,...,\boldsymbol\mu_k\}$ and $\boldsymbol\Sigma=\{\boldsymbol\Sigma_1,...,\boldsymbol\Sigma_K\}$. One way to set the values of there parameters is to use maximum likelihood. From (\ref{equ:mixture}) the log of the likelihood function is given by
+\begin{equation}
+\ln p(\mathbf X|\boldsymbol\pi,\boldsymbol\mu,\boldsymbol\Sigma)=\sum_{n=1}^N\ln\left\{\sum_{k=1}^K\pi_k\mathcal N(\mathbf x_n|\boldsymbol\mu_k,\boldsymbol\Sigma_k\right\}
+\end{equation}
+where $\mathbf X = \{\mathbf x_1,...,\mathbf x_N\}$. One approach to maximizing the likelihood function is to use iterative numerical optimization techniques. Alternatively we can employ a powerful framework called expectation maximization (EM).
+
+\subsubsection{About Latent Variables}
+We now turn to a formulation of Gaussian mixtures in terms of discrete \emph{latent} variables. This will provide us with a deeper insight into this important distribution, and will also serve to motivate the expectation-maximization (EM) algorithm.
+
+Recall from (\ref{equ:mixture}) that the Gaussian mixture distribution can be written as a linear superposition of Gaussians in the form
+\begin{equation}\label{equ:form3}
+p(\mathbf x)=\sum_{k=1}^K\pi_k\mathcal N(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)
+\end{equation}
+Let us introduce a $K$-dimensional binary random variable $\mathbf z$ having a 1-of-$K$ representation in which a particular element $z_k$ is equal to 1 and all other elements are equal to 0. The values of $z_k$ therefore satisfy $z_k\in\{0,1\}$ and $\Sigma_k z_k=1$, and we see that there are $K$ possible states for the vector $\mathbf z$ according to which element is nonzero. We shall define the joint distribution $p(\mathbf x, \mathbf z)$ in terms of a marginal distribution $p(\mathbf z)$ and a conditional distribution $p(\mathbf x|\mathbf z)$. The marginal distribution over $\mathbf z$ is specified in terms of the mixing coefficients $\pi_k$, such that
+\begin{equation}
+p(z_k=1)=\pi_k
+\end{equation}
+where the parameters $\{\pi_k\}$ must satisfy
+\begin{equation}
+0\leq\pi_k\leq 1
+\end{equation}
+together with
+\begin{equation}
+\sum_{k=1}^K\pi_k=1
+\end{equation}
+in order to be valid probabilities. Because $\mathbf z$ uses a 1-of-$K$ representation, we can also write this distribution in the form
+\begin{equation}
+p(\mathbf z)=\prod_{k=1}^K\pi_k^{z_k}.
+\end{equation}
+Similarly, the conditional distribution of $\mathbf x$ given a particular value for $\mathbf z$ is a Gaussian
+\begin{equation}\label{equ:form1}
+p(\mathbf x|z_k=1)=\mathcal(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)
+\end{equation}
+which can also be written in the form
+\begin{equation}\label{equ:form2}
+p(\mathbf x|\mathbf z)=\prod^K_{k=1}p\mathcal(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)^{z_k}.
+\end{equation}
+The joint distribution is given by $p(\mathbf z)p(\mathbf x|\mathbf z)$, and the marginal distribution of $\mathbf x$ is then obtained by summing the joint distribution over all possible states of $\mathbf z$ to give
+\begin{equation}
+p(\mathbf x)=\sum_{\mathbf z}p(\mathbf z)p(\mathbf x|\mathbf z)=\sum_{k=1}^K\pi_k\mathcal N(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)
+\end{equation}
+where we have made use of (\ref{equ:form1}) and (\ref{equ:form2}). Thus the marginal distribution of $\mathbf x$ is a Gaussian mixture of the form (\ref{equ:form3}). If we have several observations $\mathbf{x_1,...,x_N}$, then, because we have represented the marginal distribution in the form $p(\mathbf x)=\sum_{\mathbf z}p(\mathbf x,\mathbf z)$, it follows that for every observed data point $\mathbf x_n$ there is a corresponding latent variable $\mathbf z_n$.
+
+We have therefore found an equivalent formulation of the Gaussian mixture involving an explicit latent variable. It might seem that we have not gained much by doing so. However, we are now able to work with the joint distribution $p(\mathbf x, \mathbf z)$ instead of the marginal distribution $p(\mathbf x)$, and this will lead to significant simplifications, most notably through the introduction of the expectation-maximization (EM) algorithm.
+
+Another quantity that will play an important role is the conditional probability of $\mathbf z$ given $\mathbf x$. We shall use $\gamma(z_k)$ to denote $p(z_k=1|\mathbf x)$, whose value can be found using Bayes’ theorem
+
+\begin{equation}
+\gamma(z_k)=p(z_k=1|\mathbf x)=\frac{p(z_k=1)p(\mathbf x|z_k=1)}{\sum_{j=1}^Kp(z_j=1)p(\mathbf x|z_j=1)}=\frac{\pi_k\mathcal N(\mathbf x|\boldsymbol\mu_k,\boldsymbol\Sigma_k)}{\sum_{j=1}^K\pi_j\mathcal N(\mathbf x|\boldsymbol\mu_j,\boldsymbol\Sigma_j)}
+\end{equation}
+We shall view $\pi_k$ as the prior probability of $z_k=1$, and the quantity $\gamma(z_k)$ as the corresponding posterior probability once we have observed $\mathbf x$. As we shall see later, $\gamma(z_k)$ can also be viewed as the responsibility that component $k$ takes for ‘explaining’ the observation $\mathbf x$.
+
+
+
+
+\subsection{EM for Gaussian Mixtures}
+Initially, we shall motivate the EM algorithm by giving a relatively informal treatment in the context of the Gaussian mixture model.
+
+Let us begin by writing down the conditions that must be satisfied at a maximum of the likelihood function. Setting the derivatives of $\ln p(\mathbf X|\boldsymbol\pi,\boldsymbol\mu,\boldsymbol\Sigma)$ with respect to the means $\boldsymbol\mu_k$ of the Gaussian components to zero, we obtain
+\begin{equation}
+0=-\sum_{n=1}^n\frac{\pi_k\mathcal N(\mathbf x_n|\boldsymbol\mu_k,\boldsymbol\Sigma_k)}{\underbrace{\sum_j\pi_j\mathcal N(\mathbf x_n|\boldsymbol\mu_j,\boldsymbol\Sigma_j)}_{\gamma(z_{nk})}}\sum_k(\mathbf x_n-\boldsymbol\mu_k)
+\end{equation}
+
+Multiplying by $\boldsymbol\Sigma_k^{-1}$ (which we assume to be nonsingular) and rearranging we obtain
+\begin{equation}
+\boldsymbol\mu_k=\frac{1}{N_k}\sum_{n=1}^N\gamma(z_{nk})\mathbf x_n
+\end{equation}
+where we have defined
+\begin{equation}
+ N_k=\sum_{n=1}^N\gamma(z_{nk}).
+  \end{equation}
+
+We can interpret $N_k$ as the effective number of points assigned to cluster $k$. Note carefully the form of this solution. We see that the mean $\boldsymbol\mu_k$ for the $k^{th}$ Gaussian component is obtained by taking a weighted mean of all of the points in the data set, in which the weighting factor for data point $\mathbf x_n$ is given by the posterior probability $\gamma(z_{nk})$ that component $k$ was responsible for generating $\mathbf x_n$.
+
+If we set the derivative of $\ln(\mathbf X|\boldsymbol\pi,\boldsymbol\mu,\boldsymbol\Sigma)$ with respect to $\boldsymbol\Sigma_k$ to zero, and follow a similar line of reasoning, making use of the result for the maximum likelihood for the covariance matrix of a single Gaussian, we obtain
+\begin{equation}
+\boldsymbol\Sigma_k=\frac{1}{N_k}\sum^N_{n=1}\gamma(z_{nk})(\mathbf x_n-\boldsymbol\mu_k)(\mathbf x_n-\boldsymbol\mu_k)^{\mathrm T}
+\end{equation}
+which has the same form as the corresponding result for a single Gaussian fitted to the data set, but again with each data point weighted by the corresponding posterior
+probability and with the denominator given by the effective number of points associated with the corresponding component.
+
+Finally, we maximize $\ln p(\mathbf X|\boldsymbol\pi,\boldsymbol\mu,\boldsymbol\Sigma)$ with respect to the mixing coefficients $\pi_k$. Here we must take account of the constraint $\sum_{k=1}^K\pi_k=1$. This can be achieved using a Lagrange multiplier and maximizing the following quantity
+\begin{equation}
+\ln p(\mathbf X|\boldsymbol\pi,\boldsymbol\mu,\boldsymbol\Sigma)+\lambda(\sum_{k=1}^K\pi_k-1)
+\end{equation}
+which gives
+\begin{equation}
+0=\sum_{n=1}^N\frac{\mathcal N(\mathbf x_n|\boldsymbol\mu_k,\boldsymbol\Sigma_k)}{\sum_j\pi_j\mathcal N(\mathbf x_n|\boldsymbol\mu_j,\boldsymbol\Sigma_j)}
+\end{equation}
+where again we see the appearance of the responsibilities. If we now multiply both sides by $\pi_k$ and sum over $k$ making use of the constraint $\sum_{k=1}^K\pi_k=1$, we find $\lambda=-N$. Using this to eliminate $\lambda$ and rearranging we obtain
+\begin{equation}
+\pi_k=\frac{N_k}{N}
+\end{equation}
+so that the mixing coefficient for the $k^{th}$ component is given by the average responsibility which that component takes for explaining the data points.
+
+\subsection{EM Algorithm}
+Given a Gaussian mixture model, the goal is to maximize the likelihood function with respect to the parameters (comprising the means and covariances of the components and the mixing coefficients).
+\begin{enumerate}
+	\item Initialize the means $\boldsymbol\mu_k$, covariances $\boldsymbol\Sigma_k$ and mixing coefficients $\pi_k$, and evaluate the initial value of the log likelihood.
+	\item \textbf{E step}. Evaluate the responsibilities using the current parameter values
+	\begin{equation}
+	\gamma(z_{nk})=\frac{\pi_k\mathcal N(\mathbf x_n|\boldsymbol\mu_k,\boldsymbol\Sigma_k)}{\sum_{j=1}^K\pi_j\mathcal N(\mathbf x_n|\boldsymbol\mu_j,\boldsymbol\Sigma_j)}
+	\end{equation}
+	\item \textbf{M step}. Re-estimate the parameters using the current responsibilities
+	\begin{align}
+	\boldsymbol\mu_k^{new}&=\frac{1}{N_k}\sum_{n=1}^N\gamma(z_{nk})\mathbf x_n\\
+	\boldsymbol\Sigma_k^{new}&=\frac{1}{N_k}\sum_{n=1}^N\gamma(z_{nk})(\mathbf x_n-\boldsymbol\mu_k^{new})(\mathbf x_n-\boldsymbol\mu_k^{new})^{\mathrm T}\\
+	\pi_k^{new}&=\frac{N_k}{N}
+	\end{align}
+	where
+	\begin{equation}
+	N_k=\sum_{n=1}^N\gamma(z_{nk}).
+	\end{equation}
+	\item Evaluate the log likelihood
+	\begin{equation}
+	\ln p(\mathbf X|\boldsymbol\mu,\boldsymbol\Sigma,\boldsymbol\pi)=\sum_{n=1}^N\ln \left\{\sum_{k=1}^K\pi_k\mathcal N(\mathbf x_n|\boldsymbol\mu_k,\boldsymbol\Sigma_k)\right\}
+	\end{equation}
+	and check for convergence of either the parameters or the log likelihood. If the convergence criterion is not satisfied return to step 2.
+
+\end{enumerate}
+\section{Tasks}
+\begin{itemize}
+	\item Assume that score vectors of teams in the same class are normally distributed, we can thus adopt the Gaussian mixture model. Please classify the teams into 3 classes by using EM algorithm. If necessary, you can refer to page 430-439 in the book \textcolor{blue}{\texttt{Pattern Recognition and Machine Learning.pdf}} and the website \textcolor{	orange}{\url{https://blog.csdn.net/jinping_shi/article/details/59613054}} which is a Chinese translation.
+	\item You should show the values of these parameters: $\boldsymbol\gamma$, $\boldsymbol\mu$ and $\boldsymbol\Sigma$. If necessary, you can plot the clustering results. \textcolor{blue}{Note that $\boldsymbol\gamma$ is essential for classifying.}
+	\item Please submit a file named \textcolor{orange}{\texttt{E13\_YourNumber.pdf}} and send it to \textcolor{orange}{\texttt{ai\_201901@foxmail.com}}
+\end{itemize}
+
+\section{Codes and Results}
+
+The classification results are listed below.
+\begin{center}
+\begin{tabular}{|c|l|}\hline
+0 & Japan South\_Korea Iran Australia\\\hline
+1 & Saudi\_Arabia United\_Arab\_Emirates Uzbekistan Bahrain North\_Korea\\\hline
+2 & China Iraq Qatar Thailand Vietnam Oman Indonesia\\\hline
+\end{tabular}
+\end{center}
+
+And the $\boldsymbol\gamma$, $\boldsymbol\mu$ and $\boldsymbol\Sigma$ are shown in Fig.~\ref{fig:params}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{fig/params.png}
+\caption{Values of $\boldsymbol\gamma$, $\boldsymbol\mu$ and $\boldsymbol\Sigma$}
+\label{fig:params}
+\end{figure}
+
+The classification plot in 2D is shown in Fig.~\ref{fig:res} (only the first two dimensions are selected).
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{fig/result.eps}
+\caption{classification plot}
+\label{fig:res}
+\end{figure}
+
+The following code \verb'em.py' is generated by jupyter notebook \verb'em.ipynb'.
+\begin{lstlisting}
+
+# coding: utf-8
+
+# In[ ]:
+
+
+import numpy as np
+import pandas as pd
+import sys
+
+dataset = pd.read_csv("football.txt",sep=",")
+dataset.head()
+
+
+# In[ ]:
+
+
+def prob(x, mu, sigma):
+    """
+    Calculate the Gaussian distribution
+
+    N(x|\mu,\Sigma)=\frac{1}{(2\pi)^{D/2}|\Sigma|^{1/2}}\exp\{-\frac{1}{2}(x-\mu)^T}\Sigma^{-1}(x-\mu)\}
+
+    Notice the input x here should be a 1-d vector
+    """
+    if x.ndim != 1 or mu.ndim != 1:
+        raise RuntimeError("Dimension error!")
+    # print(x,mu,sigma)
+    D = x.shape[0]
+    expOn = - 1 / 2 * np.matmul(np.matmul((x - mu).T,np.linalg.inv(sigma)),x - mu)
+    divBy = np.power(2 * np.pi, D / 2) * np.sqrt(np.linalg.det(sigma))
+    return np.exp(expOn) / divBy
+
+def EM(dataMat, n_components=3, maxIter=100):
+    """
+    Expectation-Maximization (EM) algorithm
+
+    This implementation has been extended to support different number of components
+    """
+    n_samples, D = np.shape(dataMat) # n_samples=16 D=7
+
+    # 1. Initialize Gaussian parameters
+    pi_k = np.ones(n_components) / n_components # mixing coefficients
+    # randomly select k(n_components) samples as the mean of each class
+    # choices = np.random.choice(n_samples,n_components)
+    # predefined mean of each class
+    choices = [1,13,11]
+    print([(i,dataset["Country"][i]) for i in choices])
+    mu_k = np.array([dataMat[i,:] for i in choices]).reshape(n_components,D) # k * D
+    # mu_k = [dataMat[5, :], dataMat[21, :], dataMat[26, :]]
+    sigma_k = [np.eye(D) for x in range(n_components)] # k * D * D
+
+    gamma_k = np.zeros((n_samples, n_components)) # n * k
+    # Iterate for maxIter times
+    for i in range(maxIter):
+        """
+        2. E step
+        \gamma(z_{nk}) = \frac{\pi_k prob(x_n|\mu_k,\Sigma_k)}{sum_pi_mul}
+        sum_pi_mul = \sum_{j=1}^K \pi_j prob(x_n|\mu_j,\Sigma_j)
+        """
+        for n in range(n_samples):
+            sum_pi_mul = 0 # denominator
+            for k in range(n_components):
+                gamma_k[n, k] = pi_k[k] * prob(dataMat[n, :], mu_k[k], sigma_k[k])
+                sum_pi_mul += gamma_k[n, k]
+            # normalization
+            for k in range(n_components):
+                gamma_k[n, k] /= sum_pi_mul
+        # summarize gamma_k along different samples
+        N_k = np.sum(gamma_k, axis=0)
+
+        """
+        3. M step
+        \mu_k^{new} = \frac{1}{N_k}\sum_{n=1}^N\gamma(z_{nk})x_n
+	    \Sigma_k^{new} = \frac{1}{N_k}\sum_{n=1}^N\gamma(z_{nk})(x_n-\mu_k^{new})(x_n-\mu_k^{new})^T
+	    \pi_k^{new} = \frac{N_k}{N}
+
+        N_k=\sum_{n=1}^N\gamma(z_{nk})
+        """
+        for k in range(n_components):
+            # Calculate \mu_k
+            mu_k[k] = np.zeros(D,dtype=np.float64)
+            for n in range(n_samples):
+                mu_k[k] += gamma_k[n, k] * dataMat[n, :]
+            mu_k[k] /= N_k[k]
+
+            # Calculate \Sigma_k
+            sigma_k[k] = np.zeros((D, D),dtype=np.float64)
+            for n in range(n_samples):
+                sigma_k[k] += gamma_k[n, k] * np.matmul((dataMat[n, :] - mu_k[k]).reshape(1,-1).T, (dataMat[n, :] - mu_k[k]).reshape(1,-1)) # be careful of outer product!
+            sigma_k[k] /= N_k[k]
+
+            # Calculate new mixing coefficient
+            pi_k[k] = N_k[k] / n_samples
+
+        sigma_k += np.eye(D)
+
+    print("gamma: ",gamma_k)
+    print("mu: ",mu_k)
+    print("Sigma: ",sigma_k)
+
+    return gamma_k
+
+
+# In[ ]:
+
+
+def gaussianCluster(dataMat, n_components, max_iter):
+    n_samples, D = np.shape(dataMat)
+    centroids = np.zeros((n_components, D))
+    gamma = EM(dataMat,n_components,max_iter)
+
+    # get the cluster result
+    clusterAssign = np.zeros((n_samples, 2))
+    for n in range(n_samples):
+        clusterAssign[n, :] = np.argmax(gamma[n, :]), np.amax(gamma[n, :])
+
+    # calculate the final results
+    for k in range(n_components):
+        pointsInCluster = dataMat[np.nonzero(clusterAssign[:, 0] == k)[0]]
+        centroids[k, :] = np.mean(pointsInCluster, axis=0)
+    return centroids, clusterAssign[:,0]
+
+
+# In[ ]:
+
+
+from sklearn import mixture
+
+def sklearn_em(data,n_components,max_iter):
+    clst = mixture.GaussianMixture(n_components=n_components,max_iter=max_iter,covariance_type="full")
+    clst.fit(data)
+    predicted_labels = clst.predict(data)
+    return clst.means_, predicted_labels
+
+
+# In[ ]:
+
+
+import matplotlib.pyplot as plt
+
+def showCluster(dataset, k, centroids, clusterAssment):
+    numSamples, dim = dataset.shape
+
+    mark = ['or', 'ob', 'og', 'ok', '^r', '+r', 'sr', 'dr', '<r', 'pr']
+    if k > len(mark):
+        print("Sorry! Your k is too large!")
+        return 1
+
+    # draw all samples
+    for i in range(numSamples):
+        markIndex = int(clusterAssment[i])
+        plt.plot(dataset[i, 0], dataset[i, 1], mark[markIndex])
+
+    mark = ['Dr', 'Db', 'Dg', 'Dk', '^b', '+b', 'sb', 'db', '<b', 'pb']
+    # draw the centroids
+    for i in range(k):
+        plt.plot(centroids[i, 0], centroids[i, 1], mark[i], markersize=12)
+
+    plt.show()
+
+
+# In[ ]:
+
+
+n_components = 3
+data = dataset[dataset.columns.values[dataset.columns.values != "Country"]].to_numpy()
+# centroids, labels = sklearn_em(data,n_components,100)
+centroids, labels = gaussianCluster(data.astype(np.float64),n_components,100)
+showCluster(data, n_components, centroids, labels)
+res = {0:[],1:[],2:[]}
+for i,label in enumerate(labels):
+    res[label].append(dataset["Country"][i])
+for key in res:
+    print(key,*res[key])
+\end{lstlisting}
+
+\end{document}
