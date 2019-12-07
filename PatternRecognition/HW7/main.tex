@@ -1,0 +1,160 @@
+\documentclass[reportComp]{thesis}
+\usepackage[python,pseudo]{mypackage}
+
+\title{模式识别作业Chap 6}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{模式识别作业}
+
+\begin{document}
+
+\maketitle
+
+\begin{question}[\textsection 6 Q3]
+考虑用$n$个模式进行$m_e$次训练的一个$d-n_H-c$型网络。
+\begin{itemize}
+	\item [(a)] 此问题的空间复杂度是多少？（网络参数的存贮和模式存贮都要考虑，但不考虑程序本身）。
+	\item [(b)] 假设网络训练由一个随机模式来训练，时间复杂度是多少？由于它受累计乘法次数的控制所以将此作为时间复杂度的测度。
+	\item [(c)] 假设网络由成批模式训练，时间复杂度是多少？
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 隐含层$n_H$个神经元每个对应$d$个输入单元，因此有$n_Hd$个权重；同理，连接隐含层和输出层共$n_Hc$个权重，故一共的空间复杂度为$n_H(c+d)$。而模式存储的空间复杂度为$nd$。
+
+	\item [(b)] 随机模式即计算
+	\[\vw(t+1)=\vw(t)+\Delta\vw(t)\]
+	先考虑隐含层到输出层，由公式(16)，有
+	\[\Delta w_{j k}=\eta\left(t_{k}-z_{k}\right) f^{\prime}\left(net_{k}\right) y_{j}\]
+	其中，$net_k=\sum_{j=1}^{n_H}w_{jk}y_j$由$n_H$次乘法和$n_H$次加法构成，因此$\Delta w_{jk}$时间复杂度为$c(2n_H+1)$。
+
+	再考虑输入层到隐含层，由公式(20)，有
+	\[\Delta w_{j i}=\eta x_{i} f^{\prime}\left(net_{j}\right) \sum_{k=1}^{c} w_{k j} \delta_{k}\]
+	同上理，$net_j$计算量为$2d$，$\sum_{k=1}^{c} w_{k j} \delta_{k}$计算量为$2c$，故$\Delta w_{ji}$时间复杂度为$2n_H(d+c+1)$。
+
+	进而，在一轮迭代中$\vw$的计算量为（$\Delta \vw$的更新及$\Delta\vw$加上$\vw$的计算）
+	\[c(2n_H+1)+2n_H(d+c+1)+(dn_H+n_Hc)=3dn_H+5n_Hc+c+2n_H\]
+	得到总的时间复杂度为$(3dn_H+5n_Hc+c+2n_H)m_e$。
+
+	\item [(c)] 同上理，总的模式迭代次数为$nm_e$，故时间复杂度为$(3dn_H+5n_Hc+c+2n_H)n m_e$。
+\end{itemize}
+\end{answer}
+
+\begin{question}[\textsection 6 Q8]
+考虑具有$d$个输入单元、$n_H$个隐单元、$c$个输出单元以及偏置的一个标准三层反向传播网。
+\begin{itemize}
+	\item [(a)] 网络中有多少权值？
+	\item [(b)] 考虑权值对称。特别是，证明如果将每一个权值的符号反向，网络功能不变。
+	\item [(c)] 现在考虑隐单元的对称交换。隐单元上没有标记，因此它们可以相互交换（沿着对应权值）
+	而使网络功能不受影响。证明该等价标记数（对称交换因子）为$n_H!2^{n_H}$。在$n_H=10$的情况下估计该因子的值。
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 同\textsection 6 Q3(a)有权重$dn_H+(n_H+1)c$，其中多出来的$+1$项为偏置项。
+	\item [(b)] 由公式(6)
+	\[g_{k}(\mathrm{x}) \equiv z_{k}=f\left(\sum_{j=1}^{n_{H}} w_{k j} f\left(\sum_{i=1}^{d} w_{j i} x_{i}+w_{j 0}\right)+w_{k 0}\right)\]
+	假设激活函数$f$为奇函数，则内层$f$在权值符号反向后，值也相反；但$f$前面还有一个权重项$w_{kj}$也经过了反向，故原值不变，即
+	\[\left(-w_{k j}\right)\left[-f\left(\sum_{j=1}^{d} w_{j i} x_{i}\right)\right]=\left(w_{k j}\right)\left[f\left(\sum_{j=1}^{d} w_{j i} x_{i}\right)\right]\]
+	\item [(c)] 考虑$n_H$个隐单元构成的集合的子集，一共有$2^{n_H}$个。
+	而这些子集内的隐单元都可以进行重排，因此有$n_H!$种情况。
+	故一共有$n_H!2^{n_H}$个对称交换因子。
+	对于$n=10$，该值为$3715891200$。
+\end{itemize}
+\end{answer}
+
+\begin{question}[\textsection 6 Q10]
+在如下两种情况下，将sigmoid的导数用sigmoid本身来表示（$a,b>0$）：
+\begin{itemize}
+	\item [(a)] 完全为正的sigmoid：$f(net)=\frac{1}{1+\ee^{a\cdot net}}$。
+	\item [(b)] 反对称的sigmoid：$f(net)=a\tanh(b\cdot net)$
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+	\item [(a)] 变换得$1+\ee^{a\cdot net}=1/f(net)$，进而
+	\[f'(net)=\frac{-a\ee^{a\cdot net}}{(1+\ee^{a\cdot net})^2}=-a(f(net)-f^2(net))\]
+	\item [(b)] 变换得$\tanh(b\cdot net)=f(net)/a$，进而
+	\[f'(net)=ab\mathrm{sech}^2(b\cdot net)=ab(1-\tanh^2(b\cdot net))=ab(1-f^2(net)/a^2)\]
+\end{itemize}
+\end{answer}
+
+\begin{question}[\textsection 6 Q12]
+解释为什么输入层到隐含层的权值必须相互不等（即是随机的），否则学习不能顺利进行。
+更明确地说，如果权值初始化为相同的值，将出现什么现象？
+\end{question}
+\begin{answer}
+若输入层到隐层的权值均为$w_o$，则
+\[net_{j}=f\left(net_{j}\right)=\sum_{i=1}^{d} w_{ji} x_{i}=w_{o} \sum_{i} x_{i}=w_{o} \mathbf{x}\]
+为常数，因此梯度不会产生变化，进而无法训练。
+\end{answer}
+
+\begin{question}[\textsection 6 Q17]
+完成导出式(26)的推导步骤
+\end{question}
+\begin{answer}
+由式(25)有
+\[J(\mathbf{w})=n\left[\frac{n_{k}}{n} \frac{1}{n_{k}} \sum_{\mathbf{x} \in \omega_{k}}\left[g_{k}(\mathbf{x}, \mathbf{w})-1\right]^{2}+\frac{n-n_{k}}{n} \frac{1}{n-n_{k}} \sum_{\mathbf{x} \notin\omega_{k}} g_{k}(\mathbf{x}, \mathbf{w})^{2}\right]\]
+当$n\to\infty$时，$\omega_k$中的样本比例趋于$P(\omega_k)$，由大数定律
+\[\frac{1}{n_{k}} \sum_{\mathbf{x} \in \omega_{k}}\left[g_{k}(\mathbf{x}, \mathbf{w})-1\right]^{2}\]
+趋于
+\[\mathbb{E}\left(\left[g_{k}(\mathbf{x}, \mathbf{w})-1\right]^{2} | \mathbf{x} \in \omega_{k}\right)=
+\int\left[g_{k}(\mathbf{x}, \mathbf{w})-1\right]^{2} p\left(\mathbf{x} | \omega_{k}\right) \diff \vx\]
+类似的有
+\[\frac{1}{n-n_k}\sum_{x\notin \omega_k}[F_k(\vx,\omega)]^2\]
+趋于
+\[\mathbb{E}\left([g_k(\vx,\vw)]^2\mid\vx\in\omega_{i\ne k}\right)
+=\int[g_k(\vx,\vw)]^2p(\vx\mid\omega_{i\ne k})\diff\vx\]
+进而得到
+\[\begin{aligned}
+J(\mathbf{w}) &=P\left(\omega_{k}\right) \int\left[g_{k}(\mathbf{x}, \mathbf{w})-1\right]^{2} p\left(\mathbf{x} | \omega_{k}\right) d \mathbf{x}+P\left(\omega_{i \neq k}\right) \int\left[g_{k}(\mathbf{x}, \mathbf{w})\right]^{2} p\left(\mathbf{x} | \omega_{i \neq k}\right) d \mathbf{x} \\
+&=\int\left[g_{k}(\mathbf{x}, \mathbf{w})-1\right]^{2} p\left(\mathbf{x}, \omega_{k}\right) d \mathbf{x}+\int\left[g_{k}(\mathbf{x}, \mathbf{w})\right]^{2} p\left(\mathbf{x} | \omega_{i \neq k}\right) d \mathbf{x} \\
+&=\int\left[g_{k}^{2}(\mathbf{x}, \mathbf{w})+1-2 g_{k}(\mathbf{x}, \mathbf{w})\right] p\left(\mathbf{x}, \mathbf{w}_{k}\right) d \mathbf{x}+\int\left[g_{k}(\mathbf{x}, \mathbf{w})\right]^{2} p\left(\mathbf{x} | \omega_{i \neq k}\right) d \mathbf{x} \\
+&=\int\left[g_{k}(\mathbf{x}, \mathbf{w})-P\left(\omega_{k} | \mathbf{x}\right)\right]^{2} p(\mathbf{x}) d \mathbf{x}+\int P\left(\omega_{k} | \mathbf{x}\right)\left[1-P\left(\omega_{k} | \mathbf{x}\right)\right] p(\mathbf{x}) d \mathbf{x} \\
+&=\int\left[g_{k}(\mathbf{x}, \mathbf{w})-P\left(\omega_{k} | \mathbf{x}\right)\right]^{2} p(\mathbf{x}) d x+\int P\left(\omega_{k} | \mathbf{x}\right) P\left(\omega_{i \neq k} | \mathbf{x}\right) p(\mathbf{x}) d \mathbf{x}
+\end{aligned}\]
+\end{answer}
+
+\begin{question}[\textsection 6 Q26]
+考虑$S$型激活函数
+\[f(net) = a \tanh (b\cdot net)
+= a\left[\frac{1-\ee^{-b \cdot net}}{1+\ee^{-b\cdot net}}\right]
+= \frac{2 a}{1+\ee^{-b\cdot net}}-a\]
+\begin{itemize}
+	\item [(a)] 证明它的导数$f'(net)$可简单写成$f(net)$的形式
+	\item [(b)] 在$net=-\infty$、$0$、$+\infty$时$f(net)$、$f'(net)$、$f''(net)$分别是多少？
+\end{itemize}
+\end{question}
+\begin{answer}
+\textcolor{red}{注意原题的等式就是有问题的，$\tanh(b\cdot net)$展开的那条等式并不成立！
+因此下面是按照最右侧的等式，即$f(net)=\frac{2 a}{1+\ee^{-b\cdot net}}-a$进行计算。}
+\begin{itemize}
+	\item [(a)] 同题\textsection 6 Q10(b)，有
+	\[f'(net)=\frac{2ab\ee^{b\cdot net}}{(1+\ee^{b\cdot net})^2}=\frac{b}{2a}[a^2-(f(net))^2]\]
+	\item [(b)] 注意到$f''(net)=-\frac{b}{a}f(net)f'(net)$，故
+	\begin{itemize}
+		\item 当$net=\infty$时，有
+		\[\begin{aligned}
+		f(\infty) &=\frac{2 a}{1+\ee^{-b\cdot n e t}}-a=2 a-a=a \\
+		f^{\prime}(\infty) &=\frac{b}{2 a}\left[a^{2}-(f(n e t))^{2}\right]=\frac{b}{2 a}\left(a^{2}-a^{2}\right)=0 \\
+		f^{\prime \prime}(\infty) &=-\frac{b}{2 a} f(n e t) f^{\prime}(n e t)=0
+		\end{aligned}\]
+		\item 当$net=0$时，有
+		\[\begin{aligned}
+		f(0) &=\frac{2 a}{1+\ee^{-b\cdot n e t}}-a=2 a/2-a=a \\
+		f^{\prime}(0) &=\frac{b}{2 a}\left[a^{2}-(f(n e t))^{2}\right]=\frac{b}{2 a}a^2=\frac{ab}{2} \\
+		f^{\prime \prime}(0) &= 0
+		\end{aligned}\]
+		\item 当$net=-\infty$时，有
+		\[\begin{aligned}
+		f(-\infty) &=\frac{2 a}{1+\ee^{-b\cdot n e t}}-a=0-a=-a \\
+		f^{\prime}(-\infty) &=\frac{b}{2 a}\left[a^{2}-(f(n e t))^{2}\right]=\frac{b}{2 a}\left(a^{2}-a^{2}\right)=0 \\
+		f^{\prime \prime}(-\infty) &=0
+		\end{aligned}\]
+	\end{itemize}
+\end{itemize}
+\end{answer}
+
+\end{document}
