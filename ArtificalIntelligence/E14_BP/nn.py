@@ -112,6 +112,12 @@ class Network(object):
         """
         return np.linalg.norm(y_hat - y) # 2-norm
 
+    def cross_entropy(self,y_hat,y):
+        """
+        Cross entropy loss
+        """
+        return y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat)
+
     def forward(self,x):
         """
         w/o activation: z^{(l+1)} = W^{(l)}a^{(l)} + b^{(l)}
