@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 
-GLuint teapotList;
-
 void init(void)
 {
     GLfloat ambient[] = {0.0, 0.0, 0.0, 1.0};
@@ -28,9 +26,6 @@ void init(void)
     glEnable(GL_AUTO_NORMAL);
     glEnable(GL_NORMALIZE);
     glEnable(GL_DEPTH_TEST); // depth buffer
-    teapotList = glGenLists(1); // make teapot display list
-    glNewList(teapotList, GL_COMPILE);
-    glutSolidTeapot(1.0);
     glEndList();
 }
 
@@ -54,24 +49,32 @@ void display(void)
     mat[0] = 1; mat[1] = 1; mat[2] = 1; // reflect white lights
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat);
     glMaterialf(GL_FRONT, GL_SHININESS, 0.2 * 128.0); // shine
-    glCallList(teapotList);
+    glutSolidTeapot(1.0);
 
     glPopMatrix();
     glFlush();
 }
 
-void reshape(int w, int h)
-{
-    glViewport(0, 0, (GLsizei) w, (GLsizei) h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+/* Handler for window re-size event. Called back when the window first appears and
+   whenever the window is re-sized with its new width and height */
+void reshape(GLsizei width, GLsizei height) {  // GLsizei for non-negative integer
+    // Compute aspect ratio of the new window
+    if (height == 0) height = 1;                // To prevent divide by 0
+    GLfloat aspect = (GLfloat)width / (GLfloat)height;
+
+    // Set the viewport to cover the new window
+    glViewport(0, 0, width, height);
+
+    // Set the aspect ratio of the clipping volume to match the viewport
+    glMatrixMode(GL_PROJECTION);  // To operate on the Projection matrix
+    glLoadIdentity();             // Reset
     // void glOrtho(GLdouble left, GLdouble right,
     //     GLdouble bottom, GLdouble top,
     //     GLdouble nearVal, GLdouble farVal);
-    if (w <= h)
-        glOrtho(0.0, 4.0, 0.0, 4.0*(GLfloat)h/(GLfloat)w, -10.0, 10.0);
+    if (width <= height)
+        glOrtho(0.0, 4.0, 0.0, 4.0*(GLfloat)height/(GLfloat)width, -10.0, 10.0);
     else
-        glOrtho(0.0, 4.0*(GLfloat)w/(GLfloat)h, 0.0, 4.0, -10.0, 10.0);
+        glOrtho(0.0, 4.0*(GLfloat)width/(GLfloat)height, 0.0, 4.0, -10.0, 10.0);
     glMatrixMode(GL_MODELVIEW);
 }
 
