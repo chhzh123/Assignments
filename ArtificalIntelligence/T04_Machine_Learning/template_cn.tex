@@ -162,7 +162,7 @@ the computations done to make the predictions.
             $h_5$ & 100\% lime\\\hline
         \end{tabular}
     \end{center}
-    给定先验$P(h_i)$和似然$P(d\mid H)$
+    给定先验$P(h_i)$和似然$P(d\mid H)$（注意这里假设所有糖果都是独立同分布的）
     \begin{center}
     \begin{tabular}{|c|c|c|c|c|c|}\hline
         hypothesis & $h_1$ & $h_2$ & $h_3$ & $h_4$ & $h_5$\\\hline
@@ -209,6 +209,7 @@ the computations done to make the predictions.
         P(lime\mid d)&\approx P(lime\mid h_{MAP})=0.5\\
         P(cherry\mid d)&\approx P(cherry\mid h_{MAP})=0.5
     \end{aligned}\]
+    两者预测概率相等。
     \item [(c)] 极大似然(ML)
     \[h_{ML}=\argmax_{h_i} P(d\mid h_i)=h_3\]
     进而
@@ -216,6 +217,7 @@ the computations done to make the predictions.
         P(lime\mid d)&\approx P(lime\mid h_{ML})=0.5\\
         P(cherry\mid d)&\approx P(cherry\mid h_{ML})=0.5
     \end{aligned}\]
+    两者预测概率相等。
 \end{itemize}
 \end{answer}
 
@@ -225,24 +227,23 @@ Consider the Boolean function $E = (A\;\mathrm{XOR}\;B) \;\mathrm{AND}\; (C\;\ma
 \begin{answer}
 真值表如下：
 \begin{center}
-\begin{longtable}{|c|c|c|c|c|}\hline
-A & B & C & D & E\\\hline
-1 & 1 & 1 & 1 & 0\\\hline
-1 & 1 & 1 & 0 & 0\\\hline
-1 & 1 & 0 & 1 & 0\\\hline
-1 & 1 & 0 & 0 & 0\\\hline
-1 & 0 & 1 & 1 & 0\\\hline
-1 & 0 & 1 & 0 & 1\\\hline
-1 & 0 & 0 & 1 & 1\\\hline
-1 & 0 & 0 & 0 & 0\\\hline
-0 & 1 & 1 & 1 & 0\\\hline
-0 & 1 & 1 & 0 & 1\\\hline
-0 & 1 & 0 & 1 & 1\\\hline
-0 & 1 & 0 & 0 & 0\\\hline
-0 & 0 & 1 & 1 & 0\\\hline
-0 & 0 & 1 & 0 & 0\\\hline
-0 & 0 & 0 & 1 & 0\\\hline
-0 & 0 & 0 & 0 & 0\\\hline
+\begin{longtable}{|c|c|c|c|c|c|}\hline
+Sample & A & B & C & D & E\\\hline
+1 & 1 & 1 & 1 & 0 & 0\\\hline
+2 & 1 & 1 & 0 & 1 & 0\\\hline
+3 & 1 & 1 & 0 & 0 & 0\\\hline
+4 & 1 & 0 & 1 & 1 & 0\\\hline
+5 & 1 & 0 & 1 & 0 & 1\\\hline
+6 & 1 & 0 & 0 & 1 & 1\\\hline
+7 & 1 & 0 & 0 & 0 & 0\\\hline
+8 & 0 & 1 & 1 & 1 & 0\\\hline
+9 & 0 & 1 & 1 & 0 & 1\\\hline
+10 & 0 & 1 & 0 & 1 & 1\\\hline
+11 & 0 & 1 & 0 & 0 & 0\\\hline
+12 & 0 & 0 & 1 & 1 & 0\\\hline
+13 & 0 & 0 & 1 & 0 & 0\\\hline
+14 & 0 & 0 & 0 & 1 & 0\\\hline
+15 & 0 & 0 & 0 & 0 & 0\\\hline
 \end{longtable}
 \end{center}
 由朴素贝叶斯
@@ -250,13 +251,13 @@ A & B & C & D & E\\\hline
 P(E\mid A,B,C,D)
 &=\frac{P(A,B,C,D\mid E)P(E)}{P(A,B,C,D)}\\
 &=\frac{P(A\mid E) P(B\mid E) P(C\mid E) P(D\mid E) P(E)}{P(A,B,C,D)}\\
-&=\frac{1/2\cdot 1/2\cdot 1/2\cdot 1/2\cdot 1/4}{1/16}\\
+&=\frac{1/2\cdot 1/2\cdot 1/2\cdot 1/2\cdot 4/15}{1/15}\\
 &=\frac{1}{4}\\
 P(\lnot E\mid A,B,C,D)
 &=\frac{P(A,B,C,D\mid \lnot E)P(\lnot E)}{P(A,B,C,D)}\\
 &=\frac{P(A\mid \lnot E) P(B\mid \lnot E) P(C\mid \lnot E) P(D\mid \lnot E) P(\lnot E)}{P(A,B,C,D)}\\
-&=\frac{1/2\cdot 1/2\cdot 1/2\cdot 1/2\cdot 3/4}{1/16}\\
-&=\frac{3}{4}
+&=\frac{5/11\cdot 5/11\cdot 5/11\cdot 5/11\cdot 11/15}{1/15}\\
+&=\frac{625}{1331}
 \end{aligned}\]
 因为$P(\lnot E\mid A,B,C,D)>P(E\mid A,B,C,D)$，故判别为$E=0$。
 \end{answer}
