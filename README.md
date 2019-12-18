@@ -35,15 +35,15 @@ Below is the list of the courses I took in CS major.
 | Parallel Computing                  | 2019 Spring | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ParallelComputing)     | [:page_facing_up:](https://chhzh123.github.io/summary/parallel-computing/) |
 | Numerical Computing                 | 2019 Spring |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/NumericalComputing)     | [:blue_book:](https://github.com/chhzh123/Notes-of-Math/tree/master/Numerical_Computing) |
 | Convex Optimization                 | 2019 Spring | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ConvexOptimization)     | [:blue_book:](https://github.com/chhzh123/Notes-of-Math/tree/master/Convex_Optimization) |
-| Database Systems                    | 2019 Autumn | :white_check_mark:     |                        | |
-| Database Systems (Lab)              | 2019 Autumn | :white_check_mark:     |                        | |
-| Artificial Intelligence             | 2019 Autumn | :o:                    |                        | |
-| Artificial Intelligence (Lab)       | 2019 Autumn | :o:                    |                        | |
-| Pattern Recognition                 | 2019 Autumn |                        |                        | |
-| Natural Language Processing         | 2019 Autumn |                        |                        | |
-| Digital Image Processing            | 2019 Autumn |                        |                        | |
-| Computer Graphics                   | 2019 Autumn |                        |                        | |
-| Distributed Systems                 | 2019 Autumn |                        |                        | |
+| Database Systems                    | 2019 Autumn | :white_check_mark:     |                        | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/DatabaseSystems) |
+| Database Systems (Lab)              | 2019 Autumn | :white_check_mark:     | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DatabaseSystems) | |
+| Artificial Intelligence             | 2019 Autumn | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ArtificalIntelligence) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/ArtificalIntelligence) |
+| Artificial Intelligence (Lab)       | 2019 Autumn | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ArtificalIntelligence) | |
+| Pattern Recognition                 | 2019 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/PatternRecognition) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/PatternRecognition) |
+| Natural Language Processing         | 2019 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/NaturalLanguageProcessing) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/NaturalLanguageProcessing) |
+| Digital Image Processing            | 2019 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DigitalImageProcessing) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/DigitalImageProcessing) |
+| Computer Graphics                   | 2019 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ComputerGraphics) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/ComputerGraphics) |
+| Distributed Systems                 | 2019 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DistributedSystems) | [:page_facing_up:](https://chhzh123.github.io/summary/distributed-systems/) |
 | Scientific Reading and Writing      | 2019 Autumn |                        |                        | |
 | Principles of Compilers             | 2020 Spring | :white_check_mark:     |                        | |
 | Principles of Compilers (Lab)       | 2020 Spring | :white_check_mark:     |                        | |
