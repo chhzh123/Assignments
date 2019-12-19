@@ -300,4 +300,61 @@ A & B & C\\\hline
 即为所求的XOR网络。
 \end{answer}
 
+\begin{question}\normalfont
+Consider the neural net on Page 32 of the course slides for neural nets.
+\begin{figure}
+\centering
+\includegraphics[width=0.5\linewidth]{fig/neural_net.png}
+\end{figure}
+\begin{itemize}
+\item[(a)] Suppose we use the sigmoid function as the activate function. Compute $\pd{Loss_{o1}}{w_1}$.
+\item[(b)] Suppose we use the $\tanh$ function as the activate function. Compute $\pd{Loss_{o2}}{w_4}$. Note that
+\[\begin{aligned}
+    \tanh(x) &= (\ee^x - \ee^{-x})/(\ee^x + \ee^{-x}) = 2g(2x) - 1\\
+    \tanh'(x) &= 1 - \tanh^2(x)
+\end{aligned}\]
+\end{itemize}
+\end{question}
+\begin{answer}
+\begin{itemize}
+    \item[(a)] 先计算前向过程
+    \[\begin{array}{llll}
+        in_{h1} &= w_1 i_1 + w_2 i_2 + b_1 &= 0.05\cdot 0.15 + 0.10 \cdot 0.20 + 0.35 &= 0.3775\\
+        in_{h2} &= w_3 i_1 + w_4 i_2 + b_1 &= 0.05\cdot 0.25 + 0.10 \cdot 0.30 + 0.35 &= 0.3925\\
+        out_{h1} &= g(in_{h1}) &= \frac{1}{1+\ee^{-0.3775}} &=0.593269992\\
+        out_{h2} &= g(in_{h2}) &= \frac{1}{1+\ee^{-0.3875}} &=0.596884378\\
+        in_{o1} &= w_5 out_{h1} + w_6 out_{h2} +b_2 &= 0.4\cdot 0.59326992 + 0.45\cdot 0.596884378 + 0.60 &= 1.1059059669\\
+        in_{o2} &= w_7 out_{h1} + w_8 out_{h2} +b_2 &= 0.5\cdot 0.59326992 + 0.55\cdot 0.596884378 + 0.60 &= 0.909921369\\
+        out_{o1} &= g(in_{o1}) &=\frac{1}{1+\ee^{-1.1059059669}} &= 1.224921369\\
+        out_{o2} &= g(in_{o2}) &=\frac{1}{1+\ee^{-0.909921369}} &= 0.772928459
+    \end{array}\]
+    再计算后向梯度
+    \[\begin{array}{llll}
+        \Delta_{o1}&=g'(in_{o1})(y_1-out_{o1})&=out_{o1}(1-out_{o1})(y_1-out_{o1})&=-0.138498562\\
+        \Delta_{o2}&=g'(in_{o2})(y_2-out_{o2})&=out_{o2}(1-out_{o2})(y_2-out_{o2})&=0.0380982366\\
+        \Delta_{h1}&=g'(in_{h1})(w_5\Delta_{o1}+w_7\Delta_{o2})&=out_{h1}(1-out_{h1})(w_5\Delta_{o1}+w_7\Delta_{o2})&=-0.0087713546
+    \end{array}\]
+    进而
+    \[\pd{Loss_{o1}}{w_1}=-out_{i1}\Delta_{h1}=i_1\Delta_{h1}=-0.004385677\]
+    \item[(b)] 先计算前向过程
+    \[\begin{array}{llll}
+        in_{h1} &= w_1 i_1 + w_2 i_2 + b_1 &= 0.05\cdot 0.15 + 0.10 \cdot 0.20 + 0.35 &= 0.3775\\
+        in_{h2} &= w_3 i_1 + w_4 i_2 + b_1 &= 0.05\cdot 0.25 + 0.10 \cdot 0.30 + 0.35 &= 0.3925\\
+        out_{h1} &= \tanh(in_{h1}) & &=0.36053439\\
+        out_{h2} &= \tanh(in_{h2}) & &=0.37351345\\
+        in_{o1} &= w_5 out_{h1} + w_6 out_{h2} +b_2 &= 0.4\cdot 0.36053439 + 0.45\cdot 0.37351345 + 0.60 &= 0.912312211\\
+        in_{o2} &= w_7 out_{h1} + w_8 out_{h2} +b_2 &= 0.5\cdot 0.36053439 + 0.55\cdot 0.37351345 + 0.60 &= 0.985721346\\
+        out_{o1} &= \tanh(in_{o1}) & &= 0.722240193\\
+        out_{o2} &= \tanh(in_{o2}) & &= 0.755531976
+    \end{array}\]
+    再计算后向梯度
+    \[\begin{array}{llll}
+        \Delta_{o1}&=g'(in_{o1})(y_1-out_{o1})&=(1-\tanh^2(in_{o1}))(y_1-out_{o1})&=-0.3407137\\
+        \Delta_{o2}&=g'(in_{o2})(y_2-out_{o2})&=(1-\tanh^2(in_{o2}))(y_2-out_{o2})&=0.1006270\\
+        \Delta_{h2}&=g'(in_{h2})(w_6\Delta_{o1}+w_8\Delta_{o2})&=(1-\tanh^2(in_{h2}))(w_6\Delta_{o1}+w_8\Delta_{o2})&=-0.0843074\\
+        \pd{Loss_{o2}}{w_4}&=-out_{i2}\Delta_{h2}&=i_2\Delta_{h2}&=-0.0084307
+    \end{array}\]
+\end{itemize}
+\end{answer}
+
 \end{document}
