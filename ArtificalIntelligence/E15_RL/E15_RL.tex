@@ -257,6 +257,17 @@ Flappy Bird was a side-scrolling mobile game, the objective was to direct a flyi
 \end{enumerate}
 
 \section{Codes and Results}
+\subsection{Tutorial Example}
+The Q value and the optimal path are shown below.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/example.png}
+\end{figure}
+
+Please refer to \verb'example.py' for the code.
+\lstinputlisting{example.py}
+
+\subsection{Flappy Bird}
 The results are shown below, the left figure for 5000 training iterations, and the right one for 10000 iterations.
 \begin{figure}[H]
 \centering
@@ -295,6 +306,7 @@ def update_scores(self, dump_qvalues = True):
 			reward = self.r[0]
 
 		# find the max q value
+        # the actions are for next state
 		maxq = max(self.qvalues[state][0],self.qvalues[state][1])
 
 		# Update self.qvalues[state][act]

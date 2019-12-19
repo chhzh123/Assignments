@@ -78,6 +78,7 @@ class Bot(object):
                 reward = self.r[0]
 
             # find the max q value
+            # the actions are for next state
             maxq = max(self.qvalues[state][0],self.qvalues[state][1])
 
             # Update self.qvalues[state][act]
