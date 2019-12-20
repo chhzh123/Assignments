@@ -1,0 +1,329 @@
+\documentclass[thesis]{thesis}
+\usepackage[python,linenum]{mypackage}
+
+\title{Taichi图形库的剖析与应用}
+\author{吴坎$^\star$\qquad 陈鸿峥$^\star$\qquad 戴钊煌}
+\school{数据科学与计算机学院\quad 计算机类\\超算17341163，大数据17341015，超算17341027}
+\authorremark{\textbf{名字排序不代表贡献大小}，具体分工如下：
+吴坎负责具体代码实现及统筹规划；
+陈鸿峥负责论文报告撰写及PPT修改；
+戴钊煌负责PPT制作及意见讨论。
+由于使用中文撰写论文，故排版样式未参照IEEE/ACM的论文模板，而参照国内的期刊标准。
+择选的论文为Yuanming Hu, Tzu-Mao Li, Luke Anderson, Jonathan Ragan-Kelly, Fr\'edo Durand, \emph{Taichi: A Language for High-Performance Computation on Spatially Sparse Data Structures}, SIGGRAPH Asia, 2019.}
+
+\begin{document}
+	
+\maketitle
+	
+\begin{abstractchinese}
+随着计算机图形学的不断发展，越来越多复杂的算法被提出。
+传统采用OpenGL进行编程的方式，对于现在某些复杂算法来说，已显得十分低效。
+因此越来越多研究者尝试将基本的图形操作算子进行进一步封装，提供更加高层次的接口，从而提升程序员的生产力。
+而太極(Taichi)图形库正是这样的尝试，它主要针对图形学中常见的层次化数据结构，提出了对应的领域特定编程语言(Domain-Specific Language, DSL)和编译器。
+它开创性地将图形学算法中的计算部分和数据结构部分进行解耦，一方面利于程序员更快地部署和维护复杂的数据结构，另一方面通过编译器优化又可以高效地将同一个算法部署到CPU或者GPU上，最终实现性能、可编程性和可移植性三者的权衡，大大推动了图形学研究者的算法开发过程。
+本文首先对图形库及领域特定编程语言的发展状况进行阐述，然后对Taichi语言的特性进行一定讨论，最后通过自己实施算法，实现简单的实例程序并进行展示。
+\end{abstractchinese}
+\begin{keywordchinese}
+计算机图形学，物理过程模拟，领域特定编程语言，领域特定编译器
+\end{keywordchinese}
+
+\section{简介}
+从上个世纪60年代计算机图形学(Computer Graphics, CG)一词被提出来，图形学一直在不断发展焕发新的活力。
+发展至今，图形学已经成为一门独立的学科，涉及数学、物理、光学、材料等等多学科的知识。
+早期图形学研究者们因为资源限制，侧重研究如何在计算机中表示各种各样的图形；而随着计算机底层架构的不断发展，计算力的不断提升，图形学研究者们也愈发追求富有震撼力的视觉效果，提出了大量复杂的模拟算法。
+为了更加逼真地模拟现实，做出有现实感、逼真的CG图像与视频，研究者们常常需要实现几百甚至上千行代码，才能实现一个看似很简单的功能。
+这导致图形学的代码实现往往会存在一定的技术壁垒，某种程度上拖慢了现在图形学的发展速度。
+
+现在最为常用的图形库为OpenGL\cite{opengl}，发展至今将近快30年时间。
+OpenGL采用C/C++进行编写，提供了大量底层画图调用接口，为开发者提供了强有力的工具去实现各种各样的视觉效果。
+但由于太过底层，很多时候CG开发者们并不需要这么多功能，或者不想重复编写简单的图形变换操作，所以后来又有freeglut\cite{freeglut}、glfw\cite{glfw}、glew\cite{glew}等大量OpenGL的扩展库出现。
+这些扩展库将常用的OpenGL操作进一步封装，给开发者更加高层的编程接口，使得编程效率得到很大提升。
+
+而到2010年以后，学术界希望进一步提升语言抽象能力的同时，又保证其实施的高效性，因此产生了大量的领域特定编程语言(Domain-Specific Language)和编译器。
+最典型的如Halide\cite{ragan-kelley_halide_2013}专门针对图像处理管线提出了高层编程接口，同时利用自动循环优化等技术提升代码的局部性，从而实现图像处理性能的大幅提升。
+Liszt\cite{zachary_liszt_2011}是专门用于优化物理模拟过程，GraphIt\cite{yunming_graphit_2018}则是面向有限元分析等图处理的DSL。
+Tiramisu\cite{riyadh_cgo_2019}是专门针对复杂嵌套循环的基于多面体技术的编译器，Taco\cite{fredrik_taco_2017}则是专门针对张量处理设计的领域特定编译器。
+再到今年，MIT的几位研究人员发现在3D图形学应用中存在大量的层次化数据结构，因此他们提出了太極(Taichi)\cite{hu_taichi_2019}这一面向计算机图形学的领域特定语言，专门针对这些应用进行特定优化。
+
+本文将着重对Taichi图形库进行深入剖析，并利用Taichi自己实现一些简单的视觉呈现。
+第\ref{sec:bg}节阐述Taichi图形库的背景与动机，第\ref{sec:method}节将会介绍Taichi的核心方法学，第\ref{sec:exp}节给出我们的实验环境及实验结果，最后第\ref{sec:summary}节总结全文。
+
+
+\section{背景与动机}
+\label{sec:bg}
+在现在的很多3D物理过程模拟中，需要大量应用层次化的数据结构来表达数据。
+包括流体模拟、粒子模拟、材料特性模拟等，都是通过在不同的层次嵌套哈希表、静态数组、动态数组、指针数组等来表示数据。
+
+图\ref{fig:nested}给出了一个层次化嵌套的数据结构的例子。
+其中最顶层为\verb'Root'结构体，其中存储了$16\times 16$个\verb'Block'结构体数组；
+而每个\verb'Block'又包含两个成员，一个为$16\times 16$的\verb'ChildNode'结构体静态数组，另一个为动态的\verb'child2'数组。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/nested.png}
+\caption{层次化嵌套数据结构}
+\label{fig:nested}
+\end{figure}
+
+这只是三层的层次结构，若在每次计算中都要访问叶结点的$(u,v)$元素，在代码编写和实际运行上都已经非常麻烦。
+从这一个例子中我们可以总结出这种多层嵌套的数据结构存在的挑战：
+\begin{enumerate}
+	\item[1)] \underline{简单地遍历层次数据结构会产生大量的冗余访存}：因为核心数据是存储在叶结点$(u,v)$上，因此每次计算访问或更新数据都不得不通过前面的父节点数据结构而访问到子节点。
+	建立多个结构体只是为了符合面向对象编程的标准，使得程序员更好地组织代码，但事实上中间数据结构的访问对实际执行没有任何益处，因此这些冗余访存的开销都可以通过编译器优化抹平。
+	\item[2)] \underline{难以充分利用数据局部性以发挥现代计算机体系结构的优势}：层次化数据结构的访问相当于不规则的访问，每次都需要间接索引地址，因此数据局部性非常差，导致难以充分利用现代计算机中的高速缓存。
+	如果结合Stencil\cite{stencil}等本身就很复杂的数据依赖关系，那么程序运行的性能将会变得更加糟糕。
+	\item[3)] \underline{难以在不同硬件上实现高效的并行}：为了适配不同的体系结构，应用研究者通常要对不同的硬件，如CPU/GPU编写不同的优化代码，以实现最大的性能。但这种方法是低效且不通用的，对于这种3D网格算法更加如此，本身就很难并行，还要部署到不同设备上，只会使问题难上加难。
+\end{enumerate}
+
+因此，Taichi图形库的提出就是为了解决以上的挑战。
+通过高效实现层次化数据结构，并结合领域特定编译器优化，实现平均$4.5$倍的性能提升。
+通过从数据结构中分离计算单元，提供C/C++接口以及Python的绑定，帮助程序员用$1/10$的代码量就实现同样的功能。
+通过实现不同的编译器后端，使得代码可以一次编写，多次部署在不同硬件上。
+最终成功实现了性能(performance)、生产力(productivity)、可移植性(portability)三者的权衡与统一。
+
+\section{核心方法}
+\label{sec:method}
+本节中将按照Taichi原始论文\cite{hu_taichi_2019}的章节顺序简要介绍Taichi图形库的核心特性。
+
+\subsection{语言特性}
+Taichi DSL的核心思想是将\textbf{计算}和\textbf{数据结构}解耦。
+
+在原始的C/C++程序中计算过程与数据结构是紧耦合的，意味着修改数据结构的同时，也要求计算过程进行相应的修改，进而编译器难以做相关的优化。
+而当这两者分离后，程序员在定义数据结构时将轻松很多，同时可以将计算过程与底层存储方式隔离，实现算法的通用性。
+
+如下面的2维离散Laplace算子
+\begin{equation}
+u_{i,j}=\frac{1}{\Delta x^2}(4v_{i,j}-v_{i+1,j}-v_{i-1,j}-v_{i,j+1}-v_{i,j-1})
+\end{equation}
+如果应用在复杂的网格结构中将会非常麻烦，所有关于$v$的访问都会带上复杂的结构名称体前缀。
+而Taichi采用的方法如图\ref{fig:decouple}所示，当计算内核与数据结构相分离后，代码的编写将会变得异常简单。
+两者相互不影响，而整合的过程只需交由编译器完成。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/decouple.png}
+\caption{计算内核与数据结构相分离}
+\label{fig:decouple}
+\end{figure}
+
+\textbf{计算内核}类似于GPU的CUDA编程，采用Single-Program-Multiple-Data (SPMD)的方式进行编写。
+只需在\verb'Kernel.def'中用C++11的Lambda表达式定义好计算过程即可。
+
+而\textbf{数据结构}只需指定根结点\verb'root'，然将下面的数据结构后逐层堆积上去即可。
+Taichi提供了稠密(\verb'dense')、哈希(\verb'hash')和动态(\verb'dynamic')三种子结点类型，又提供了Z形(\verb'morton')、位掩码(\verb'bitmasked')和指针(\verb'pointer')三种结点排布方式，基本上涵盖了所有层次化数据结构。
+
+\subsection{编译优化技术}
+Taichi的编译器主要从以下三个方面优化并提升整体性能。
+\begin{enumerate}
+	\item [1)] \underline{提升缓存局部性}：通过边界推断(boundary inference)确定所需片上cache空间，更好地管理数据存储，也避免了过多无效的计算。
+	\item [2)] \underline{删除冗余访问}：通过分析计算核在不同迭代轮次之间的重叠区域，推断计算一个块所需的内存大小，生成对应得暂存器和共享内存空间，从而利用数据的时空局部性，分摊遍历格点的成本（如图\ref{fig:opt}(a)所示）。
+	\item [3)] \underline{自动并行化和任务管理}：由于网格存在稀疏性，并不是所有网格的叶子结点都需要进行计算，因此直接对叶子结点采用并行机制会导致负载不均（如图\ref{fig:opt}(b)所示）。
+	Taichi采取的方法是，将数据结构展开成一维数组，再做均匀划分。
+	在CPU上通过OpenMP并行处理任务队列，在GPU上则维护多个任务列表，从根节点层层生成，进而实现每个计算单元的负载近似相同。 
+\end{enumerate}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{fig/opt.png}
+\caption{编译器优化技术：(a) 删除冗余访问；(b) 稠密与稀疏结点任务划分对比}
+\label{fig:opt}
+\end{figure}
+
+其他编译器优化技术如公共子表达式消除、局部变量存储转发、死指令消除等在此不再赘述。
+
+\subsection{运行时优化技术}
+由于用户在编写代码时可以直接跳过层次数据结构，直接访问到最底层叶子结点的数据，因此就需要编译器将用户请求的下标，转换为对应的物理地址。
+这里Taichi实现了一个内存分配器，按需分配每个计算核的资源，并且实现虚拟地址空间到物理空间的映射。
+
+CPU上除了采用常见的并行方式外，Taichi也使用了SIMD的方式，利用SSE或AVX指令集，实现多数据的并行读取与写入。
+
+\section{实验}
+\label{sec:exp}
+本节会给出我们的实验环境、以及我们自己利用Taichi图形库编写的一些程序及结果。
+
+\subsection{实验环境}
+我们在VAIO Z Flip 2016的主机上进行了实验，其中有一个Intel Core i7-6567U CPU (3.30GHZ)，一个核心显卡Intel Iris 550，配备8G内存。
+操作系统为Windows 10的子系统Ubuntu 18.04.2 LTS，并安装了Python 3.7.4及相应的依赖库文件。
+下列所有程序都使用Taichi图形库提供的Python Binding进行编程。
+由于机器不具备独立显卡的CUDA环境，故所有程序都只在CPU环境下运行并进行结果分析。
+
+\subsection{实验结果}
+\subsubsection{官方示例}
+首先是基本的环境测试，运行官方提供的太极图（运行方式可见附录\ref{appendix:env}），可正常生成如图\ref{fig:taichi}所示的图片，说明Taichi图形库正常安装并可运行。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.3\linewidth]{fig/taichi.jpg}
+\caption{太极图实例\protect\footnotemark}
+\label{fig:taichi}
+\end{figure}
+\footnotetext{源代码来自：\url{https://github.com/yuanming-hu/taichi/blob/master/examples/taichi_logo.py}，图片中呈现的为本机实现的效果。}
+
+接着，我们尝试运行动态画面，同样运行Taichi代码库中example的例子，其流体效果如图\ref{fig:fluid}所示。
+由于采用CPU进行计算，因此帧率会比较低，但是不影响正常的运行。
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.33\linewidth]{fig/mpm1.png}&
+\includegraphics[width=0.33\linewidth]{fig/mpm2.png}&
+\includegraphics[width=0.33\linewidth]{fig/mpm3.png}
+\end{tabular}
+\caption{流体图实例\protect\footnotemark}
+\label{fig:fluid}
+\end{figure}
+\footnotetext{源代码来自：\url{https://github.com/yuanming-hu/taichi/blob/master/examples/mpm88.py}，图片中呈现的为本机实现的效果。}
+
+最后，我们也加载了作者今年关于可微Taichi库\cite{hu_difftaichi_2019}的实例，其实现了一个可微的水波模拟，如图\ref{fig:difftaichi}所示。
+虽然用CPU模拟相对比较慢，但是相比起传统的图形库，Taichi的模拟速度已经有了质的提升，在几分钟时间内即可完成几百轮迭代。
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.33\linewidth]{fig/wave1.png}&
+\includegraphics[width=0.33\linewidth]{fig/wave2.png}&
+\includegraphics[width=0.33\linewidth]{fig/wave3.png}
+\end{tabular}
+\caption{可微高地水波模拟实例\protect\footnotemark}
+\label{fig:difftaichi}
+\end{figure}
+\footnotetext{源代码来自：\url{https://github.com/yuanming-hu/difftaichi/blob/master/examples/wave.py}，图片中呈现的为本机实现的效果。}
+
+\subsubsection{手写实验}
+第二组实验则由我们亲自手写。
+我们渲染了SYSU四个英文字母，使用复数乘法实现了简单的旋转效果，同时通过Taichi提供的装饰器实现计算核与数据结构的分离。
+图\ref{fig:sysu}展示了我们自己手写的SYSU标志效果，代码可见附录\ref{appendix:sysu}。
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.33\linewidth]{fig/sysu1.jpg}&
+\includegraphics[width=0.33\linewidth]{fig/sysu2.jpg}&
+\includegraphics[width=0.33\linewidth]{fig/sysu3.png}
+\end{tabular}
+\caption{SYSU变换图}
+\label{fig:sysu}
+\end{figure}
+
+由于该实验的计算核比较简单，故在CPU上执行非常快，整体运行十分流畅，达到了我们预期的效果。
+
+\section{总结}
+\label{sec:summary}
+本文对常用的图形库及领域特定语言进行了一定简介，然后介绍了Taichi产生的由来与动机，接着介绍了Taichi图形库的核心特性，最后我们在自己的机器上完成了一些实验，并跑出了预期的效果。
+总的来看，Taichi图形库的出现大大提升了程序员的生产力，是一个研究图形学算法的一个强有力的工具。
+
+\bibliographystyle{unsrt}
+\bibliography{reference}
+
+\newpage
+\appendix
+\appendixconfig
+\section{环境配置}
+\label{appendix:env}
+\begin{lstlisting}[language=bash]
+# CPU only. No GPU/CUDA needed. (Linux, OS X and Windows)
+python3 -m pip install taichi-nightly
+
+# With GPU (CUDA 10.0) support (Linux only)
+# python3 -m pip install taichi-nightly-cuda-10-0
+
+# execution
+python3 sysu.py
+\end{lstlisting}
+
+\section{SYSU代码}
+\label{appendix:sysu}
+\begin{lstlisting}
+import taichi as ti
+
+
+def getX():
+    logo = [[
+        "  ####  ",
+        " ##  ## ",
+        " #    # ",
+        " #      ",
+        "  #     ",
+        "   ##   ",
+        "     ## ",
+        " #    # ",
+        " #    # ",
+        " ##  ## ",
+        "  ####  "
+    ], [
+        " #    # ",
+        " #    # ",
+        "  #  #  ",
+        "  #  #  ",
+        "   ##   ",
+        "   ##   ",
+        "   ##   ",
+        "   ##   ",
+        "   ##   ",
+        "   ##   ",
+        "   ##   "
+    ], [
+        "  ####  ",
+        " ##  ## ",
+        " #    # ",
+        " #      ",
+        "  #     ",
+        "   ##   ",
+        "     ## ",
+        " #    # ",
+        " #    # ",
+        " ##  ## ",
+        "  ####  "
+    ], [
+        " #    # ",
+        " #    # ",
+        " #    # ",
+        " #    # ",
+        " #    # ",
+        " #    # ",
+        " #    # ",
+        " #    # ",
+        " #    # ",
+        " ##  ## ",
+        "  ####  "
+    ]]
+    x = []
+    for i in range(len(logo)):
+        for X in range(len(logo[i])):
+            for Y in range(len(logo[i][X])):
+                if logo[i][X][Y] == '#':
+                    x.append([i/len(logo)+Y/len(logo[i][X])/len(logo),
+                              0.5+0.5/len(logo)-X/len(logo[i])/len(logo)])
+    return x
+
+
+ti.cfg.arch = ti.cuda
+x_logo = getX()
+n_particles = len(x_logo)
+dim = 2
+spin = [ti.cos(0.1), ti.sin(0.1)]
+x = ti.Vector(dim, dt=ti.f32, shape=n_particles)
+for i in range(n_particles):
+    x[i] = x_logo[i]
+
+
+@ti.func
+def complexMul(a: ti.f32, b: ti.f32, c: ti.f32, d: ti.f32):  # `复数乘法，用于旋转'
+    return [a*c-b*d, b*c+a*d]
+
+
+@ti.kernel
+def substep():
+    for p in x:
+        x[p] = x[p]-0.5
+        x[p] = complexMul(x[p][0], x[p][1], spin[0], spin[1])
+        x[p] = x[p]+0.5
+
+
+gui = ti.core.GUI("SYSU_CG_COURSE", ti.veci(512, 512))
+canvas = gui.get_canvas()
+for frame in range(19260817):
+    substep()
+
+    canvas.clear(0)
+    pos = x.to_numpy(as_vector=True)
+    for i in range(n_particles):
+        canvas.circle(ti.vec(pos[i, 0], pos[i, 1])).radius(
+            7).color(87*256+33).finish()  # `中大绿'
+    gui.update()
+\end{lstlisting}
+	
+\end{document}
