@@ -1,0 +1,5 @@
+data
+log
+checkpoint
+!dataset_*/*.txt
+!requirements.txt

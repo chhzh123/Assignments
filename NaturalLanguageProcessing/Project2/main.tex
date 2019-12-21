@@ -1,0 +1,41 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[python,pseudo]{mypackage}
+
+\title{自然语言处理}
+\subtitle{期末大项目：基于深度学习的中英机器翻译}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{自然语言处理作业}
+
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\kaiti\em}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\newpage
+
+\section{预处理}
+
+% \begin{thebibliography}{99}
+
+% \end{thebibliography}
+
+\end{document}
+% 要求：
+% 1. 描述清楚核心代码逻辑和tensor维度
+% 2. 描述清楚代码的运行环境和软件版本
+% 3. 独立完成，不得抄袭！不得抄袭！不得抄袭
+
+% 参考教程：
+% pytorch.org/tutorias/intermediate/seq2seq_translation_tutorial.html
+% tensorflow.google.cn/tutorials/text/nmt_with_attention
+
+% 相关论文：
+% Effective Approaches to Attention-based Neural Machine Translation, Luong et al., EMNLP 2015
+% Neural Machine Translation by Jointly Learning to Align and Translate, Bahdanau et al., ICLR 2015
+% Bleu: a Method for Automatic Evaluation for Machine Translation, Papineni et al., ACL 2002
