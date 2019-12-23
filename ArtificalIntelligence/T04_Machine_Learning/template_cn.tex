@@ -12,6 +12,7 @@
 \usepackage[colorlinks,linkcolor=red]{hyperref}
 
 \newcommand{\ent}[4][]{-#1\left(\frac{#2}{#4}\log_2\frac{#2}{#4}+\frac{#3}{#4}\log_2\frac{#3}{#4}\right)}
+\newcommand{\ipd}[2]{\partial #1/\partial #2}
 
 \title{
 \normalfont \normalsize
@@ -315,7 +316,10 @@ Consider the neural net on Page 32 of the course slides for neural nets.
 \end{aligned}\]
 \end{itemize}
 \end{question}
+% https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
 \begin{answer}
+    这里损失函数采用平方误差
+    \[Loss=\sum_{k}Loss_k\qquad Loss_k=(y_k-a_k)^2\]
 \begin{itemize}
     \item[(a)] 先计算前向过程
     \[\begin{array}{llll}
@@ -325,35 +329,46 @@ Consider the neural net on Page 32 of the course slides for neural nets.
         out_{h2} &= g(in_{h2}) &= \frac{1}{1+\ee^{-0.3875}} &=0.596884378\\
         in_{o1} &= w_5 out_{h1} + w_6 out_{h2} +b_2 &= 0.4\cdot 0.59326992 + 0.45\cdot 0.596884378 + 0.60 &= 1.1059059669\\
         in_{o2} &= w_7 out_{h1} + w_8 out_{h2} +b_2 &= 0.5\cdot 0.59326992 + 0.55\cdot 0.596884378 + 0.60 &= 0.909921369\\
-        out_{o1} &= g(in_{o1}) &=\frac{1}{1+\ee^{-1.1059059669}} &= 1.224921369\\
-        out_{o2} &= g(in_{o2}) &=\frac{1}{1+\ee^{-0.909921369}} &= 0.772928459
+        out_{o1} &= g(in_{o1}) &=\frac{1}{1+\ee^{-1.1059059669}} &= 0.751365070\\
+        out_{o2} &= g(in_{o2}) &=\frac{1}{1+\ee^{-0.909921369}} &= 0.772928459\\
+        Loss_{o1} &= (target_{o1}-out_{o1})^2 &= (0.01-0.751365070)^2 &=0.5496221670\\
+        Loss_{o2} &= (target_{o2}-out_{o2})^2 &= (0.99-0.772928459)^2 &=0.0471200539
     \end{array}\]
     再计算后向梯度
-    \[\begin{array}{llll}
-        \Delta_{o1}&=g'(in_{o1})(y_1-out_{o1})&=out_{o1}(1-out_{o1})(y_1-out_{o1})&=-0.138498562\\
-        \Delta_{o2}&=g'(in_{o2})(y_2-out_{o2})&=out_{o2}(1-out_{o2})(y_2-out_{o2})&=0.0380982366\\
-        \Delta_{h1}&=g'(in_{h1})(w_5\Delta_{o1}+w_7\Delta_{o2})&=out_{h1}(1-out_{h1})(w_5\Delta_{o1}+w_7\Delta_{o2})&=-0.0087713546
+    \[\pd{Loss_{o1}}{w_1}=\pd{Loss_{o1}}{out_{o1}}\pd{out_{o1}}{in_{o1}}\pd{in_{o1}}{out_{h1}}\pd{out_{h1}}{in_{h1}}\pd{in_{h1}}{w_1}\]
+    \[\begin{array}{lll}
+        \ipd{Loss_{o1}}{out_{o1}}&=2(target_{o1}-out_{o1})&=-1.48273014\\
+        \ipd{out_{o1}}{in_{o1}}&=out_{o1}(1-out_{o1})&=0.1868156\\
+        \ipd{in_{o1}}{out_{h1}}&=w_5&=0.40\\
+        \ipd{out_{h1}}{in_{h1}}&=out_{h1}(1-out_{h1})&=0.24130071\\
+        \ipd{in_{h1}}{w_1}&=i1&=0.05
     \end{array}\]
     进而
-    \[\pd{Loss_{o1}}{w_1}=-out_{i1}\Delta_{h1}=i_1\Delta_{h1}=-0.004385677\]
+    \[\pd{Loss_{o1}}{w_1}=-0.00133679\]
     \item[(b)] 先计算前向过程
-    \[\begin{array}{llll}
-        in_{h1} &= w_1 i_1 + w_2 i_2 + b_1 &= 0.05\cdot 0.15 + 0.10 \cdot 0.20 + 0.35 &= 0.3775\\
-        in_{h2} &= w_3 i_1 + w_4 i_2 + b_1 &= 0.05\cdot 0.25 + 0.10 \cdot 0.30 + 0.35 &= 0.3925\\
-        out_{h1} &= \tanh(in_{h1}) & &=0.36053439\\
-        out_{h2} &= \tanh(in_{h2}) & &=0.37351345\\
-        in_{o1} &= w_5 out_{h1} + w_6 out_{h2} +b_2 &= 0.4\cdot 0.36053439 + 0.45\cdot 0.37351345 + 0.60 &= 0.912312211\\
-        in_{o2} &= w_7 out_{h1} + w_8 out_{h2} +b_2 &= 0.5\cdot 0.36053439 + 0.55\cdot 0.37351345 + 0.60 &= 0.985721346\\
-        out_{o1} &= \tanh(in_{o1}) & &= 0.722240193\\
-        out_{o2} &= \tanh(in_{o2}) & &= 0.755531976
+    \[\begin{array}{lll}
+        in_{h1} &= w_1 i_1 + w_2 i_2 + b_1 &= 0.3775\\
+        in_{h2} &= w_3 i_1 + w_4 i_2 + b_1 &= 0.3925\\
+        out_{h1} &= \tanh(in_{h1}) &=0.36053439\\
+        out_{h2} &= \tanh(in_{h2}) &=0.37351345\\
+        in_{o1} &= w_5 out_{h1} + w_6 out_{h2} +b_2 &= 0.912312211\\
+        in_{o2} &= w_7 out_{h1} + w_8 out_{h2} +b_2 &= 0.985721346\\
+        out_{o1} &= \tanh(in_{o1}) &= 0.722240193\\
+        out_{o2} &= \tanh(in_{o2}) &= 0.755531976\\
+        Loss_{o1} &= (target_{o1}-out_{o1})^2 &=0.50728609\\
+        Loss_{o2} &= (target_{o1}-out_{o2})^2 &=0.05497525
     \end{array}\]
     再计算后向梯度
+    \[\pd{Loss_{o2}}{w_4}=\pd{Loss_{o2}}{out_{o2}}\pd{out_{o2}}{in_{o2}}\pd{in_{o2}}{out_{h2}}\pd{out_{h2}}{in_{h2}}\pd{in_{h2}}{w_4}\]
     \[\begin{array}{llll}
-        \Delta_{o1}&=g'(in_{o1})(y_1-out_{o1})&=(1-\tanh^2(in_{o1}))(y_1-out_{o1})&=-0.3407137\\
-        \Delta_{o2}&=g'(in_{o2})(y_2-out_{o2})&=(1-\tanh^2(in_{o2}))(y_2-out_{o2})&=0.1006270\\
-        \Delta_{h2}&=g'(in_{h2})(w_6\Delta_{o1}+w_8\Delta_{o2})&=(1-\tanh^2(in_{h2}))(w_6\Delta_{o1}+w_8\Delta_{o2})&=-0.0843074\\
-        \pd{Loss_{o2}}{w_4}&=-out_{i2}\Delta_{h2}&=i_2\Delta_{h2}&=-0.0084307
+        \ipd{Loss_{o2}}{out_{o2}}&=2(target_{o2}-out_{o2})&=0.468936048\\
+        \ipd{out_{o2}}{in_{o2}}&=1-out_{o2}^2&=0.429171433\\
+        \ipd{in_{o2}}{out_{h2}}&=w_8&=0.55\\
+        \ipd{out_{h2}}{in_{h2}}&=1-out_{h2}^2&=0.8604877\\
+        \ipd{in_{h2}}{w_4}&=i2&=0.10
     \end{array}\]
+    进而
+    \[\pd{Loss_{o2}}{w_4}=0.009524710\]
 \end{itemize}
 \end{answer}
 
