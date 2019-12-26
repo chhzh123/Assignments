@@ -148,6 +148,102 @@ It is common to periodically insert a Pooling layer in-between successive Conv l
 \end{enumerate}
 
 \section{Codes and Results}
+Following the steps described above, I glue different modules in \verb'cs231n' together.
+\begin{enumerate}
+	\item [(a)] To read the input images, I leverage the \verb'get_CIFAR10_data' function in \verb'data_utils.py', where it separate the data into training set, validation set, and test set, all of which are stored in a dictionary.
+	Moreover, it normalizes the data for easy training later.
+	The return data has the shape as follows,
+\begin{flushleft}
+X\_train:  (49000, 3, 32, 32)\\
+y\_train:  (49000,)\\
+X\_val:  (1000, 3, 32, 32)\\
+y\_val:  (1000,)\\
+X\_test:  (1000, 3, 32, 32)\\
+y\_test:  (1000,)
+\end{flushleft}
+	Notice the channel dimension has been swap to axis 1 in numpy representation.
 
+	\item [(b)] The filters are defined in \verb'layers.py'.
+	The naive implementation of convolutional layer needs four nested loops.
+	(Actually if counting the numpy summation implementation, there will be more loops.)
+	In the innerest loop, the original image makes a dot product with the convolutional kernel.
+\begin{lstlisting}
+for ni in range(x.shape[0]):
+    for fi in range(w.shape[0]):
+        for xi in range(H_):
+            for yi in range(W_):
+                out[ni, fi, xi, yi] = np.sum(x_pad[ni, :, xi * stride:xi * stride + HH, yi * stride:yi * stride + WW] * w[fi, :, :, :])
+
+        out[ni,fi,:,:]+=b[fi]
+\end{lstlisting}
+
+	The implementation of Max Pooling layer is similar, except for the max function.
+	The key computation is listed below.
+	The size of max pooling output is much easier to be calculated than the convolutional layer, since the stride is commonly set equal to the size of the max pooling kernel.
+\begin{lstlisting}
+for ni in range(x.shape[0]):
+    for ci in range(x.shape[1]):
+        for xi in range(H_):
+            for yi in range(W_):
+                out[ni, ci, xi, yi] = np.max(x[ni,ci,xi * stride:xi * stride + pool_height,yi * stride:yi * stride + pool_width])
+\end{lstlisting}
+
+	The backward pass of the convolutional layer and the max pooling layer are much harder than the forward pass, and the naive implementation also has great performance degradation.
+	For example, backpropagation through max pooling layer needs to find the index that generates the current maximum, which needs a tedious traversal in each convolution.
+	This is a large overhead if the traversal does not deal well.
+
+	\item [(c,d,e,f)] Once the key components are built, what we need to do is to glue them.
+	The CNN has been encapsulated as \verb'ThreeLayersConvNet' in \verb'cnn.py'.
+	The architecture is defined below,
+\begin{center}
+conv - relu - 2x2 max pool - affine - relu - affine - softmax
+\end{center}
+	Then we directly call the forward pass and the backward pass of these layers, and the CNN will work properly.
+	Notice the weights and biases should be stored when propagation in order to calculate the loss faster.
+\end{enumerate}
+
+After the three-layer CNN is built, I take the most of the \verb'Solver'.
+Just instantiate the data and model, and pass them into the solver.
+Press \verb'solver.train()', and the CNN will train automatically.
+The codes are listed below.
+\lstinputlisting{ConvNet.py}
+
+I only train the CNN for three epochs, obtaining 55.8\% and 55\% of accuracy on train set and validation set representatively, as shown in Fig.~\ref{fig:acc}.
+The accuracy on test set is 54.5\%.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{fig/results/train_acc2.png}
+\caption{Accuracy of train set and validation set}
+\label{fig:acc}
+\end{figure}
+
+The training loss is shown in Fig.~\ref{fig:loss}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{fig/loss.pdf}
+\caption{Training loss}
+\label{fig:loss}
+\end{figure}
+
+From this experiment, I clearly realize that how slow the CPU is!
+Even though the CIFAR dataset is such a toy dataset in nowadays deep learning research, it takes almost an hour to train only 3 epochs using my Intel i7 CPU, which is extremely unacceptable.
+The code in \verb'cs231n' has been optimized using the ahead of time (AOT) compiler Cython.
+However, the training process still takes a long time.
+And we may know how much optimization has been done in Pytorch and Tensorflow, where C/C++ and Python codes are deeply fused.
+Both of the frameworks greatly push the development of deep learning.
+Moreover, the deployment of GPU in deep learning truly leads the AI field to take a big step.
+That is why somebody said the Turing Award should be awarded to Jen-Hsun Huang, the CEO of Nvidia.
+
+Moreover, we can observe a marginal effect decrement in Fig.~\ref{fig:loss}.
+Actually after the first epoch, the CNN has reached 50\% accuracy on the train set.
+The two more times of training only improve the performance for 5\%.
+The investment and the return are not consistent.
+This also makes us to think if it necessary to take so many resources to improve only little prediction accuracy in nowadays deep learning research, or this kind of improvement is just anything but useful.
+
+At last, to summarize the AI course this term, I have to say this is the best course I have ever toke in SYSU.
+Starting from simple searching algorithms, we got through logic, knowledge representation, planning, Bayes, and finally got the place of machine learning and deep learning.
+Though the number of experiments is double of those of CS major, we learned a lot and built lots of artificial idiots, which is also a kind of fun!
+
+Last but not least, great thanks to TAs, especially to Yukun :), who provide us lots of guidance on the road to the peak of artificial intelligence, and give us lots of happiness and warmness.
 
 \end{document}
