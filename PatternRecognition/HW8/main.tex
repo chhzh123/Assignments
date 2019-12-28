@@ -1,5 +1,5 @@
 \documentclass[reportComp]{thesis}
-\usepackage[python,pseudo]{mypackage}
+\usepackage[table,pseudo]{mypackage}
 
 \title{模式识别作业Chap 7}
 \school{数据科学与计算机学院}
@@ -14,6 +14,10 @@
 
 \begin{question}[\textsection 7 Q3]
 图7-2左边的能量地形曲面过分复杂，因下述原因容易误导读者：
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/fig7-2.png}
+\end{figure}
 \begin{itemize}
 	\item [(a)] 对式(1)的优化问题，讨论图中的连续空间与离散空间的差异。
 	\item [(b)] 图中示出在空间的中部有一个局部能量极小点，问对于离散空间，是否存在中部的极小点？
@@ -43,16 +47,20 @@
 \end{tabular}
 \end{center}
 并考虑以下权值及偏置
-\[\begin{aligned}
-w_{03} &= -1 & w_{13} &= 1 & w_{23} &=1 \\
-w_{14} &= 1/2 & w_{24} &=1/2 & w_{34} &=-1\\
-\theta_{3} &= -1 & \theta_{4} &=-1/2
-\end{aligned}\]
+\[\begin{array}{llllllll}
+w_{13} &= 1 & w_{23} &=1 &\theta_{3} &= -1 & \theta_{4} &=-1/2\\
+w_{14} &= 1/2 & w_{24} &=1/2 & w_{34} &=-1
+\end{array}\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.25\linewidth]{fig/Q10.pdf}
+\end{figure}
+
 进而根据Boltzmann网络能量的表达式
 \[E=-\left(\sum _{{i<j}}w_{{ij}}\,s_{i}\,s_{j}+\sum _{i}\theta _{i}\,s_{i}\right)\]
 可求得
 \begin{center}
-\begin{tabular}{cccc|c}\hline
+\begin{longtable}{cccc|c}\hline
 $s_1$ & $s_2$ & $s_3$ & $s_4$ & $E$\\\hline
 $1$ & $1$ & $1$ & $1$ & $-0.5$ \\
 $1$ & $1$ & $1$ & $-1$ & $-1.5$ \\
@@ -70,7 +78,7 @@ $-1$ & $-1$ & $1$ & $1$ & $5.5$ \\
 $-1$ & $-1$ & $1$ & $-1$ & $0.5$ \\
 $-1$ & $-1$ & $-1$ & $1$ & $-2.5$ \\
 $-1$ & $-1$ & $-1$ & $-1$ & $-3.5$ \\\hline
-\end{tabular}
+\end{longtable}
 \end{center}
 满足（隐层状态不同可取等，但输出状态为严格不等式）
 \[\begin{aligned}

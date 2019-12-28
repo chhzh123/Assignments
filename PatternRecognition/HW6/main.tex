@@ -1,5 +1,5 @@
 \documentclass[reportComp]{thesis}
-\usepackage[python,pseudo]{mypackage}
+\usepackage[optidef,python,pseudo]{mypackage}
 
 \title{模式识别作业六}
 \school{数据科学与计算机学院}
@@ -22,7 +22,12 @@
 \end{question}
 \begin{answer}
 \begin{itemize}
-	\item [(a)] 构造拉格朗日函数
+	\item [(a)] 优化问题如下
+	\begin{mini*}
+		{\vx}{\norm{\vx-\vx_a}^2}{}{}
+		\addConstraint{g(\vx)}{=\vw^\T \vx+w_0 =0}
+	\end{mini*}
+	构造拉格朗日函数（这里为方便计算，在约束项前面添加了常数$2$）
 	\[\begin{aligned}f(\mathbf{x}, \lambda)&=\left\|\mathbf{x}-\mathbf{x}_{a}\right\|^{2}+2 \lambda[g(\mathbf{x})]\\
 	&=\left\|\mathbf{x}-\mathbf{x}_{a}\right\|^{2}+2 \lambda\left[\mathbf{w}^\T  \mathbf{x}+w_{0}\right] \\
 	&=\left(\mathbf{x}-\mathbf{x}_{a}\right)^\T \left(\mathbf{x}-\mathbf{x}_{a}\right)+2 \lambda\left(\mathbf{w}^\T  \mathbf{x}+w_{0}\right) \\
@@ -48,6 +53,7 @@
 	&=\left\|\left(\frac{\mathbf{w}^\T  \mathbf{x}_{a}+w_{0}}{\mathbf{w}^\T  \mathbf{w}}\right) \mathbf{w}\right\| \\
 	&=\frac{\left|g\left(\mathbf{x}_{a}\right)\right|\|\mathbf{w}\|}{\|\mathbf{w}\|^{2}}=\frac{\left|g\left(\mathbf{x}_{a}\right)\right|}{\|\mathbf{w}\|}
 	\end{aligned}\]
+	符合题意
 	\item [(b)] 由于(a)已经得到从超平面到$\vx$的最小距离，而$\vx_a$的投影即为拉格朗日求导等于零求出来的$\vx$值，即
 	\[\begin{aligned}
 	\mathbf{x}_{p} &=\mathbf{x}_{a}-\lambda \mathbf{w} \\
@@ -77,19 +83,17 @@ $\omega_2$&: $(2,-3)^\T$  & $(-1,-4)^\T$  & $(0,2)^\T$
 将训练集数据$\omega_1$和$\omega_2$构成矩阵，并扩增一个维度，得到
 \[Y =\left(\begin{array}{rrr}{1} & {1} & {5} \\ {1} & {2} & {9} \\ {1} & {-5} & {-3} \\ {-1} & {-2} & {3} \\ {-1} & {1} & {4} \\ {-1} & {0} & {-2}\end{array}\right) \quad \mathbf{a}=\left(\begin{array}{r}{a_{1}} \\ {a_{2}} \\ {a_{3}}\end{array}\right) \quad \mathbf{b}=\left(\begin{array}{c}{b} \\ {b} \\ {b} \\ {b} \\ {b} \\ {b}\end{array}\right)\]
 平方误差准则函数为
-\[\mathbf{J}_{s}(\mathbf{a})=\frac{1}{2} \sum_{i=1}^{n}\left(\mathbf{a}^\T  \mathbf{y}_{i}-b\right)^{2}=\frac{(Y  \mathbf{a}-\mathbf{b})^\T (Y  \mathbf{a}-\mathbf{b})}{2}\]
+\[J_{s}(\mathbf{a})=\frac{1}{2} \sum_{i=1}^{n}\left(\mathbf{a}^\T  \mathbf{y}_{i}-b\right)^{2}=\frac{(Y  \mathbf{a}-\mathbf{b})^\T (Y  \mathbf{a}-\mathbf{b})}{2}\]
 \begin{itemize}
+	% 没有必要将一阶导求出具体值
 	\item [(a)] 对准则函数求导得到
-	\[\nabla J_{s}(\mathbf{a})=Y^\T (Y  \mathbf{a}-\mathbf{b})=\left(
-	\begin{array}{ccccccc}{6 a_{1}} & {-} & {a_{2}} & {+} & {6 a_{3}} & {+} & {0} \\
-	{-a_{1}} & {+} & {35 a_{2}} & {+} & {36 a_{3}} & {+} & {3 b} \\
-	{6 a_{1}} & {+} & {36 a_{2}} & {+} & {144 a_{3}} & {-} & {16 b}
-	\end{array}\right)\]
+	\[\nabla J_{s}(\mathbf{a})=Y^\T (Y  \mathbf{a}-\mathbf{b})\]
 	进而Hessian矩阵为
-	\[H =Y ^\T  Y =\left(\begin{array}{ccc}{6} & {-1} & {6} \\ {-1} & {35} & {36} \\ {6} & {36} & {144}\end{array}\right)\]
-	\item [(b)] 最优学习率
-	\[\eta=\frac{\left[\boldsymbol{\nabla} J_{s}(\mathbf{a})\right]^\T  \boldsymbol{\nabla} J_{s}(\mathbf{a})}{\left[\boldsymbol{\nabla} J_{s}(\mathbf{a})\right]^\T  H  \nabla J_{s}(\mathbf{a})}\]
-	通过求解特征方程，得到$\vH$的特征值为$5.417,24.57,155.0$，进而$0.006452\leq\eta\leq 0.1846$
+	\[H =\nabla^2 J_s(\va)=Y ^\T  Y =\left(\begin{array}{ccc}{6} & {-1} & {6} \\ {-1} & {35} & {36} \\ {6} & {36} & {144}\end{array}\right)\]
+	\item [(b)] 由公式(14)，最优学习率为
+	\[\eta=\frac{\left[\nabla J_{s}(\mathbf{a})\right]^\T  \nabla J_{s}(\mathbf{a})}{\left[\nabla J_{s}(\mathbf{a})\right]^\T  H  \nabla J_{s}(\mathbf{a})}\]
+	通过求解特征方程，得到$H$的特征值\footnote{特征值可通过$|H-\lambda I|=0$求解，这里则直接使用numpy指令np.linalg.eig进行计算。}为$5.417,24.57,155.0$，进而
+	\[\frac{1}{\lambda_{\max}}=0.006452\leq\eta\leq 0.1846=\frac{1}{\lambda_{\min}}\]
 \end{itemize}
 \end{answer}
 
@@ -98,6 +102,7 @@ $\omega_2$&: $(2,-3)^\T$  & $(-1,-4)^\T$  & $(0,2)^\T$
 \[\alpha=\left[1+\frac{n_{1} n_{2}}{n}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)^\T  \mathbf{S}_{w}^{-1}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)\right]^{-1}\]
 \end{question}
 \begin{answer}
+% 推到前面的变换交代一下
 由等式(54)有权重向量
 \[\mathbf{w}=\alpha n \mathbf{S}_{w}^{-1}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)\]
 其中$\vw$满足
@@ -105,14 +110,15 @@ $\omega_2$&: $(2,-3)^\T$  & $(-1,-4)^\T$  & $(0,2)^\T$
 
 将$\vw$代入上式得到
 \[\left[\frac{1}{n} \mathbf{S}_{w}+\frac{n_{1} n_{2}}{n^{2}}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)^\T \right] \alpha n \mathbf{S}_{w}^{-1}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)=\mathbf{m}_{1}-\mathbf{m}_{2}\]
-进而
-\[\alpha \theta\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)=\mathbf{m}_{1}-\mathbf{m}_{2}\]
-其中
+令
 \[\theta=1+\frac{n_{1} n_{2}}{n^{2}}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)^\T  \mathbf{S}_{w}^{-1}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)\]
+则
+\[\alpha \theta\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)=\mathbf{m}_{1}-\mathbf{m}_{2}\]
 由于这条等式对于所有$\vm_1$和$\vm_2$成立，因此我们有$\alpha\theta=1$，或者下式成立
 \[\alpha=\left[1+\frac{n_{1} n_{2}}{n^{2}}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)^\T  \mathbf{S}_{w}^{-1}\left(\mathbf{m}_{1}-\mathbf{m}_{2}\right)\right]^{-1}\]
 \end{answer}
 
+% 取消了！
 \begin{question}[\textsection 5 Q28]
 在5.10.2节给出的线性规划公式包含了一个极小化的人工变量$\tau$，且满足约束条件$\va^\T y_i+\tau>b_i$及$\tau\geq 0$。
 证明得到的权向量使得以下准则函数极小化：
@@ -170,11 +176,11 @@ $\omega_2$: & $(0,0)^\T$  & $(1,0)^\T$  & $(0,1)^\T$
 \begin{itemize}
 	\item [(a)] 按序编号
 	\[\begin{aligned}
-	\omega_{1}&: \mathrm{x}_{1}=\left(\begin{array}{c}{1} \\ {1}\end{array}\right), \mathrm{x}_{2}=\left(\begin{array}{l}{2} \\ {2}\end{array}\right), \mathrm{x}_{3}=\left(\begin{array}{l}{2} \\ {0}\end{array}\right)\\
-	\omega_{2}&:\mathrm{x}_{4}=\left(\begin{array}{l}{0} \\ {0}\end{array}\right), \mathrm{x}_{5}=\left(\begin{array}{l}{1} \\ {0}\end{array}\right), \mathrm{x}_{6}=\left(\begin{array}{l}{0} \\ {1}\end{array}\right)
+	\omega_{1}&: \mathbf{x}_{1}=\left(\begin{array}{c}{1} \\ {1}\end{array}\right), \mathbf{x}_{2}=\left(\begin{array}{l}{2} \\ {2}\end{array}\right), \mathbf{x}_{3}=\left(\begin{array}{l}{2} \\ {0}\end{array}\right)\\
+	\omega_{2}&:\mathbf{x}_{4}=\left(\begin{array}{l}{0} \\ {0}\end{array}\right), \mathbf{x}_{5}=\left(\begin{array}{l}{1} \\ {0}\end{array}\right), \mathbf{x}_{6}=\left(\begin{array}{l}{0} \\ {1}\end{array}\right)
 	\end{aligned}\]
 	且$z_1=z_2=z_3=-1,z_4=z_5=z_6=1$。
-	最优超平面为$y_1+y_2=3/2$，即
+	如下图所示，考虑做恒等映射$\vy_k=\varphi(\vx_k)=\vx_k$，则在$\vy$空间上最优超平面为$y_1+y_2=3/2$，即
 	\[(3 / 2,-1,-1)^\T \left(1,y_{1},y_{2}\right)=0\]
 	将其做放缩变换($\times 2$)，得到权向量为$(3,-2,-2)^\T $。
 
@@ -182,7 +188,7 @@ $\omega_2$: & $(0,0)^\T$  & $(1,0)^\T$  & $(0,1)^\T$
 	\centering
 	\includegraphics[width=0.5\linewidth]{fig/Q32.pdf}
 	\end{figure}
-	最优间隔为从样本点到超平面的最小距离，如上图所示，为$\sqrt{2}/4$。
+	最优间隔为从样本点到超平面的最小距离为$1/2\sin(\pi/4)=\sqrt{2}/4$。
 	\item [(b)] 从上图可以清晰看出，支持向量为
 	\[\left\{\mathbf{x}_{1}, \mathbf{x}_{3}, \mathbf{x}_{5}, \mathbf{x}_{6}\right\}=\left\{(1,1)^\T ,(2,0)^\T ,(1,0)^\T ,(0,1)^\T \right\}\]
 	\item [(c)] 最大化式(109)给出的准则函数
@@ -222,7 +228,7 @@ $\omega_2$: & $(0,0)^\T$  & $(1,0)^\T$  & $(0,1)^\T$
 
 	最后确定$a_0$。
 	使用支持向量$\vy=(1,1,1)^\T $，满足$\va^\T \vy_1z_1=1$，得到
-	\[-\left(\begin{array}{c}{0} \\ {-2} \\ {-2}\end{array}\right)(1,1,1)=-a_{0}+4=1\]
+	\[-\left(\begin{array}{c}{a_0} \\ {-2} \\ {-2}\end{array}\right)(1,1,1)=-a_{0}+4=1\]
 	求得$a_0=3$，最终的权向量为$\va=(3,-2,-2)^\T $。
 \end{itemize}
 \end{answer}

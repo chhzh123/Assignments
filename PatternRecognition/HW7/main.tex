@@ -8,6 +8,8 @@
 \stunum{17341015}
 \headercontext{模式识别作业}
 
+\def\sech{\mathrm{sech}}
+
 \begin{document}
 
 \maketitle
@@ -21,24 +23,25 @@
 \end{itemize}
 \end{question}
 \begin{answer}
+\textcolor{red}{注意在计算空间复杂度时不应将偏置计入}
 \begin{itemize}
-	\item [(a)] 隐含层$n_H$个神经元每个对应$d$个输入单元，因此有$n_Hd$个权重；同理，连接隐含层和输出层共$n_Hc$个权重，故一共的空间复杂度为$n_H(c+d)$。而模式存储的空间复杂度为$nd$。
+	\item [(a)] 隐含层$n_H$个神经元每个对应$d$个输入单元，因此有$n_Hd$个权重；同理，连接隐含层和输出层共$n_Hc$个权重，故一共的空间复杂度为$\mO\lrp{n_H(c+d)}$。而模式存储的空间复杂度为$\mO\lrp{nd}$。
 
 	\item [(b)] 随机模式即计算
 	\[\vw(t+1)=\vw(t)+\Delta\vw(t)\]
-	先考虑隐含层到输出层，由公式(16)，有
+	先考虑隐含层到输出层，由公式(17)，有
 	\[\Delta w_{j k}=\eta\left(t_{k}-z_{k}\right) f^{\prime}\left(net_{k}\right) y_{j}\]
-	其中，$net_k=\sum_{j=1}^{n_H}w_{jk}y_j$由$n_H$次乘法和$n_H$次加法构成，因此$\Delta w_{jk}$时间复杂度为$c(2n_H+1)$。
+	其中，$net_k=\sum_{j=1}^{n_H}w_{jk}y_j$由$n_H$次乘法和$n_H$次加法构成，因此$\Delta w_{jk}$计算量为$c(2n_H+1)$。
 
-	再考虑输入层到隐含层，由公式(20)，有
+	再考虑输入层到隐含层，由公式(21)，有
 	\[\Delta w_{j i}=\eta x_{i} f^{\prime}\left(net_{j}\right) \sum_{k=1}^{c} w_{k j} \delta_{k}\]
 	同上理，$net_j$计算量为$2d$，$\sum_{k=1}^{c} w_{k j} \delta_{k}$计算量为$2c$，故$\Delta w_{ji}$时间复杂度为$2n_H(d+c+1)$。
 
 	进而，在一轮迭代中$\vw$的计算量为（$\Delta \vw$的更新及$\Delta\vw$加上$\vw$的计算）
 	\[c(2n_H+1)+2n_H(d+c+1)+(dn_H+n_Hc)=3dn_H+5n_Hc+c+2n_H\]
-	得到总的时间复杂度为$(3dn_H+5n_Hc+c+2n_H)m_e$。
+	得到总的时间复杂度为$\mO(m_en_H(d+c+1))$。
 
-	\item [(c)] 同上理，总的模式迭代次数为$nm_e$，故时间复杂度为$(3dn_H+5n_Hc+c+2n_H)n m_e$。
+	\item [(c)] 同上理，总的模式迭代次数为$nm_e$，故时间复杂度为$\mO(nm_en_H(d+c+1))$。
 \end{itemize}
 \end{answer}
 
@@ -74,10 +77,15 @@
 \end{question}
 \begin{answer}
 \begin{itemize}
-	\item [(a)] 变换得$1+\ee^{a\cdot net}=1/f(net)$，进而
-	\[f'(net)=\frac{-a\ee^{a\cdot net}}{(1+\ee^{a\cdot net})^2}=-a(f(net)-f^2(net))\]
-	\item [(b)] 变换得$\tanh(b\cdot net)=f(net)/a$，进而
-	\[f'(net)=ab\mathrm{sech}^2(b\cdot net)=ab(1-\tanh^2(b\cdot net))=ab(1-f^2(net)/a^2)\]
+	\item [(a)] 由题设变换得$1+\ee^{a\cdot net}=1/f(net)$，进而
+	\[f'(net)=\frac{-a\ee^{a\cdot net}}{(1+\ee^{a\cdot net})^2}=-af(net)(1-f(net))\]
+	\item [(b)] 由题设变换得$\tanh(b\cdot net)=f(net)/a$，又$\tanh'(x)=\sech^2(x)$，进而
+	\[\begin{aligned}
+	f'(net)&=ab\sech^2(b\cdot net)\qquad\text{链式法则及$\tanh$求导式}\\
+	&=ab(1-\tanh^2(b\cdot net))\qquad\text{双曲三角函数性质}1-\tanh^2 x=\sech^2x\\
+	&=ab(1-f^2(net)/a^2)\qquad\text{题设变换公式}
+	\end{aligned}\]
+	注意这里使用的$\tanh(x)=\sinh(x)/\cosh(x)=(\ee^{x}-\ee^{-x})/(\ee^{x}+\ee^{-x})$与课本的$\tanh$存在一定差异。
 \end{itemize}
 \end{answer}
 
@@ -128,8 +136,7 @@ J(\mathbf{w}) &=P\left(\omega_{k}\right) \int\left[g_{k}(\mathbf{x}, \mathbf{w})
 \end{itemize}
 \end{question}
 \begin{answer}
-\textcolor{red}{注意原题的等式就是有问题的，$\tanh(b\cdot net)$展开的那条等式并不成立！
-因此下面是按照最右侧的等式，即$f(net)=\frac{2 a}{1+\ee^{-b\cdot net}}-a$进行计算。}
+注意这里利用课本提供的$\tanh$公式进行计算。
 \begin{itemize}
 	\item [(a)] 同题\textsection 6 Q10(b)，有
 	\[f'(net)=\frac{2ab\ee^{b\cdot net}}{(1+\ee^{b\cdot net})^2}=\frac{b}{2a}[a^2-(f(net))^2]\]

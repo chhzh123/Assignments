@@ -57,6 +57,7 @@
 	=& \underset{\boldsymbol{\mu}}{\arg \max }\left\{\left[-\frac{n}{2} \ln \left[(2 \pi)^{d}|\Sigma|\right]-\sum_{k=1}^{n} \frac{1}{2}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)^{\T} \Sigma^{-1}\left(\mathbf{x}_{k}-\boldsymbol{\mu}\right)\right]\right.\\
 	&\left. \cdot\left[\frac{1}{(2 \pi)^{d / 2}\left|\Sigma_{0}\right|^{1 / 2}} \exp \left[-\frac{1}{2}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)^{\T} \Sigma_{0}^{-1}\left(\boldsymbol{\mu}-\mathbf{m}_{0}\right)\right]\right]\right\}
 	\end{aligned}\]
+	\textcolor{red}{MAP最好前后都取对数，但这里按照的是课本的公式，即最大似然取对数，概率不取。}
 	\item [(b)] 由均值和协方差的性质有
 	\[\begin{aligned}\boldsymbol{\mu}^{\prime}&= \mathbb{E}\left[\mathbf{x}^{\prime}\right]=\mathbb{E}[A \mathbf{x}]=A \mathbb{E}[\mathbf{x}]=A \boldsymbol{\mu}\\
 	\Sigma^{\prime} &=\mathbb{E}\left[\left(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime}\right)\left(\mathbf{x}^{\prime}-\boldsymbol{\mu}^{\prime}\right)^{\T}\right] \\
@@ -139,7 +140,9 @@
 	\[\vw=S_W'^{-1}\left(\boldsymbol{\mu}_{1}-\boldsymbol{\mu}_{2}\right)=
 	[P(\omega_1)\Sigma_1+P(\omega_2)\Sigma_2]^{-1}(\vmu_1-\vmu_2)\]
 	时取得最大值。
-	\item [(c)] 在公式(96)中，令$\tilde{m}_i=\mu_i$和$\tilde{s}_i^2=\sigma_i^2$，可以得到(a)中的式子，即(96)与(a)联系更密切。
+	\item [(c)] 在公式(96)中，
+	\[J(\vw)=\frac{|\tilde{m}_1-\tilde{m}_2|^2}{\tilde{s}_1^2+\tilde{s}_2^2}\]
+	令$\tilde{m}_i=\mu_i$和$\tilde{s}_i^2=\sigma_i^2$，可以得到(a)中的式子，即(96)与(a)联系更密切。
 \end{itemize}
 \end{answer}
 
