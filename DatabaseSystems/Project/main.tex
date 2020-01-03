@@ -1,6 +1,5 @@
 \documentclass[logo,reportComp]{thesis}
-\usepackage[python,javascript,pseudo,table]{mypackage}
-
+\usepackage[python,javascript,linenum]{mypackage}
 \title{数据库系统期末大作业}
 \subtitle{AIDO项目设计报告}
 \school{数据科学与计算机学院}
@@ -22,9 +21,12 @@
 \label{fig:overview}
 \end{figure}
 
-\textcolor{red}{本项目已经部署上腾讯云服务器，可通过\url{http://xxx.xx.xx.xxx:8056/}进行访问。}
+\textcolor{red}{本项目已经部署上腾讯云服务器，可通过\url{http://193.112.60.186:8056/}进行访问。}
+% \textcolor{red}{本项目已经部署上腾讯云服务器，可通过\url{http://xxx.xxx.xx.xxx:8056/}进行访问。}
 
 本项目的所有源代码公开于\url{https://github.com/reacherhai/AIDO}，或可查看本项目下的\verb'source'文件夹。
+\textbf{更多细节可见}\verb'document.pdf'\textbf{，其中包含了市场调查、竞品分析、产品特点与使用说明等。}
+如需自己安装服务器并运行，请查看\verb'README.md'进行部署。
 下面将会简要叙述本项目的要求及设计动机。
 
 \subsection{项目要求}
@@ -45,9 +47,10 @@
 所以为了解决上述的两个问题，我们小组旨在设计一个类似于微软小冰或是小黄鸡的，能协助管理个人事务的智能机器人AIDO。
 而这里的名称AIDO借用了偶像(idol)的谐音，方便易记，希望能够真正成为用户心中的偶像与朋友。
 
-目前该项目主要部署在web端，用户不需要进行下载，更加方便应用的使用与传播。
+\textbf{目前该项目主要部署在web端，用户不需要进行下载，更加方便应用的使用与传播。
+用户可直接像平时聊天一样进行键盘输入或语音输入，没有任何使用或安装门槛。}
 
-\subsection{技术栈} %待修改
+\subsection{技术栈}
 \begin{flushleft}
 \begin{tabular}{ll}
 \textbf{开发语言} &\qquad JavaScript\ /\ HTML\ /\ CSS\ /\ Python\ /\ SQLite\\
@@ -71,6 +74,7 @@
 
 \textbf{刘学海：}
 \begin{itemize}
+\item 产品功能设计
 \item 后端接口的设计与实现
 \item 数据库设计
 \end{itemize}
@@ -318,9 +322,207 @@ WHERE t.title LIKE ?
 \end{lstlisting}
 \end{itemize}
 
-\subsection{对话机器人} %待修改
+\subsection{对话机器人}
+我们使用了一个类Chatbot来封装机器人的所有功能。机器人的核心模块使用面向对象的接口形式进行封装。
+\begin{itemize}
+    \item \textbf{语音输入}\\
+    语音输入部分，机器人获取用户的输入并将录音文件保存到本地的media/voice\_ss.mp3。实现类recorder如下：
+\begin{lstlisting}
+from pyaudio import PyAudio, paInt16
+import numpy as np
+import wave
 
-\subsection{交互界面} %待修改
+class Recorder:
+    NUM_SAMPLES = 2000      # `py audio内置缓冲大小'
+    SAMPLING_RATE = 16000    # `取样频率'
+    LEVEL = 500         # `声音保存的阈值'
+    COUNT_NUM = 20      # `NUM\_SAMPLES个取样之内出现COUNT\_NUM个大于LEVEL的取样则记录声音'
+    SAVE_LENGTH = 8         # `声音记录的最小长度：SAVE\_LENGTH * NUM\_SAMPLES 个取样'
+    TIME_COUNT = 20     # `录音时间，单位s'
+
+    Voice_String = []
+
+    def savewav(self, filename):
+        wf = wave.open(filename, 'wb')
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(self.SAMPLING_RATE)
+        wf.writeframes(np.array(self.Voice_String).tostring())
+        # wf.writeframes(self.Voice_String.decode())
+        wf.close()
+
+    def recorder(self):
+        pa = PyAudio()
+        stream = pa.open(format=paInt16, channels=1, rate=self.SAMPLING_RATE, input=True,
+                         frames_per_buffer=self.NUM_SAMPLES)
+        save_count = 0
+        save_buffer = []
+        time_count = self.TIME_COUNT
+
+        while True:
+            time_count -= 1
+            # print time_count
+            # `读入NUM\_SAMPLES个取样'
+            string_audio_data = stream.read(self.NUM_SAMPLES)
+            # `将读入的数据转换为数组'
+            audio_data = np.fromstring(string_audio_data, dtype=np.short)
+            # `计算大于LEVEL的取样的个数'
+            large_sample_count = np.sum(audio_data > self.LEVEL)
+            print(np.max(audio_data))
+            # `如果个数大于COUNT\_NUM，则至少保存SAVE\_LENGTH个块'
+            if large_sample_count > self.COUNT_NUM:
+                save_count = self.SAVE_LENGTH
+            else:
+                save_count -= 1
+
+            if save_count < 0:
+                save_count = 0
+
+            if save_count > 0:
+                # `将要保存的数据存放到save\_buffer中'
+                # print  save_count > 0 and time_count >0
+                save_buffer.append(string_audio_data)
+            else:
+                # print save_buffer
+                # `将save\_buffer中的数据写入WAV文件，WAV文件的文件名是保存的时刻'
+                # print "debug"
+                if len(save_buffer) > 0:
+                    self.Voice_String = save_buffer
+                    save_buffer = []
+                    print("Recode a piece of voice successfully!")
+                    return True
+            if time_count == 0:
+                if len(save_buffer) > 0:
+                    self.Voice_String = save_buffer
+                    save_buffer = []
+                    print("Recode a piece of voice successfully!")
+                    return True
+                else:
+                    return False
+
+    def recording(self,filename):
+        self.recorder()
+        self.savewav(filename)
+\end{lstlisting}
+    
+    \item \textbf{Chatbot}\\
+    自动聊天部分，我们使用事先准备好的语料库对机器人进行训练。
+    其中，语料库来自于百度百科、百度贴吧、微博等，语料库的详细信息请阅\url{https://github.com/codemayq/chinese\_chatbot\_corpus}。\\
+    
+    训练成功后，调用机器人的\verb'get_response()'接口获取自动对话信息。
+    Chatbot机器人实现了下述5项功能。
+    \begin{itemize}
+        \item \verb'voice2text'\\
+        将用户的语音输入转化成机器人可以理解的文本。
+\begin{lstlisting}
+    def voice2text(self):
+        # `获取access\_token'
+        token = getToken()
+        data = {}
+        data['format'] = 'wav'
+        data['rate'] = 16000
+        data['channel'] = 1
+        data['cuid'] = str(random.randrange(123456, 999999))
+        data['token'] = token
+        wav_fp = open(self.voice_url, 'rb')
+        voice_data = wav_fp.read()
+        data['len'] = len(voice_data)
+        data['speech'] = base64.b64encode(voice_data).decode('utf-8')
+        post_data = json.dumps(data)
+        # `语音识别的api url'
+        upvoice_url = 'http://vop.baidu.com/server_api'
+        r_data = urllib.request.urlopen(upvoice_url, data=bytes(post_data, encoding="utf-8"),timeout=10).read()
+        logger.info(json.loads(r_data))
+        err = json.loads(r_data)['err_no']
+        if err == 0:
+            return json.loads(r_data)['result'][0]
+        else:
+            return json.loads(r_data)['err_msg']
+\end{lstlisting}
+        
+        \item \verb'get_response'\\
+        根据获取的用户输入文本，调用对话接口和TodoList接口综合得到回复。如果用户输入符合TodoList的接口需求，则调用TodoList接口管理用户的待办事项。否则，调用对话接口获取机器人的聊天回复。
+\begin{lstlisting}
+    def get_response(self,text,voice_flag=False):
+        prefix = "  "
+        if not voice_flag:
+            data = self.get_data(text)
+        else:
+            self.recording()
+            text = self.voice2text()
+            data = self.get_data(text)
+
+        if (text == "todo"):
+            output = os.popen("todo").read()
+            output = deal_control_char(output)
+            logger.info(output)
+            if output != "":
+                return prefix + "`您的待办事项有以下这些哦：'\n" + output
+            else:
+                return prefix + "`您没有待办事项哦'~"
+
+        if(text == "setup"):
+            os.popen("rm -rf ~/.toduh")
+            return prefix + "`已为您清除所有任务'"
+
+        if (grabdate(text)):
+            command = getcommand(text)
+            # return output
+            try:
+                output = os.popen(command).read()
+            except:
+                return prefix + "`添加的事项输入有问题哦'"
+
+            output = os.popen("todo").read()
+            output = deal_control_char(output)
+            logger.info(output)
+            return prefix + "`帮您记录好啦'\n" + output
+        if (grabdel(text)):
+            command = getdel(text)
+            try:
+                output = os.popen(command).read()
+            except:
+                return prefix + "`┗|｀O′|┛ 嗷~~删除的信息不存在，请输入正确的删除信息(删除+数字/字母)'"
+            output = os.popen("todo").read()
+            output = deal_control_char(output)
+            logger.info(output)
+            return prefix + "`已删除~'\n" + output
+
+        data = self.get_data(text)
+        url = 'https://api.ownthink.com/bot'  # `API接口'
+        try:
+            response = requests.post(url=url, data=data, headers=headers,timeout=10)
+            response.encoding = 'utf-8'
+            result = response.json()
+            answer = result['data']['info']['text']
+        except:
+            answer = "`LoL 小思有点忙'..."
+        logger.info("Q: {}".format(text)) # used for logging
+        logger.info("A: {}".format(answer))
+        return prefix + answer
+\end{lstlisting}
+        
+        \item \verb'text2voice'\\
+        将机器人所返回的信息转化成语音文件，用于后续在交互界面播放。
+\begin{lstlisting}
+    def text2voice(self,answer):
+        # `获取access\_token'
+        logger.info("text2voice")
+        token = getToken()
+        get_url = baidu_api_url2 % (urllib.parse.quote(answer), "test", token)
+        voice_data = urllib.request.urlopen(get_url).read()
+        voice_fp = open(self.voice_url, 'wb+')
+        voice_fp.write(voice_data)
+        voice_fp.close()
+        logger.info("Done writing audio file!")
+        return
+\end{lstlisting}
+        
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{交互界面}
 本次项目的前端采用Python的Django进行搭建，之所以选择Django是因为项目的后端都选择Python进行编写，而Django能够很好地跟后端进行交互，并且只需较小工作就能实现一个前端界面。
 
 \subsubsection{前后端交互}
