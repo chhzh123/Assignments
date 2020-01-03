@@ -1,49 +1,31 @@
-\documentclass[a4paper, 11pt]{article}
-\usepackage{amsmath}
-\usepackage{graphicx}
-\usepackage{geometry}
-\usepackage{listings}
-\usepackage[colorlinks=True, linkcolor=black, urlcolor=blue]{hyperref}
-\usepackage{ctex}
-%\usepackage{xypic}
-\usepackage{amsfonts,amssymb}
-\usepackage{multirow}
-\usepackage{lipsum}
-\usepackage{courier}
-\usepackage{fancyvrb}
-\usepackage{etoolbox}
-\usepackage{enumerate}
-\usepackage{fancyhdr}
-\usepackage{float}
-\usepackage{ulem}
+\documentclass[logo,reportComp]{thesis}
+\usepackage[python,javascript,pseudo,table]{mypackage}
 
-\lstset{
-frame=shadowbox,
-breaklines=true,
- numbers=left
- }
- 
-\geometry{scale=0.8}
-\pagestyle{fancy}
-\lhead{\bfseries 数据库实验报告}
-\rhead{\bfseries \leftmark}
-\title{	
-\normalfont \normalsize
-\textsc{School of Data and Computer Science, Sun Yat-sen University} \\ [25pt] %textsc small capital letters
-\rule{\textwidth}{0.5pt} \\[0.4cm] % Thin top horizontal rule
-\huge  AIDO项目设计报告 \\ % The assignment title
-\rule{\textwidth}{2pt} \\[0.5cm] % Thick bottom horizontal rule
-\author{陈鸿峥 \ 刘学海 \ 刘佳荣}
-\date{\normalsize\today}
-}
+\title{数据库系统期末大作业}
+\subtitle{AIDO项目设计报告}
+\school{数据科学与计算机学院}
+\author{陈鸿峥\qquad 刘学海\qquad 刘佳荣\\17341015\qquad 17341111\qquad 17341109}
+\classname{17大数据与人工智能}
+\stunum{}
+\headercontext{数据库系统期末大作业}
 
 \begin{document}
-\maketitle
-% \tableofcontents
 
-\newpage
+\maketitle
+
 \section{概览}
-本项目的所有源代码公开于 \url{https://github.com/reacherhai/AIDO}
+本次项目我们开发了一套人工智能日程管理系统，实现智能对话、日程管理、语音输入识别与输出等多项功能，效果概览图可见图\ref{fig:overview}。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/overview.png}
+\caption{AIDO：你的智能小管家}
+\label{fig:overview}
+\end{figure}
+
+\textcolor{red}{本项目已经部署上腾讯云服务器，可通过\url{http://xxx.xx.xx.xxx:8056/}进行访问。}
+
+本项目的所有源代码公开于\url{https://github.com/reacherhai/AIDO}，或可查看本项目下的\verb'source'文件夹。
+下面将会简要叙述本项目的要求及设计动机。
 
 \subsection{项目要求}
 本项目需要我们设计一个数据库应用，采用客户端/服务器的结构，具体要求如下：
@@ -54,81 +36,108 @@ breaklines=true,
 \end{itemize}
 
 \subsection{设计动机}
-\par 我们小组做这个项目最初的动机来源于前半学期实验中做的todolist。todolist的作用类似于实际生活中的备忘录或是手账，用户可以在todolist中记录自己未来要做的事情，并且可以修改记录，或者是对记录进行标记（比如打上已经完成的标记）。通过使用这类工具，用户可以有效地管理未来的事务。
-\par 我们认为，现在的生活中，每个人都面临着繁琐的日常事务。就以学生来说，各门课都会布置作业，作业都有各自的DDL，如果没有进行有效的管理，会导致规划时间不合理或是忘记作业等问题。所以我们认为管理个人未来事务是一种需求，我们可以针对这种需求去做一个项目。
-\par 虽然todolist可以达成管理个人事务这一目的，但我们认为仅仅如此是不够的，todolist存在一些问题。todolist中每一项记录的添加、删除、修改都要通过打字或多次操作实现，这在一定程度上增加了使用的难度，从而降低用户使用todolist的积极性，而这种类似于备忘录的应用如果更少地被使用，它的作用是要打折扣的。同时，todolist的功能单一，只有备忘录这一功能，用户使用的积极性也比较低，这会带来与前一点相同的影响。
-\par 所以为了解决上述的两个问题，我们小组旨在设计一个类似于微软小冰或是小黄鸡的，能协助管理个人事务的智能机器人AIDO。
+我们小组做这个项目最初的动机来源于前半学期实验中做的TodoList。TodoList的作用类似于实际生活中的备忘录或是手账，用户可以在TodoList中记录自己未来要做的事情，并且可以修改记录，或者是对记录进行标记（比如打上已经完成的标记）。通过使用这类工具，用户可以有效地管理未来的事务。
+
+我们认为，现在的生活中，每个人都面临着繁琐的日常事务。就以学生来说，各门课都会布置作业，作业都有各自的DDL，如果没有进行有效的管理，会导致规划时间不合理或是忘记作业等问题。所以我们认为管理个人未来事务是一种需求，我们可以针对这种需求去做一个项目。
+
+虽然TodoList可以达成管理个人事务这一目的，但我们认为仅仅如此是不够的，TodoList存在一些问题。TodoList中每一项记录的添加、删除、修改都要通过打字或多次操作实现，这在一定程度上增加了使用的难度，从而降低用户使用TodoList的积极性，而这种类似于备忘录的应用如果更少地被使用，它的作用是要打折扣的。同时，TodoList的功能单一，只有备忘录这一功能，用户使用的积极性也比较低，这会带来与前一点相同的影响。
+
+所以为了解决上述的两个问题，我们小组旨在设计一个类似于微软小冰或是小黄鸡的，能协助管理个人事务的智能机器人AIDO。
+而这里的名称AIDO借用了偶像(idol)的谐音，方便易记，希望能够真正成为用户心中的偶像与朋友。
+
+目前该项目主要部署在web端，用户不需要进行下载，更加方便应用的使用与传播。
 
 \subsection{技术栈} %待修改
-\par \textbf{开发语言} \ \ \ \ \ \ JavaScript\ /\ HTML\ /\ CSS\ /\ Python\ /\ SQLite
-\par \textbf{浏览器环境} \ \ \ \ Chrome\ /\ Firefox\ /\ Safari
-\par \textbf{第三方库}  \ \ \ \ \ \ jQuery\ /\ Bootstrap
+\begin{flushleft}
+\begin{tabular}{ll}
+\textbf{开发语言} &\qquad JavaScript\ /\ HTML\ /\ CSS\ /\ Python\ /\ SQLite\\
+\textbf{浏览器环境} &\qquad Chrome\ /\ Firefox\ /\ Safari\\
+\textbf{第三方库}  &\qquad jQuery\ /\ Bootstrap
+\end{tabular}
+\end{flushleft}
 
 \subsection{项目分工}
-\par 整个项目主要分为两个部分，前期准备规划以及代码的实现与测试。
-\par 前期规划阶段没有十分明显的分工，主要是三人针对todolist现有的问题进行分析，并进行调研，调查市场上类似产品，分析自己做的东西是否有意义。之后，进行规划，明确需要实现的需求，包括智能机器人以及事务管理两部分。再然后，进行工作的分配，并进行准备。
-\par 代码的实现与测试阶段的分工如下。
-\par \textbf{陈鸿峥：}
+整个项目主要分为两个部分，前期准备规划以及代码的实现与测试。
+
+前期规划阶段没有十分明显的分工，主要是三人针对TodoList现有的问题进行分析，并进行调研，调查市场上类似产品，分析自己做的东西是否有意义。之后，进行规划，明确需要实现的需求，包括智能机器人以及事务管理两部分。再然后，进行工作的分配，并进行准备。
+
+代码的实现与测试阶段的分工如下。
+
+\textbf{陈鸿峥：}
 \begin{itemize}
-\item 前端页面的搭建与链接
+\item 前端页面的搭建与整合
 \item 页面的设计与美化
 \end{itemize}
-\par \textbf{刘学海：}
+
+\textbf{刘学海：}
 \begin{itemize}
 \item 后端接口的设计与实现
-\item 设计数据库
+\item 数据库设计
 \end{itemize}
-\par \textbf{刘佳荣：}
+
+\textbf{刘佳荣：}
 \begin{itemize}
 \item 明确需求与实现，编写文档报告
 \item 对应用进行运行测试，反馈前后端
 \end{itemize}
 
 \section{项目特点}
-\par AIDO的主要设计目的是打造一个帮助管理日常事务的智能管家，让用户能便捷、有效地管理日常事务，并提供友好的交互界面。其主要特征有：
+
+AIDO的主要设计目的是打造一个帮助管理日常事务的智能管家，让用户能便捷、有效地管理日常事务，并提供友好的交互界面。其主要特征有：
 \begin{itemize}
 \item \textbf{聊天交互功能：}AIDO模仿了现有的小黄鸡等应用，实现了用户与机器人之前的交互功能。
 \begin{figure}[H]
 \centering
-\includegraphics[width=15cm]{fig/chatting}
+\includegraphics[width=\linewidth]{fig/chatting}
 \end{figure}
-\par 我们的机器人支持语言输入，按住say按钮就可以进行录音。录音文件就会保存到本地。同时，机器人也会根据语音进行相应的回答。用户可以通过与智能机器人交流，达到近似于与真人进行交流的体验。于此同时，下面的一系列功能都支持语音输入。
+
+我们的机器人支持\textbf{语音输入}，按住say按钮就可以进行录音。录音文件会保存到本地。同时，机器人也会根据语音进行相应的回答（打开音响可以听到\textbf{语音反馈}）。用户可以通过与智能机器人交流，达到近似于与真人进行交流的体验。与此同时，下面的一系列功能都支持语音输入和语音输出，最大程度释放用户的双手。
 \item \textbf{日常查询功能：}AIDO可以根据用户输入的信息，解释相关概念。
 \begin{figure}[H]
 \centering
-\includegraphics[width=15cm]{fig/wiki}
+\includegraphics[width=\linewidth]{fig/wiki}
 \end{figure}
-\par 用户可以输入想要了解的人物/事务，机器人就会为用户提供对应概念的解释，此处机器人提供的解释主要来源于百度百科。
+
+用户可以输入想要了解的人物/事务，机器人就会为用户提供对应概念的解释，此处机器人提供的解释主要来源于百度百科。
 \item \textbf{添加任务功能：}AIDO可以实现帮用户添加任务事项的功能。
 \begin{figure}[H]
 \centering
-\includegraphics[width=15cm]{fig/add_task}
+\includegraphics[width=\linewidth]{fig/add_task}
 \end{figure}
-\par 用户输入日期（****年*月*日）+任务，机器人将帮用户录入todolist，并自动计算距离deadline的时间。此外，支持给任务添加优先级。在任务中添加“优先级”+数字，奇迹人将自动检测任务的优先级并将高优先级的任务排在前面。
+
+用户输入日期（****年*月*日）+任务，机器人将帮用户录入TodoList，并自动计算距离deadline的时间。此外，支持给任务添加优先级。在任务中添加“优先级”+数字，奇迹人将自动检测任务的优先级并将高优先级的任务排在前面。
 \item \textbf{删除任务功能：}AIDO可以实现帮助用户删除任务事项的功能。
 \begin{figure}[H]
 \centering
-\includegraphics[width=15cm]{fig/del_task}
+\includegraphics[width=\linewidth]{fig/del_task}
 \end{figure}
-\par 通过输入“删除”+任务对应的字母/数字，机器人就可以帮助用户删除对应的任务。
+
+通过输入“删除”+任务对应的字母/数字，机器人就可以帮助用户删除对应的任务。
 \item \textbf{查看待办事项功能：}AIDO允许用户查询当前剩余的待办事项。
 \begin{figure}[H]
 \centering
-\includegraphics[width=15cm]{fig/ask_task}
+\includegraphics[width=\linewidth]{fig/ask_task}
 \end{figure}
-\par 通过输入“todo”，用户可以查看现有的所有待办事项的详细信息。
+
+通过输入“todo”，用户可以查看现有的所有待办事项的详细信息。
 \end{itemize}
-\par 我们的项目主要包含了以上功能，可以说，AIDO包含了todolist的核心功能，但同时加入了智能机器人这一辅助工具，使个人事务的管理可以统一使用语音输入这一手段进行管理，增加了效率和方便性，又使得应用场景更丰富，机器人可以协助解决除事务管理外的其它问题。同时，AIDO也提供了更为美观、友好的交互界面，给用户带来更好的体验。
+
+我们的项目主要包含了以上功能，可以说，AIDO包含了TodoList的核心功能，但同时加入了智能机器人这一辅助工具，使个人事务的管理可以统一使用语音输入这一手段进行管理，增加了效率和方便性，又使得应用场景更丰富，机器人可以协助解决除事务管理外的其它问题。同时，AIDO也提供了更为美观、友好的交互界面，给用户带来更好的体验。
 
 \section{ER图与关系模式设计}
 \subsection{ER图}
-\par 本项目设计的ER图如下所示：
+
+本项目设计的ER图如图\ref{fig:er}所示。
 \begin{figure}[H]
 \centering
-\includegraphics[width=15cm]{fig/er_design}
+\includegraphics[width=\linewidth]{fig/er_design}
+\caption{项目设计E-R图}
+\label{fig:er}
 \end{figure}
+
 \subsection{关系模式与建表语句}
-\par 根据以上ER图，我们可以建立以下关系模式：
+
+根据以上ER图，我们可以建立以下关系模式：
 \begin{itemize}
 \item \textbf{Task(\uline{id}, title, created, deadline, start, priority, done, \uwave{context}, content, editing)}
 \begin{lstlisting}[language=SQL]
@@ -161,12 +170,14 @@ CREATE INDEX `PathIndex` ON `Context` (`path` ASC);
 \end{itemize}
 
 \section{设计细节}
-\par 本节主要介绍各个部分的设计细节，包括其中涉及的代码细节与SQL语句。
 
-\subsection{todolist}
-todolist的实现主要包含了四个模块，添加任务，删除任务， 修改任务以及查询任务。
+本节主要介绍各个部分的设计细节，包括其中涉及的代码细节与SQL语句。
+
+\subsection{TodoList}
+TodoList的实现主要包含了四个模块，添加任务，删除任务， 修改任务以及查询任务。
 \subsubsection{添加任务}
-\par todolist中有任务的添加，以及环境(context）的添加。
+
+TodoList中有任务的添加，以及环境(context）的添加。
 \begin{itemize}
 \item 任务添加
 \begin{lstlisting}[language=SQL]
@@ -190,7 +201,8 @@ WHERE context = (
 \end{itemize}
 
 \subsubsection{删除任务}
-\par todolist中有对数据的删除操作，其中包括了删除任务，删除环境，以及删除满足某些要求的任务。
+
+TodoList中有对数据的删除操作，其中包括了删除任务，删除环境，以及删除满足某些要求的任务。
 \begin{itemize}
 \item 删除特定id的任务
 \begin{lstlisting}[language=SQL]
@@ -211,7 +223,8 @@ AND created < ?
 \end{itemize}
 
 \subsubsection{修改任务}
-\par todolist中有对任务的修改操作，其中主要是修改任务内容，或是更改任务的标记内容（完成标记以及编辑标记）。
+
+TodoList中有对任务的修改操作，其中主要是修改任务内容，或是更改任务的标记内容（完成标记以及编辑标记）。
 \begin{itemize}
 \item 修改特定id的任务
 \begin{lstlisting}[language=SQL]
@@ -240,7 +253,8 @@ WHERE id = ?
 \end{itemize}
 
 \subsubsection{查询任务}
-\par todolist中有如下的各种查询操作。
+
+TodoList中有如下的各种查询操作。
 \begin{itemize}
 \item 查询特定id的任务
 \begin{lstlisting}[language=SQL]
@@ -305,16 +319,167 @@ WHERE t.title LIKE ?
 \end{itemize}
 
 \subsection{对话机器人} %待修改
+
 \subsection{交互界面} %待修改
-\section{技术难点} %待修改
-\subsection{后端设计} %待修改
-\subsection{前端设计} %待修改
+本次项目的前端采用Python的Django进行搭建，之所以选择Django是因为项目的后端都选择Python进行编写，而Django能够很好地跟后端进行交互，并且只需较小工作就能实现一个前端界面。
+
+\subsubsection{前后端交互}
+Django项目的核心交互模块存在于以下几个文件中：
+\begin{itemize}
+\item \verb'manage.py'：Django框架的运行入口，具体执行方法即在当前文件夹下调用
+\begin{lstlisting}[language=bash]
+python manage.py runserver 0.0.0.0:8000
+\end{lstlisting}
+
+\item \verb'aido/settings.py'：基本配置文件，包括用于生成静态页面的文件夹，模板、语言、应用设置等
+
+\item \verb'aido/urls.py'：网页url地址与具体入口函数或静态页面文件夹的映射。
+如下面的语句就保证主页会被链接到我们的AIDO机器人的执行入口函数。
+\begin{lstlisting}[language=python]
+urlpatterns = [
+    url(r'^$', ChatterBotAppView.as_view(), name='main')
+]
+\end{lstlisting}
+
+\item \verb'aido/views.py'：这个文件是最为核心的前后端交互代码模块。
+在Django框架中所有页面都是以视窗(view)的方式呈现，因此我们在这一文件中创建了\verb'ChatterBotApiView'的类，其中静态存放已经初始化的\verb'ChatBot'。
+通过从前端读入用户请求，然后传送到后端进行处理，接着再从后端返回处理后的结果，再返回给前端。
+注意这里提供了\textbf{语言输入}模块和\textbf{文字交互}模块，所有交互都通过json文件进行交互传输，具体代码如下。
+\begin{lstlisting}
+class ChatterBotApiView(View):
+    """
+    Provide an API endpoint to interact with ChatterBot.
+    """
+
+    chatterbot = ChatBot()
+
+    def post(self, request, *args, **kwargs):
+        """
+        Return a response to the statement in the posted data.
+
+        * The JSON data should contain a 'text' attribute.
+        """
+        input_data = json.loads(request.body.decode('utf-8'))
+
+        if 'voice' in input_data:
+            # voice input
+            response = self.chatterbot.get_response(input_data['voice'])
+        elif 'text' in input_data:
+            # text input
+            response = self.chatterbot.get_response(input_data['text'])
+        else: if 'text' not in input_data:
+            return JsonResponse({
+                'text': [
+                    'The attribute "text" is required.'
+                ]
+            }, status=400)
+
+        response = response.replace("\n","\r\n")
+
+        self.chatterbot.text2voice(response)
+
+        return JsonResponse({
+            'text': [
+                response
+            ],
+            'audioname': [
+                'voice_ss.mp3'
+            ]
+        }, status=200, safe=False)
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{前端视觉效果}
+虽然使用Django进行搭建，但是传统的网页开发三件套HTML、CSS、Javascript依然是不可或缺的。
+
+所有的HTML代码存放在\verb'templates'文件夹下，其他的第三方开发库（如jQuery和bootstrap）和图片都存放在\verb'static'文件夹下。
+
+\begin{itemize}
+\item \verb'nav.html'：给出导航行的设置，即左上角的AIDO图标与链接
+
+\item \verb'app.html'：核心前端交互页面，主要通过下面的函数获取用户输入并显示。
+当用户点击\verb'Submit'、\verb'Say'或者按入回车时，都会触发下述javascript函数获取\verb'input'，然后新增一个\verb'list-group-item'用于显示用户对话，然后将输入文本用\verb'ajax'打包发送给后端。
+当\verb'submit'事件完成，则会触发另一个js函数，将AIDO的返回文本和语音进行输出。
+\begin{lstlisting}[language=javascript]
+function submitInput() {
+  var inputData = {
+    'text': $input.val()
+  }
+
+  // Display the user's input on the web page
+  var $row = $('<li class="list-group-item"></li>');
+
+  var row_text = $row.text('  ' + $input.val());
+  row_text.html(row_text.html().replace(/\n/g, '<br/>'));
+  $row.prepend('<img src="{% static "img/you.jpg" %}" width = "30" height = "30" class= "d-inline-block align-top" alt = "you" >');
+  $chatlog.append($row);
+
+  // Clear the input field immediately
+  $input.val('');
+
+  var $submit = $.ajax({
+    type: 'POST',
+    url: chatterbotUrl,
+    data: JSON.stringify(inputData),
+    contentType: 'application/json'
+  });
+
+  $submit.done(function (statement) {
+    createRow(statement.text);
+
+    var myaudio = new Audio('media/' + statement.audioname)
+    myaudio.play();
+
+    // Scroll to the bottom of the chat interface
+    $chatlog[0].scrollTop = $chatlog[0].scrollHeight;
+  });
+}
+\end{lstlisting}
+而语音输入模块也是类似，只是更多的工作会交给后端完成，核心函数如下。
+\begin{lstlisting}[language=javascript]
+function sayInput() {
+  try {
+    var $submit = $.ajax({
+      type: 'POST',
+      url: chatterbotUrl,
+      data: 'voice',
+      contentType: 'application/json'
+    });
+
+    $submit.done(function (statement) {
+      createRow(statement.text);
+
+      var myaudio = new Audio('media/' + statement.audioname)
+      myaudio.play();
+
+      // Scroll to the bottom of the chat interface
+      $chatlog[0].scrollTop = $chatlog[0].scrollHeight;
+    });
+  }
+  catch (err) {
+    alert("Oops`，您的设备似乎没有办法语音输入哦'");
+  }
+}
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{其他设施}
+\begin{itemize}
+	\item \verb'fixtures'：其中的\verb'ipconfig.yaml'定义了服务器的IP地址
+	\item \verb'media'：存储用户和AIDO的语音输入输出
+\end{itemize}
+
 \section{结语}
-\par 本项目至此便已圆满结束，在这个项目中确实学习到了很多在课堂上学习不到的知识，也提升了项目开发能力。我们有几个简单的感想：
+
+本项目至此便已圆满结束，在这个项目中确实学习到了很多在课堂上学习不到的知识，也提升了项目开发能力。我们有几个简单的感想：
 \begin{itemize}
 \item 实际的项目开发比原想的要复杂的多。对比以往有明确要求的各种大作业，这次的大作业只是给了基本的要求，要做什么项目、要怎么实现、要达到什么程度等都得自行决定。因此，这次的作业，前期的准备规划阶段对比以往的作业也尤为重要，小组内需要商讨项目内容，需要调查市场竞品，还得考虑到实际的开发时间等，所有这些都商量好之后才能进入之后的开发阶段，进行代码的实现与测试。
-\item 代码的复杂使实现的过程也存在困难。这次的作业要求我们实现包含前端界面和后端服务器的一个完整程序。后端包含的两个模块虽然都有比较成熟的模板，但是实际开发过程中，配置代码运行的环境，以及两部分代码的衔接，实现原有代码没有的功能等，耗费了队友的大量精力。前端界面的开发虽然在前半学期的todolist中有练习过，但在实际的开发中这并不足够，所以也是一边学习一边实现。同时，在接口的对接时，两位队友也进行了大量的沟通。这也让我们反省我们的开发流程是否还有优化的空间，可能在前期进行规划的时候需要对各种模块端口进行更为明确的规定。
+\item 代码的复杂使实现的过程也存在困难。这次的作业要求我们实现包含前端界面和后端服务器的一个完整程序。后端包含的两个模块虽然都有比较成熟的模板，但是实际开发过程中，配置代码运行的环境，以及两部分代码的衔接，实现原有代码没有的功能等，耗费了队友的大量精力。前端界面的开发虽然在前半学期的TodoList中有练习过，但在实际的开发中这并不足够，所以也是一边学习一边实现。同时，在接口的对接时，两位队友也进行了大量的沟通。这也让我们反省我们的开发流程是否还有优化的空间，可能在前期进行规划的时候需要对各种模块端口进行更为明确的规定。
 \end{itemize}
-\par 总之，我感谢我两位队友与我的组队！面对工作量如此巨大的Project，队友的努力，让这个项目有坚持下去并圆满完成的可能！
-\par 以及，十分感谢助教检查我们的项目，提出宝贵的建议，并不厌其烦地读完这篇冗长的报告。
+
+总之，十分幸运我们这个三人队伍能够成功组建，并且完美地完成了本项目！
+面对工作量如此巨大的Project，只有三个人共同努力，才让这个项目有持续下去并圆满完成的可能！
+
+以及，十分感谢助教与老师检查我们的项目，提出宝贵的建议，并不厌其烦地读完这篇冗长的报告。
+
 \end{document}
