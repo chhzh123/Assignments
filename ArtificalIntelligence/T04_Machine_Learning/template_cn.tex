@@ -26,9 +26,14 @@
 
 \begin{document}
 \maketitle
-% \tableofcontents
-
+\tableofcontents
 \newpage
+
+\begin{flushleft}
+\textemph{\Large Score: 20/20 + 19/20 + 19/20 + 20/20 + 18/20 = 96}
+\end{flushleft}
+
+\section{Q1 - 决策树}
 \begin{question}\normalfont
 Consider the following data. The DECISION-TREE-LEARNING algorithm will first select the attribute \textbf{Length} to split on. Finish building the decision tree, and show the computations.
 \begin{center}
@@ -147,7 +152,14 @@ Consider the following data. The DECISION-TREE-LEARNING algorithm will first sel
 \end{forest}
 \end{center}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 20/20
+}
+\end{flushleft}
 
+\newpage
+\section{Q2 - 贝叶斯学习}
 \begin{question}\normalfont
 Consider the candy example from the lecture. Assume that the prior distribution over $h1, \ldots, h5$ is given by $\lrang{0.1, 0.2, 0.4, 0.2, 0.1}$. Suppose that the first 5 candies taste lime, cherry, cherry, lime, and lime. Make predictions for the 6th candy using Bayesian, MAP and ML learning, respectively. Show
 the computations done to make the predictions.
@@ -220,7 +232,24 @@ the computations done to make the predictions.
     两者预测概率相等。
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 19/20
+\begin{itemize}
+\item 忘记除以$1/P(d)$了，导致Bayes概率和不为$1$，答案应为
+\[\begin{aligned}
+P(lime\mid d)&=0.545\\
+P(cherry\mid d)&=0.455
+\end{aligned}\]
+可以先根据
+\[P(h_i\mid d)=\frac{P(d\mid h_i)P(h_i)}{P(d)}\]
+算出所有后验概率
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
+\section{Q3 - 朴素贝叶斯}
 \begin{question}\normalfont
 Consider the Boolean function $E = (A\;\mathrm{XOR}\;B) \;\mathrm{AND}\; (C\;\mathrm{XOR}\;D)$. Construct its truth table, and then remove the line for the input $A = 1, B = 1, C = 1, D = 1$. Use Naive Bayes classification to make prediction for this input. Show the computations.
 \end{question}
@@ -261,7 +290,17 @@ P(\lnot E\mid A,B,C,D)
 \end{aligned}\]
 因为$P(\lnot E\mid A,B,C,D)>P(E\mid A,B,C,D)$，故判别为$E=0$。
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 19/20
+\begin{itemize}
+\item Bayes概率和不为$1$，其实归一化因子$\alpha=1/P(A,B,C,D)$是不用算的，或者通过概率和为$1$归一化得到
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
+\section{Q4 - 神经网络}
 \begin{question}\normalfont
 Construct a neural network that computes the $\mathrm{XOR}$ function of two inputs.
 \end{question}
@@ -300,10 +339,17 @@ A & B & C\\\hline
 \end{aligned}\]
 即为所求的XOR网络。
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 20/20
+}
+\end{flushleft}
 
+\newpage
+\section{Q5 - 反向传播}
 \begin{question}\normalfont
 Consider the neural net on Page 32 of the course slides for neural nets.
-\begin{figure}
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.5\linewidth]{fig/neural_net.png}
 \end{figure}
@@ -371,5 +417,14 @@ Consider the neural net on Page 32 of the course slides for neural nets.
     \[\pd{Loss_{o2}}{w_4}=0.009524710\]
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 18/20
+\begin{itemize}
+\item 推导漏了负号
+\[\pd{Loss_{o1}}{out_{o1}}=\textcolor{red}{-}2(target_{o1}-out_{o1})\]
+\end{itemize}
+}
+\end{flushleft}
 
 \end{document}

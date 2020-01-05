@@ -25,7 +25,9 @@
 \tableofcontents
 \newpage
 
-% Score: 29/30 + 26/35 + 35/35 = 90/100
+\begin{flushleft}
+\textemph{\Large Score: 29/30 + 26/35 + 35/35 = 90/100}
+\end{flushleft}
 
 \section{Q1 - 环检测算法}
 \begin{question}
@@ -39,14 +41,23 @@
 \begin{answer}
 如下图所示，环检测部分已经用删除线标出。
 注意每次添加进边界集的顺序以字母为序，但是扩展结点以路径代价为序。
-而且当结点从优先队列出队时才进行目标检测。
+而且\textemph{当结点从优先队列出队时才进行目标检测}。
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{fig/A1.png}
 \end{figure}
 \end{answer}
-% B结点计算错误，应该是450
+\begin{flushleft}
+\textemph{
+Score: 29/30
+\begin{itemize}
+\item 第一个$B$结点计算错误，应该是$239+211=450$
+\item 注意这里实际上是扩展$P$结点时，第二个$B$将在边界集中的第一个$B$结点给替换了，之后$B=418$弹出时才做目标检测
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
 \section{Q2 - $A^\star$算法}
 \begin{question}[传教士与野人问题]
 考虑$M=5$且$K=3$的情况，采用启发式函数$h(n)=M+C-2B$。
@@ -66,10 +77,18 @@
 \end{figure}
 可以看出结果确实正确，即使采用$A^\star$算法也需要经过11步才能找到最优解。
 \end{answer}
-% 注意优先队列以(f,h)作为优先级排序，即当f相同时，选取h较小的那个
-% (5,2,1)扩展错位置
-% 漏最后四个结点（一共24个扩展，剪枝部分可不用标出）
+\begin{flushleft}
+\textemph{
+Score: 26/35
+\begin{itemize}
+\item 注意优先队列以$(f,h)$作为优先级排序，即当$f$相同时，选取$h$较小的那个
+\item $(5,2,1)$扩展错位置
+\item 漏最后四个结点（一共24个扩展，剪枝部分可不用标出）
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
 \section{Q3 - $\alpha-\beta$剪枝}
 \begin{question}
 采用\textbf{$\alpha-\beta$剪枝}对下面的博弈树进行搜索，计算出根节点的效用。
@@ -86,6 +105,13 @@
 \includegraphics[width=\linewidth]{fig/A3.png}
 \end{figure}
 \end{answer}
-
+\begin{flushleft}
+\textemph{
+Score: 35/35
+\begin{itemize}
+\item 注意剪枝条件要看所有祖先
+\end{itemize}
+}
+\end{flushleft}
 
 \end{document}

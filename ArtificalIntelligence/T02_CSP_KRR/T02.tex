@@ -14,7 +14,7 @@
 \normalfont \normalsize
 \textsc{School of Data and Computer Science, Sun Yat-sen University} \\ [25pt] %textsc small capital letters
 \rule{\textwidth}{0.5pt} \\[0.4cm] % Thin top horizontal rule
-\huge  T02 CSP and KR\\ % The assignment title
+\huge  T02 CSP and KRR\\ % The assignment title
 \rule{\textwidth}{2pt} \\[0.5cm] % Thick bottom horizontal rule
 \author{17341015 陈鸿峥}
 \date{\normalsize\today}
@@ -22,11 +22,14 @@
 
 \begin{document}
 \maketitle
-% \tableofcontents
+\tableofcontents
 \newpage
 
-% Score: -/15 + -/35 + -/15 + -/35 = -/100
+\begin{flushleft}
+\textemph{\Large Score: 13/15 + 35/35 + 13/15 + 35/35 = 96/100}
+\end{flushleft}
 
+\section{Q1 - CSP}
 \begin{question}\normalfont
     Give precise formulations for each of the following as CSPs: Provide the variables, domains and constraints.
     \begin{itemize}
@@ -92,7 +95,17 @@
 \[1000(V_S+V_M)+100(V_E+V_O)+10(V_N+V_R)+(V_D+V_E)=10000V_M+1000V_O+100V_N+10V_E+V_Y\]
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 13/15
+\begin{itemize}
+\item (b)和(c)的Constraints都缺少allDifferent(Vars)
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
+\section{Q2 - FC \& GAC}
 \begin{question}\normalfont
     Consider a scheduling problem, where there are five activities to be scheduled in four time slots. Suppose we represent the activities by the variables $A, B,  C, D, E$, where the domain of each variable is $\{1,2,3,4\}$ and the constraints are $A > D$, $D > E$, $C \ne A$, $C > E$, $C \ne D$, $B \geq A$, $B \ne C$, and $C \ne D + 1$.
     \begin{itemize}
@@ -118,8 +131,8 @@
 搜索过程如下，用中括号表示论域，没有中括号则代表赋值。
 注意搜索限制按照字母序进行搜索，因此可能出现未搜索到对应限制（未进行论域删减），就提前终止了。
 删除线划掉的代表论域已经失效。
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|c|}\hline
+
+\begin{longtable}{|c|c|c|c|c|c|}\hline
     Depth & A & B & C & D & E \\\hline
     0 & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\\hline
     1 & 1 & \sout{[1, 2, 3, 4]} & \sout{[1, 2, 3, 4]} & DWO & \sout{[1, 2, 3, 4]}\\ \hline
@@ -131,14 +144,14 @@
     3 & 3 & 3 & [1, 4] & 2 & [1]\\ \hline
     4 & 3 & 3 & [4] & 2 & 1\\ \hline
     5 & 3 & 3 & 4 & 2 & 1\\ \hline
-\end{tabular}
-\end{center}
+\end{longtable}
+
 最终得到解为$A=3,B=3,C=4,D=2,E=1$。
 \item [(b)]
 搜索及剪枝过程如下，其中首列为搜索深度或剪枝的条件（违反一致性的边(arc)）。
 后面的记号与(a)题相同，没有加方括号的为赋值，加了方括号的为论域，每轮GAC检测删除的值都已用删除线标出。
 注意这里合并了连续对同一变量的论域进行删减的情况。
-\begin{center}
+
 \begin{longtable}{|c|c|c|c|c|c|}\hline
     Depth / Constraints & A & B & C & D & E\\\hline
     0 & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4] & [1, 2, 3, 4]\\ \hline
@@ -163,11 +176,18 @@
     4 & 3, [3] & 3, [3] & 4, [4] & 2, \color{red}{[2]} & [1]\\ \hline
     5 & 3, [3] & 3, [3] & 4, [4] & 2, [2] & 1, \color{red}{[1]}\\ \hline
 \end{longtable}
-\end{center}
+
 可以看出GAC算法对于剪枝非常高效，使得最后只扩展了六个结点就搜索到了解$A=3,B=3,C=4,D=2,E=1$。
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 35/35
+}
+\end{flushleft}
 
+\newpage
+\section{Q3 - 知识表示与推理（归结）}
 \begin{question}\normalfont
     Determine whether the following sentence is valid using resolution:
     \[(\exists x\forall y P(x,y)\lor\exists x\forall y Q(x,y))\to
@@ -205,7 +225,17 @@
     \end{enumerate}
     总结即当$x=a,y=f(a),z=a,w=f(a)$时得到归结结果，题目中的式子成立。
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 13/15
+\begin{itemize}
+\item 在Skolemize表示中，$x$和$z$是常量，$a$是变量，故在归结的时候应写为$\{a=x,a=z\}$
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
+\section{Q4 - 知识表示与推理（归结）}
 \begin{question}\normalfont
     Victor has been murdered, and Arthur, Bertram, and Carleton are the only suspects (meaning exactly one of them is the murderer). Arthur says that Bertramwas the victim's friend, but that Carleton hated the victim. Bertram says that he was out of town the day of the murder, and besides, he didn't even know the guy. Carleton says that he saw Arthur and Bertram with the victim just before the murder. You may assume that everyone – except possibly for the murderer – is telling the truth.
     \begin{itemize}
@@ -215,7 +245,7 @@
 \end{question}
 \begin{answer}
 \begin{itemize}
-    \item [a.] 凶手既可以说真话也可以说假话，而不是凶手则一定说真话，则凶手与他说的话之间呈\emph{或}的关系。
+    \item [(a)] 凶手既可以说真话也可以说假话，而不是凶手则一定说真话，则凶手与他说的话之间呈\emph{或}的关系。
     简记Arthur, Bertram, Carleton, Victor为A, B, C, V，并设谓词$M(x)$代表$x$为凶手，$F(x)$代表$x$为V的朋友，$O(x)$代表$x$有不在场证明，$x\in D=\{A,B,C\}$。
     则由题目信息，可给出下列公式
     \[\begin{aligned}
@@ -252,7 +282,7 @@
         \item[16.] $R[11,15]\{x=B\}:\;(Answer(B))$
     \end{enumerate}
     所以得到Bertram为凶手。
-    \item [b.] 如果凶手可能不止一个，则只有1-7条子句仍继续符合。下面给出可能的解释：
+    \item [(b)] 如果凶手可能不止一个，则只有1-7条子句仍继续符合。下面给出可能的解释：
     \begin{itemize}
         \item 当$A$为清白，$B,C$为凶手时：$A$说真话，$B$是朋友，$C$不是朋友；$B$说假话，$B$当天在场且$B$是朋友；$C$可说真话可说假话。
         形式化的解释$\Im$如下，用\cmark代表True，用\xmark代表False。
@@ -287,6 +317,11 @@
     \end{itemize}
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 35/35
+}
+\end{flushleft}
 
 \end{document}
 

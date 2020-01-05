@@ -22,9 +22,14 @@
 
 \begin{document}
 \maketitle
-% \tableofcontents
-
+\tableofcontents
 \newpage
+
+\begin{flushleft}
+\textemph{\Large Score: 22/25 + 23/25 + 22/25 + 25/25 = 92}
+\end{flushleft}
+
+\section{Q1 - 确定性规划}
 \begin{question}\normalfont
 Consider a world with pots that may contain water. There is a function $volume(p)$, meaning the volume of pot $p$ in liters. There is a single fluent $Contains(p, w, s)$, meaning that pot $p$ contains $w$ liters of water in situation $s$. There are only two possible actions: $empty(p)$, which can be executed when the pot $p$ is not empty, and which discards all the water contained in $p$, and $transfer(p, p')$, which can be executed when $p \ne p'$, pot $p$ is not empty and pot $p'$ is not full, and which pours as much water as possible without spilling from $p$ to $p'$. To simplify the formalization, we assume that the usual arithmetic constants, functions, and predicates are also available. (You may assume that axioms for these have already been provided or built in.)
 
@@ -75,7 +80,18 @@ Using the situation calculus, complete the following.
     \end{center}
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 22/25
+\begin{itemize}
+\item (b) transfer的effect错，最后一句应该是
+\[Contains(p',w'+w,do(transfer(p,p'),s)\]
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
+\section{Q2 - STRIPS}
 \begin{question}\normalfont
 Consider the following blocks world planning problem.
 There are a collection of blocks: a block can be on the table, or on top of another block.
@@ -143,6 +159,7 @@ c\\\hline
         \centering
         \includegraphics[width=0.6\linewidth]{fig/T03-Q2.pdf}
     \end{figure}
+    \textemph{注意这里图中的动作层标号有误}\\
     由$S_2$可得
     \[\begin{aligned}
         G&=\{clear(a),clear(c),on(a,b),onTable(b),onTable(c)\}\\
@@ -164,7 +181,22 @@ c\\\hline
     \[CountActions(G,S_2)=1+1+0=2\]
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 23/25
+\begin{itemize}
+\item (b) $A1$层动作不全，应该有一下这些
+\[\begin{aligned}
+&move(a,a,a),move(a,a,b),move(a,b,b),move(b,c,a),move(b,c,b),\\
+&moveFromTable(a,a),moveFromTable(a,b),\\
+&moveToTable(a,a),moveToTable(b,c)
+\end{aligned}\]
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
+\section{Q3 - 贝叶斯网络}
 \begin{question}\normalfont
 Consider the following example: Metastatic cancer is a possible cause of a brain tumor and is also an explanation for an increased total serum calcium. In turn, either of these could cause a patient to fall into an occasional coma. Severe headache could also be explained by a brain tumor.
 \begin{itemize}
@@ -213,7 +245,17 @@ Consider the following example: Metastatic cancer is a possible cause of a brain
     进而，$P(a\mid\lnot d,e)=0.04/0.4112=0.097276<P(a)=0.2$，故病人有癌症的概率降低了。
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 22/25
+\begin{itemize}
+\item 题目要求$P(A,B,C\mid\lnot d,e)$，(c)题都要除以$P(\lnot d,e)$
+\end{itemize}
+}
+\end{flushleft}
 
+\newpage
+\section{Q4 - 变量消除算法}
 \begin{question}\normalfont
 Consider the following belief network:
 
@@ -283,5 +325,10 @@ P(c \mid \neg a, \neg b) &=0.4 \quad P(f \mid \neg c)&= 0.9
     \end{enumerate}
 \end{itemize}
 \end{answer}
+\begin{flushleft}
+\textemph{
+Score: 25/25
+}
+\end{flushleft}
 
 \end{document}
