@@ -20,15 +20,10 @@
 \begin{answer}
 由概率论中的结论，我们有当
 \[\lim_{n\to \infty}\E{|p_n(\vx)-p(\vx)|^2}=0\]
-时，$p_n(\vx)$依概率收敛到$p(\vx)$。
+时，$p_n(\vx)$依概率收敛到$p(\vx)$（均方意义下的收敛）。
 而
 \[\E{|p_n(\vx)-p(\vx)|^2}=\Var{p_n(\vx)}-\lrp{\E{|p_n(\vx)-p(\vx)|}}^2\]
-故欲证原题，只需证在
-\[\begin{aligned}
-\lim_{n\to\infty}k_n=\infty\\
-\lim_{n\to\infty}k_n/n=0
-\end{aligned}\]
-的前提下，满足
+故欲证原题，只需证
 \[\begin{aligned}
 \E{p_n(\vx)}\to p(\vx), & \quad n\to\infty\\
 \Var{p_n(\vx)}\to 0, & \quad n\to\infty
@@ -48,7 +43,7 @@
 =\int\delta_n(\vx-\vv)p(\vv)\diff\vv\to p(\vx),\;n\to\infty\]
 当且仅当
 \[\frac{1}{V_n}\varphi\lrp{\frac{\vx}{h_n}}=\delta(\vx),\;n\to\infty\]
-其中$\delta(\vx)$为狄利克函数。
+其中$\delta(\vx)$为狄拉克函数。
 
 因为$\disp\lim_{n\to\infty}k_n/n= 0$，故可以得到$k_n$个点与$\vx$的距离都小于$h_n$。
 进而当$V_n\to 0,h_n\to 0$时，有
@@ -64,9 +59,9 @@
 &=\lim _{n \rightarrow \infty} \frac{1}{n V_{n}} \int \frac{1}{V_{n}} \varphi^{2}\left(\frac{\vx-\vu}{h_{n}}\right) p(\mathbf{u}) d \vu \\ 
 &=\frac{\disp\int\lim_{n \rightarrow \infty}\left[\frac{1}{V_{n}} \varphi^{2}\left(\frac{\vx-\vu}{h_{n}}\right)\right] p(\mathbf{u}) d \mathbf{u}}{\disp\lim _{n \rightarrow \infty} n V_{n}} \\ 
 &=\frac{\disp\int \delta(\vx-\mathbf{u}) p(\mathbf{u}) d \mathbf{u}}{\disp\lim _{n \rightarrow \infty} n V_{n}}\qquad \text{公式(23)}\\ 
-&=\frac{p(\mathrm{x})}{\disp\lim _{n \rightarrow \infty} n V_{n}}
+&=\frac{p(\vx)}{\disp\lim _{n \rightarrow \infty} n V_{n}}
 \end{aligned}\]
-又$\disp\lim_{n\to\infty}\frac{k_n}{nV_n}=P(\vx)$，且$\disp\lim_{n\to\infty}k_n=\infty$，进而$\disp\lim_{n\to\infty}nV_n=\infty$。
+又$\disp\lim_{n\to\infty}\frac{k_n/n}{V_n}=P(\vx)$，且$\disp\lim_{n\to\infty}k_n=\infty$，进而$\disp\lim_{n\to\infty}nV_n=\infty$。
 最终得到$\Var{p_n(\vx)}\to 0,\; n\to\infty$。
 \end{itemize}
 故原题得证。
@@ -174,7 +169,7 @@
 在本题中的“原信息”的场合下能够取到。
 \end{question}
 \begin{answer}
-由题设有$p(\vx\mid\omega_i)=p(\vx),i=1,\ldots,c$，进而
+由题设有$p(\vx\mid\omega_i)=p(\vx\mid\omega),i=1,\ldots,c$，进而
 \[p(\mathbf{x})=\sum_{i=1}^{c} p\left(\mathbf{x} \mid \omega_{i}\right) P\left(\omega_{i}\right)=\sum_{i=1}^{c} p(\mathbf{x} \mid \omega) \frac{1}{c}=p(\mathbf{x} \mid \omega)\]
 而由条件概率
 \[P\left(\omega_{i} \mid \mathbf{x}\right)=\frac{p\left(\mathbf{x} \mid \omega_{i}\right) P\left(\omega_{i}\right)}{p(\mathbf{x})}=\frac{p(\mathbf{x} \mid \omega) 1 / c}{p(\mathbf{x} \mid \omega)}=\frac{1}{c}\qquad(*)\]

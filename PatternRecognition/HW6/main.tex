@@ -80,19 +80,18 @@ $\omega_2$&: $(2,-3)^\T$  & $(-1,-4)^\T$  & $(0,2)^\T$
 \end{itemize}
 \end{question}
 \begin{answer}
-将训练集数据$\omega_1$和$\omega_2$构成矩阵，并扩增一个维度，得到
+将训练集数据$\omega_1$和$\omega_2$构成矩阵，并扩增一个维度做规范化，得到
 \[Y =\left(\begin{array}{rrr}{1} & {1} & {5} \\ {1} & {2} & {9} \\ {1} & {-5} & {-3} \\ {-1} & {-2} & {3} \\ {-1} & {1} & {4} \\ {-1} & {0} & {-2}\end{array}\right) \quad \mathbf{a}=\left(\begin{array}{r}{a_{1}} \\ {a_{2}} \\ {a_{3}}\end{array}\right) \quad \mathbf{b}=\left(\begin{array}{c}{b} \\ {b} \\ {b} \\ {b} \\ {b} \\ {b}\end{array}\right)\]
 平方误差准则函数为
 \[J_{s}(\mathbf{a})=\frac{1}{2} \sum_{i=1}^{n}\left(\mathbf{a}^\T  \mathbf{y}_{i}-b\right)^{2}=\frac{(Y  \mathbf{a}-\mathbf{b})^\T (Y  \mathbf{a}-\mathbf{b})}{2}\]
 \begin{itemize}
-	% 没有必要将一阶导求出具体值
 	\item [(a)] 对准则函数求导得到
 	\[\nabla J_{s}(\mathbf{a})=Y^\T (Y  \mathbf{a}-\mathbf{b})\]
 	进而Hessian矩阵为
 	\[H =\nabla^2 J_s(\va)=Y ^\T  Y =\left(\begin{array}{ccc}{6} & {-1} & {6} \\ {-1} & {35} & {36} \\ {6} & {36} & {144}\end{array}\right)\]
 	\item [(b)] 由公式(14)，最优学习率为
 	\[\eta=\frac{\left[\nabla J_{s}(\mathbf{a})\right]^\T  \nabla J_{s}(\mathbf{a})}{\left[\nabla J_{s}(\mathbf{a})\right]^\T  H  \nabla J_{s}(\mathbf{a})}\]
-	通过求解特征方程，得到$H$的特征值\footnote{特征值可通过$|H-\lambda I|=0$求解，这里则直接使用numpy指令np.linalg.eig进行计算。}为$5.417,24.57,155.0$，进而
+	通过求解特征方程，得到$H$的特征值\footnote{特征值可通过$|H-\lambda I|=0$求解，这里则直接使用numpy指令np.linalg.eig进行计算。}为$5.417,24.57,155.0$，进而由二次型的性质\footnote{二次型$Q$有$\min_{\norm{\vx}=1}Q(\vx)=\lambda_{\min}$和$\max_{\norm{\vx}=1}Q(\vx)=\lambda_{\max}$}
 	\[\frac{1}{\lambda_{\max}}=0.006452\leq\eta\leq 0.1846=\frac{1}{\lambda_{\min}}\]
 \end{itemize}
 \end{answer}
@@ -224,7 +223,7 @@ $\omega_2$: & $(0,0)^\T$  & $(1,0)^\T$  & $(0,1)^\T$
 	\[L(\mathbf{a}, \boldsymbol{\alpha})=\frac{1}{2}\|\mathbf{a}\|^{2}-\sum_{k=1}^{n} \alpha_{k}\left[z_{k} \mathbf{a}^\T  \mathbf{y}_{k}-1\right]\]
 	求导有
 	\[\frac{\partial L}{\partial \mathbf{a}}=\mathbf{a}-\sum_{k=1}^{n} \alpha_{k} z_{k} \mathbf{y}_{k}=\mathbf{0}\]
-	进而$\va=(0,-2,-2)^\T $。
+	进而$\va=(a_0,-2,-2)^\T $。
 
 	最后确定$a_0$。
 	使用支持向量$\vy=(1,1,1)^\T $，满足$\va^\T \vy_1z_1=1$，得到

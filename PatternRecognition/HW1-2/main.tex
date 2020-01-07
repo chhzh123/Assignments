@@ -62,8 +62,10 @@
 \begin{itemize}
 	\item [(a)] 因先验概率相等，故$p(x\mid\omega_1)=1/2$。
 	设判别边界为$x^\star$，则
+	（$\omega_1$曲线对应尖峰坐标为$a_1$，$\omega_2$曲线对应尖峰坐标为$a_2$，贝叶斯下交点右侧判为$\omega_2$）
 	\[\begin{aligned}
-	E_1&=\intab{x^\star}{\infty}{p(x\mid\omega_1)P(\omega_1)}\\
+	E_1&=\intab{x^\star}{\infty}{p(\omega_1\mid x)P(x)}\\
+	&=\intab{x^\star}{\infty}{p(x\mid\omega_1)P(\omega_1)}\\
 	&=\frac{1}{2}\intab{x^\star}{\infty}{\frac{1}{\pi b}\frac{1}{1+\lrp{\frac{x-a_1}{b}}^2}}\\
 	&=\frac{1}{2\pi b}\intabu{u^\star}{\infty}{\frac{b}{1+u^2}}{u}\qquad u=\frac{x-a_1}{b}\\
 	&=\frac{1}{2\pi}\arctan u\Big|_{u^\star}^{\infty}
@@ -87,7 +89,7 @@
 	
 	\item [(d)] 将值代入(c)式得到$x^\star=0.3764$，$E=0.2613$
 	
-	\item [(e)] 贝叶斯的决策边界为$x_B^\star=0$，进而贝叶斯误差率为
+	\item [(e)] 由(d)的$a_1$和$a_2$对称知贝叶斯的决策边界为$x_B^\star=0$，进而贝叶斯误差率为
 	\[\begin{aligned}
 	E_B&=2\cdot\frac{1}{2\pi b}\intab{0}{\infty}{\frac{1}{1+\lrp{\frac{x-a_1}{b}}^2}}\\
 	&=\arctan u\Big|_0^\infty\\
@@ -182,19 +184,19 @@
 	\[\vx_\omega=A_\omega^\T(\vx_0-\vmu)=\bmat{1 & 0 & 0\\ 0 & 1/\sqrt{6} & -1/\sqrt{6}\\ 0 & 1/\sqrt{14} & 1/\sqrt{14}}\bmat{-0.5\\ -2\\ -1}=\bmat{-0.5\\-1/\sqrt{6}\\-3/\sqrt{14}}\]
 
 	\item [(d)] 由(a)知原距离$r^2=1.06$，而新的距离
-	\[r_\omega^2=\vx_\omega^\T\vx_\omega=1.06\]
+	\[r_\omega^2=\vx_\omega^\T I^{-1}\vx_\omega=\vx_\omega^\T\vx_\omega=1.06\]
 	因此两者相等
 
 	\item [(e)] 设线性变换后的向量为$\vx'=T^\T\vx$，进而有均值
 	\[\vmu'=\sum_{k=1}^n\vx_k'\Big/n=\sum_{k=1}^n T^\T\vx_k\Big/n=T^\T\sum_{k=1}^n\vx_k\Big/n=T^\T\vmu\]
 	和协方差
 	\[\Sigma'=\sum_{k=1}^n(\vx_k'-\vmu')(\vx_k'-\mu')^\T=T^\T\lrs{\sum_{k=1}^n(\vx_k-\vmu)(\vx_k-\mu)^\T}T=T^\T\Sigma T\]
-	又$|\Sigma'|=|T^\T\Sigma T|=|\Sigma|$，故
+	进而
 	\[p(\vx_0\mid N(\vmu,\Sigma))=p(T^\T\vx_0\mid N(T^\T\vmu,T^\T\Sigma T))\]
 
 	\item [(f)] 由课本图2.8上面的公式，我们有
 	\[p(A_\omega^\T\vx)\thicksim N(A_\omega^\T\vmu,A_\omega^\T\Sigma A_\omega)\]
-	进而可得协方差矩阵
+	进而可得协方差矩阵（注意这里$\Sigma=\phi\Lambda\phi^\T$是基于谱分解/特征分解）
 	\[\begin{aligned}
 	A_\omega^\T\Sigma A_\omega &= (\phi\Lambda^{-1/2})^\T\phi\Lambda\phi^\T(\phi\Lambda^{-1/2})\\
 	&= \Lambda^{-1/2}(\phi^\T(\phi\Lambda\phi^\T)\phi)\Lambda^{-1/2}\\
