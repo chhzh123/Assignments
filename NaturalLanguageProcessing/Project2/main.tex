@@ -1,5 +1,5 @@
 \documentclass[logo,reportComp]{thesis}
-\usepackage[python,pseudo]{mypackage}
+\usepackage[python,pseudo,linenum]{mypackage}
 \usepackage{relsize}
 
 \setcounter{secnumdepth}{4}
@@ -33,7 +33,7 @@
 
 \newpage
 
-本次实验主要分为预处理、模型搭建、模型训练、模型预测几个部分，下面将详细进行说明。
+本次实验主要分为预处理、模型搭建、模型训练、模型预测、实验结果呈现几个部分，下面将详细进行说明。
 
 \section{预处理}
 由于原始数据集数据没有进行清洗，因此在预处理阶段做的工作非常的多。
@@ -152,6 +152,10 @@ s = re.sub(r"[0-9]+", r" <NUM> ", s) # replace numbers
 基于与数字改写为实体标记的原因，为避免不同时态、词语单复数等语法语义造成的词语不同，英文还需要进行词干提取(stemming)或词形还原(lemmatization)\cite{bib:stem}。
 这里直接采用\verb'nltk'包中的\verb'WordNetLemmatizer'进行预处理。
 先将句子进行分词，对每个词做词形还原后再恢复为原句子。
+\begin{lstlisting}
+split_lst = s.split()
+split_lst = [lemmatizer.lemmatize(word) if word != "<NUM>" else "<NUM>" for word in split_lst]
+\end{lstlisting}
 
 \subsection{句子}
 \label{sub:sentence}
@@ -171,7 +175,6 @@ def addSentence(self,sentence):
 \begin{itemize}
     \item 中文：利用结巴分词(jieba)对中文词语进行精确分词，然后利用\verb'filter'将所有多余空格移除；
     \item 英文：直接利用\verb'split'对空格进行断词。
-    利用\verb'lemmatizer.lemmatize'将词语原型恢复，然后再添加入词表中
 \end{itemize}
 
 \subsection{词表生成}
@@ -539,9 +542,6 @@ train_loader = data.DataLoader(dataset=train_set,batch_size=flags.batch_size,shu
                     elif decoder.name == "Attn":
                         decoder_output, (decoder_ht, decoder_ct), decoder_attn = decoder(decoder_input, (decoder_ht, decoder_ct), encoder_outputs)
                         all_decoder_outputs[t] = decoder_output.transpose(1,0)
-                    else:
-                        decoder_output, (decoder_ht, decoder_ct), decoder_attn = decoder(decoder_input, (decoder_ht, decoder_ct), encoder_outputs)
-                        all_decoder_outputs[t] = decoder_output
                     # teaching forcing: next input is the current target
                     decoder_input = y[:,t].reshape(batch_size,1) # remember to reshape
             else: # without teacher forcing
@@ -553,9 +553,6 @@ train_loader = data.DataLoader(dataset=train_set,batch_size=flags.batch_size,shu
                     elif decoder.name == "Attn":
                         decoder_output, (decoder_ht, decoder_ct), decoder_attn = decoder(decoder_input, (decoder_ht, decoder_ct), encoder_outputs)
                         all_decoder_outputs[t] = decoder_output.transpose(1,0)
-                    else:
-                        decoder_output, (decoder_ht, decoder_ct), decoder_attn = decoder(decoder_input, (decoder_ht, decoder_ct), encoder_outputs)
-                        all_decoder_outputs[t] = decoder_output
                     # use the current output as the next input
                     topv, topi = decoder_output.topk(1)
                     decoder_input = topi.squeeze().detach().reshape(batch_size,1)
@@ -644,12 +641,12 @@ from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 # https://cloud.tencent.com/developer/article/1042161
 
 def evalOne(in_text, out_text, src_lang, dst_lang, encoder, decoder, beam_search=False, beam_width=2, print_flag=False):
-    if len(in_text) > flags.seq_size or len(out_text) > flags.seq_size:
+    in_text, in_text_len = in_text
+    if PAD_token in in_text[:in_text_len] or PAD_token in out_text or len(in_text) > flags.seq_size or len(out_text) > flags.seq_size:
         return None, None, -1
     encoder.eval() # set in evaluation mode
     decoder.eval()
 
-    in_text, in_text_len = in_text
     x = torch.tensor(in_text).to(device).reshape(1,-1)
     seq_len = torch.tensor([in_text_len]).to(torch.int64).to(device)
     # encoder
@@ -685,11 +682,7 @@ def evalOne(in_text, out_text, src_lang, dst_lang, encoder, decoder, beam_search
             if word == "<EOS>":
                 break
             decoder_input = torch.LongTensor([ni]).reshape(1,1).to(device)
-    else:
-        """
-        Beam seach:
-        https://medium.com/@dhartidhami/beam-search-in-seq2seq-model-7606d55b21a5
-        """
+    else: # Beam search
         path = [(BOS_token,0,[])] # input, value, words on the path
         for t in range(max_len):
             new_path = []
@@ -722,7 +715,7 @@ def evalOne(in_text, out_text, src_lang, dst_lang, encoder, decoder, beam_search
                 _, value, decoded_index = new_path[0]
                 break
             else:
-                new_path.sort(key=lambda x:x[1]/len(x[2])**0.7,reverse=True) # normalization
+                new_path.sort(key=lambda x:x[1]/len(x[2]),reverse=True) # normalization
                 path = new_path[:beam_width]
 
         if not flag_done:
@@ -741,15 +734,6 @@ def evalOne(in_text, out_text, src_lang, dst_lang, encoder, decoder, beam_search
     decoded_index = list(filter("<PAD>".__ne__,decoded_index))
     sm = SmoothingFunction()
     bleu = sentence_bleu([filter_outtext],decoded_index,smoothing_function=sm.method4)
-    if print_flag:
-        print(out_text[:pad_index])
-        print(decoded_index)
-        print("Bleu score: {}".format(bleu))
-        res_words = " ".join(decoded_words)
-        print("< {}".format(src_lang.getSentenceFromIndex(in_text)))
-        print("= {}".format(dst_lang.getSentenceFromIndex(filter_outtext)))
-        print("> {}".format(res_words))
-        print()
     return decoded_words, decoder_attentions[:t+1, :flags.seq_size], bleu
 \end{lstlisting}
 
@@ -778,8 +762,11 @@ def evalOne(in_text, out_text, src_lang, dst_lang, encoder, decoder, beam_search
 词嵌入维度 & \verb'embedding_size' & 256\\\hline
 LSTM隐态维度\cite{bib:pytorch_lstm} & \verb'lstm_size' & 256\\\hline
 梯度裁剪阈值\cite{bib:gradient_clipping} & \verb'gradients_norm' & 5\\\hline
-训练轮数 & \verb'num_epochs' & 40\\\hline
+训练轮数 & \verb'num_epochs' & 30\\\hline
 优化器学习率 & \verb'learning_rate' & 0.01\\\hline
+学习率衰减比率 & \verb'learning_rate_decay_ratio' & 0.5\\\hline
+学习率衰减轮数 & \verb'learning_rate_decay_epochs' & 10\\\hline
+强制教师比率 & \verb'teacher_forcing_ratio' & 0.9\\\hline
 \end{tabular}
 \end{table}
 
@@ -787,7 +774,7 @@ LSTM隐态维度\cite{bib:pytorch_lstm} & \verb'lstm_size' & 256\\\hline
 训练的Loss函数如图\ref{fig:train_loss}所示，可以看到训练正常进行，Loss不断下降，到最后出现过拟合趋势。因此这里选取的是梯度不继续下降的点处的模型来作为最优模型评估。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.5\linewidth]{fig/train_loss.pdf}
+\includegraphics[width=0.6\linewidth]{fig/train_loss.pdf}
 \caption{训练Loss函数}
 \label{fig:train_loss}
 \end{figure}
@@ -819,20 +806,39 @@ Bleu score: 0.21713440482860163
 前文提到在做字符串预处理时，我们将数字全部标注为实体标记\verb'<NUM>'，但是从这里可以看到，源语言句子中的数字被标记了，但目标语言中的句子的数字并没有被标记，因为其是用英文单词直接拼写出来，这种情况就特别难处理。
 我猜测在实际生产环境中是采用BNF范式结合正则表达式将这些数字给提取出来，然后再单独进行处理，否则直接丢给神经网络翻译肯定是无法正确翻译的。
 \begin{quote}
-$>$ 从这次冲突开始到现在,土耳其已经接收了约<NUM>万叙利亚难民\\
+$>$ 从这次冲突开始到现在,土耳其已经接收了约\verb'<NUM>'万叙利亚难民\\
 $=$ turkey has now taken in some three million syrian refugees since the beginning of the conflict .
 \end{quote}
 
-最终在训练集上达到0.78的BLEU指标，但只在测试集上达到0.15的BLEU值，可能的原因前面都已叙述。
+最后一个例子采用的是lemmatization之后的词表，可以看到模型已经能精准定位出伊朗对应的是iran，但是其语法和句法结构并不是很对，比如介词采用in而不是on，采用现在完成时而不是现在时等等。
+\begin{quote}
+$<$ 事实上,在伊朗问题上,欧洲的统一意见能让它获得比其他重要外交政策问题更大的影响力.\\
+$=$ indeed , on iran , europe s unified approach ha enabled it to have a greater impact than on any other significant foreign policy issue .\\
+$>$ in iran , iran it ha been taken over to make a greater extent than that in iran .\\
+Bleu score: 0.1836057519632682
+\end{quote}
+
+最终得到的BLEU指标如表\ref{tab:bleu}所示，可以看到训练集的BLEU已经非常高，大部分甚至已经到1的水平，但是验证集和测试集的BLEU都很低，说明模型的泛化能力很弱。
+但我已经验证过不是过拟合导致的测试集BLEU值偏低，所以只能说明是目标语料太少，导致一些其实正确的单词或句法结构被扣除了分数，即BLEU值计算出现偏差，具体的样例也在前面已经给出。
+
+\begin{table}[H]
+\centering
+\caption{BLEU指标}
+\label{tab:bleu}
+\begin{tabular}{|c|c|c|}\hline
+    训练集 & 验证集 & 测试集\\\hline
+    0.71 & 0.165 & 0.161\\\hline
+\end{tabular}
+\end{table}
 
 \subsection{Teacher Forcing效果}
 由于训练一次时间太久，故本次实验并没有采用类似Grid Search的方法，将几种可能的Teacher Forcing Ratio都尝试一遍得出最优超参数。
 但是通过实验会发现，teacher forcing虽然与实际的评测(test)环境不同（评测环境是用上一输出喂给下一输入），但是它能让网络更快收敛，也使梯度没有这么大的震荡。
 
-我尝试了修改几种Teacher Forcing的值，发现大多数时候，不采用Teacher Forcing并没有带来好效果，反而让其远离梯度下降的方向，因此最终我还是将Teacher Forcing调大，以确保收敛性。
+我尝试了修改几种Teacher Forcing的值，发现大多数时候，\textbf{不采用Teacher Forcing并没有带来好效果}，反而让其远离梯度下降的方向，因此最终我还是将Teacher Forcing调大，以确保收敛性。
 
 \subsection{集束搜索效果}
-在我的实验中，集束搜索同样没有给最终的结果带来什么改善，其BLEU指标与不采用集束搜索的结果几乎是一致的，意味着大多数时候机器都能选择到模型预测的最优解，也即概率值最大的路径。
+在我的实验中，集束搜索同样没有给最终的结果带来什么改善，其BLEU指标与不采用集束搜索的结果\textbf{几乎是一致的}，意味着大多数时候机器都能选择到模型预测的最优解，也即概率值最大的路径。
 对于其他情况，特别是长句的情况，集束搜索则早早就停止了预测，因为继续预测并没有给归一化BLEU值带来改善。
 
 同时，集束搜索的时间与空间成本都非常高，相比起直接取最大值的方案，可能弊大于利了。
@@ -845,7 +851,7 @@ $=$ turkey has now taken in some three million syrian refugees since the beginni
 而且模型还无法马上得出结果，可能跑了几个小时，预测出来的全是the和us等词，你也不知道是模型本身的问题还是模型还未收敛，这其实是非常麻烦的一件事情。
 虽然现在人人都在炼丹，人人都在调包调参，但是想真正当好一个``炼丹师''也不是一件容易的事情。
 
-而另一点感受还是那句话，``有多少人工就有多少智能''。
+而另一点感受还是那句话，``\textbf{有多少人工就有多少智能}''。
 虽说现在深度学习的兴起，给NLP巨大的发展空间，但是其能达到的水平还是极大依赖于人工的。
 像这一次实验，预处理部分需要考虑非常多的问题，预处理没有处理好，后面训练出的模型不行，又要重新来过。
 而且其实深度学习并不万能，很多时候还是需要我们人工硬编码入一些规则，否则它更像是脱缰的野马，想输出什么就输出什么，我们不知道为什么，也拦也拦不住。
@@ -853,9 +859,18 @@ $=$ turkey has now taken in some three million syrian refugees since the beginni
 之后的研究结合知识图谱的、结合知识表示与推理的，或许都能够给NLP带来新的机遇。
 
 \begin{thebibliography}{99}
+\bibitem{bib:cs224n} Stanford CS224n: Natural Language Processing with Deep Learning, \url{http://web.stanford.edu/class/cs224n/}
+\bibitem{bib:pytorch_seq2seq} Pytorch, seq2seq translation tutorial, \url{https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html}
+\bibitem{bib:practical_pytorch} Practical Pytorch, Batched seq2seq, \url{https://github.com/spro/practical-pytorch/blob/master/seq2seq-translation/seq2seq-translation-batched.ipynb}
 \bibitem{bib:unicode} Unicode字符百科，\url{https://unicode-table.com/cn/blocks/cjk-unified-ideographs/}
 \bibitem{bib:stem} Stemming and Lemmatization, \url{https://nlp.stanford.edu/IR-book/html/htmledition/stemming-and-lemmatization-1.html}
+\bibitem{bib:colah} Colah, \url{https://colah.github.io/posts/2015-08-Understanding-LSTMs/}
+\bibitem{bib:pytorch_lstm} Pytorch nn.LSTM, \url{https://pytorch.org/docs/stable/nn.html\#torch.nn.LSTM}
+\bibitem{bib:gradient_clipping} How to Avoid Exploding Gradients With Gradient Clipping, \url{https://machinelearningmastery.com/how-to-avoid-exploding-gradients-in-neural-networks-with-gradient-clipping/}
+\bibitem{bib:seq2seq} Sutskever Ilya, Vinyals Oriol, and Le Quoc V, \emph{Sequence to Sequence Learning with Neural Networks}, NeurIPS, 2014
+\bibitem{bib:attention} Bahdanau et al., \emph{Neural Machine Translation by Jointly Learning to Align and Translate}, ICLR, 2015
 \bibitem{bib:luong} Minh-Thang Luong, Hieu Pham, and Christopher D. Manning, \emph{Effective Approaches to Attention-based Neural Machine Translation}, EMNLP, 2015
+\bibitem{bib:bleu} Papineni Kishore, Roukos Salim, Ward Todd, and Zhu Wei-Jing, \emph{BLEU: a method for automatic evaluation of machine translation}, ACL, 2002
 \end{thebibliography}
 
 \end{document}
