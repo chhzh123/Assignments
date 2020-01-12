@@ -17,5 +17,7 @@ with open("log/seq2seq-{:>02d}.log".format(file_num),"r") as file:
 			losses.append(loss/draw_every)
 			loss = 0
 
+plt.xlabel("Iteration")
+plt.ylabel("Loss")
 plt.plot(losses)
 plt.show()

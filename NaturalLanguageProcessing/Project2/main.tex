@@ -150,9 +150,11 @@ s = re.sub(r"[0-9]+", r" <NUM> ", s) # replace numbers
 \end{lstlisting}
 
 基于与数字改写为实体标记的原因，为避免不同时态、词语单复数等语法语义造成的词语不同，英文还需要进行词干提取(stemming)或词形还原(lemmatization)\cite{bib:stem}。
-这里直接采用nltk包进行预处理。
+这里直接采用\verb'nltk'包中的\verb'WordNetLemmatizer'进行预处理。
+先将句子进行分词，对每个词做词形还原后再恢复为原句子。
 
 \subsection{句子}
+\label{sub:sentence}
 将句子进行规范化后就可以将其添加入句子表中，这里在\verb'Lang'中封装了一个类\verb'addSentence'，如下。
 \begin{lstlisting}
 def addSentence(self,sentence):
@@ -169,6 +171,7 @@ def addSentence(self,sentence):
 \begin{itemize}
     \item 中文：利用结巴分词(jieba)对中文词语进行精确分词，然后利用\verb'filter'将所有多余空格移除；
     \item 英文：直接利用\verb'split'对空格进行断词。
+    利用\verb'lemmatizer.lemmatize'将词语原型恢复，然后再添加入词表中
 \end{itemize}
 
 \subsection{词表生成}
@@ -751,23 +754,103 @@ def evalOne(in_text, out_text, src_lang, dst_lang, encoder, decoder, beam_search
 \end{lstlisting}
 
 \section{实验结果}
-训练的Loss函数
+\subsection{实验环境配置}
+上述全部实验代码均在Python 3.6环境下测试通过，可以通过Jupyter Notebook查看\verb'seq2seq.ipynb'或直接查看生成的源码文件\verb'seq2seq.py'。
 
-集束搜索的时间成本太高
+实验主要用了以下三个第三方库
+\begin{itemize}
+    \item jieba：中文分词工具
+    \item pytorch：深度学习框架
+    \item nltk：自然语言处理包，只用来计算BLEU和部分预处理
+\end{itemize}
+所有依赖环境可以通过\verb'pip -r install requirements.txt'进行安装。
+实验使用一块Nvidia Titan V GPU进行训练，并使用BLEU-4指标进行评估。
 
-最终得到BLUE-4的指标为
+所采用的超参数如表\ref{tab:lstm_hyperparam}所示。
+\begin{table}[H]
+\caption{LSTM模型超参数}
+\label{tab:lstm_hyperparam}
+\centering
+\begin{tabular}{|c|c|c|}\hline
+参数 & 变量名 & 数值\\\hline
+序列长 & \verb'seq_size' & 32\\\hline
+批大小 & \verb'batch_size' & 32\\\hline
+词嵌入维度 & \verb'embedding_size' & 256\\\hline
+LSTM隐态维度\cite{bib:pytorch_lstm} & \verb'lstm_size' & 256\\\hline
+梯度裁剪阈值\cite{bib:gradient_clipping} & \verb'gradients_norm' & 5\\\hline
+训练轮数 & \verb'num_epochs' & 40\\\hline
+优化器学习率 & \verb'learning_rate' & 0.01\\\hline
+\end{tabular}
+\end{table}
+
+\subsection{损失函数变化}
+训练的Loss函数如图\ref{fig:train_loss}所示，可以看到训练正常进行，Loss不断下降，到最后出现过拟合趋势。因此这里选取的是梯度不继续下降的点处的模型来作为最优模型评估。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{fig/train_loss.pdf}
+\caption{训练Loss函数}
+\label{fig:train_loss}
+\end{figure}
+
+\subsection{翻译样例分析}
+采取训练好的模型对一些句例进行重点分析评估。
+其中$<$开头的为源语言句子，$=$开头的为目标语言句子，$>$开头的为模型预测结果。
+
+下面一句取得了较高的BLEU分数，可以看到其实机器翻译模型将后面的几个单词都翻译对了，而仅仅在前面添加了几个单词。
+这很大原因是在没有任何标志性输入的前提下，解码器的输入都是\verb'<BOS>'，而这可能对很多句子并没有辨识度，因此前面只能乱翻译进行尝试，后面隐态多了才能正确翻译。
+\begin{quote}
+$<$ 标志着时代终结的一年?\\
+$=$ the year that ended an epoch ?\\
+$>$ what is desperately needed is the year that ended an epoch ?\\
+Bleu score: 0.5593684915933074
+\end{quote}
+
+注意到评测集中每条源语言句子只提供了\textbf{一条正确的目标语言句子}，实际上这是很不可靠的方法，评测出来的BLEU值也有很大偏差。由于语法结构、词语顺序等原因，实际上一个句子可以有多种翻译方式，因此如果仅仅限制死一种，那必然效果不会很好。
+如下例，其实完全可以将\emph{欧洲领导人}放在句首进行翻译；同时也可以将其翻译成europe's或european都没有问题，本来这两者说的就是一样事情，也是合乎语法的。
+但是nltk并没有将european进行恢复，因而在计算BLEU时也不认为这两者是同一个词，导致评测性能下降。
+\begin{quote}
+$<$ 正因如此,欧洲领导人已无时间可以浪费.\\
+$=$ that is why europe s leaders have no time to waste .\\
+$>$ european leaders do not have to waste a finance public space about the european central bank .\\
+Bleu score: 0.21713440482860163
+\end{quote}
+
+下例则重在说明还有些难以处理的情况。
+前文提到在做字符串预处理时，我们将数字全部标注为实体标记\verb'<NUM>'，但是从这里可以看到，源语言句子中的数字被标记了，但目标语言中的句子的数字并没有被标记，因为其是用英文单词直接拼写出来，这种情况就特别难处理。
+我猜测在实际生产环境中是采用BNF范式结合正则表达式将这些数字给提取出来，然后再单独进行处理，否则直接丢给神经网络翻译肯定是无法正确翻译的。
+\begin{quote}
+$>$ 从这次冲突开始到现在,土耳其已经接收了约<NUM>万叙利亚难民\\
+$=$ turkey has now taken in some three million syrian refugees since the beginning of the conflict .
+\end{quote}
+
+最终在训练集上达到0.78的BLEU指标，但只在测试集上达到0.15的BLEU值，可能的原因前面都已叙述。
+
+\subsection{Teacher Forcing效果}
+由于训练一次时间太久，故本次实验并没有采用类似Grid Search的方法，将几种可能的Teacher Forcing Ratio都尝试一遍得出最优超参数。
+但是通过实验会发现，teacher forcing虽然与实际的评测(test)环境不同（评测环境是用上一输出喂给下一输入），但是它能让网络更快收敛，也使梯度没有这么大的震荡。
+
+我尝试了修改几种Teacher Forcing的值，发现大多数时候，不采用Teacher Forcing并没有带来好效果，反而让其远离梯度下降的方向，因此最终我还是将Teacher Forcing调大，以确保收敛性。
+
+\subsection{集束搜索效果}
+在我的实验中，集束搜索同样没有给最终的结果带来什么改善，其BLEU指标与不采用集束搜索的结果几乎是一致的，意味着大多数时候机器都能选择到模型预测的最优解，也即概率值最大的路径。
+对于其他情况，特别是长句的情况，集束搜索则早早就停止了预测，因为继续预测并没有给归一化BLEU值带来改善。
+
+同时，集束搜索的时间与空间成本都非常高，相比起直接取最大值的方案，可能弊大于利了。
 
 \section{实验心得}
-本学期的课程终于结束了，通过两次实验充分体会到了NLP的基本原理与方法。
+本学期的课程终于告一段落，通过两次实验我充分理解了NLP的基本原理与方法，自己对实验项目进行实操，也对其中的细节更加清楚。
 
-训练时间、训练成本太大了
+虽然本学期也有其他AI相关的课程，但我不得不承认，基于深度学习的NLP，无论从训练时间，还是从训练资源来看都太大了。
+往往写一个模型一天过去了，调整参数并部署又是一天。
+而且模型还无法马上得出结果，可能跑了几个小时，预测出来的全是the和us等词，你也不知道是模型本身的问题还是模型还未收敛，这其实是非常麻烦的一件事情。
+虽然现在人人都在炼丹，人人都在调包调参，但是想真正当好一个``炼丹师''也不是一件容易的事情。
 
-虽然说现在深度学习的兴起，给NLP巨大的发展空间，但是其能达到的水平还是极大依赖于人工的。
-还是那句话，``有多少人工就有多少智能''。
-
-硬编码规则
-
-人工预处理
+而另一点感受还是那句话，``有多少人工就有多少智能''。
+虽说现在深度学习的兴起，给NLP巨大的发展空间，但是其能达到的水平还是极大依赖于人工的。
+像这一次实验，预处理部分需要考虑非常多的问题，预处理没有处理好，后面训练出的模型不行，又要重新来过。
+而且其实深度学习并不万能，很多时候还是需要我们人工硬编码入一些规则，否则它更像是脱缰的野马，想输出什么就输出什么，我们不知道为什么，也拦也拦不住。
+很多存在的问题我在前面案例分析中也提到了，这些确实也是NLP很大的挑战。
+之后的研究结合知识图谱的、结合知识表示与推理的，或许都能够给NLP带来新的机遇。
 
 \begin{thebibliography}{99}
 \bibitem{bib:unicode} Unicode字符百科，\url{https://unicode-table.com/cn/blocks/cjk-unified-ideographs/}
