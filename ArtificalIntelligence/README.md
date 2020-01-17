@@ -140,3 +140,28 @@ This project uses the material of [UC Berkeley CS188: Intro to AI](http://ai.ber
 This project uses the material of [UC Berkeley CS188: Intro to AI](http://ai.berkeley.edu/home.html) - [Project 3: Reinforcement Learning](http://ai.berkeley.edu/reinforcement.html), and needs to implement the **value iteration, Q-Learning, and epsilon greedy algorithms**.
 
 ## Theory Assignments
+Theory assignments have the prefix `T`.
+
+### T01 - Searching
+1. Uniform-cost search (UCS) with cycle checking
+2. A\* search
+3. Alpha-Beta Pruning
+
+### T02 - CSP & KRR
+1. Constraint Satisfaction Problem (CSP) formulation
+2. Forward Checking (FC) & Generalized Arc Consistency (GAC) algorithm
+3. Knowledge Representation (resolution)
+4. Knowledge Representation (resolution)
+
+### T03 - Planning & Uncertainty
+1. Deterministic planning
+2. STRIPS representation
+3. Bayesian Network
+4. Variable Elimination (VE) algorithm
+
+### T04 - Machine Learning
+1. Decision tree
+2. Bayesian learning
+3. Naive Bayes
+4. Neural network (XOR) construction
+5. Backpropagation algorithm
