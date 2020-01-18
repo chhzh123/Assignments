@@ -1,6 +1,6 @@
-## Computer Programming (C++)
+# Computer Programming (C++)
 
-This is the repository of chhzh123's projects of *Computer Programming (C++)* - Spring 2018 @ SYSU.
+This is the repository of chhzh123's projects of *Computer Programming (C++)* - Spring 2018 @ SYSU lectured by *Yong Lu*.
 
 Detailed information can be found in each folder.
 

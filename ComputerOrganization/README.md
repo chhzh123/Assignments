@@ -1,8 +1,8 @@
-## Computer Organization (Laboratory)
+# Computer Organization (Laboratory)
 
-This is the repository of chhzh123's assignments of *Computer Organization (Laboratory)* - Autumn 2018 @ SYSU.
+This is the repository of chhzh123's assignments of *Computer Organization (Laboratory)* - Autumn 2018 @ SYSU lectured by *Chaodong He*.
 
-* The detailed requirements of the assignments can be found in ''report.pdf'' in each folder.
+* The detailed requirements of the assignments can be found in `report.pdf` in each folder.
 
 * The instruments used in the experiments are mostly provided by the school's laboratory, including the circuit board and the *Xilinx Basys 3* FPGA study board.
 

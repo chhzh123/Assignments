@@ -1,8 +1,8 @@
-## Digital Circuits and Logic Design (Laboratory)
+# Digital Circuits and Logic Design (Laboratory)
 
-This is the repository of chhzh123's assignments of *Digital Circuits and Logic Design (Laboratory)* - Spring 2018 @ SYSU.
+This is the repository of chhzh123's assignments of *Digital Circuits and Logic Design (Laboratory)* - Spring 2018 @ SYSU lectured by *Chao Huang*.
 
-* The detailed requirements of the assignments can be found in ''report.pdf'' in each folder.
+* The detailed requirements of the assignments can be found in `report.pdf` in each folder.
 
 * The instruments used in the experiments are mostly provided by the school's laboratory, including the oscilloscope, the circuit board, and the *Xilinx Basys 3* FPGA study board.
 

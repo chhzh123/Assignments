@@ -1,6 +1,6 @@
-## Convex Optimization
+# Convex Optimization
 
-This is the final project of *Convex Optimization* - Spring 2019 @ SYSU.
+This is the final project of *Convex Optimization* - Spring 2019 @ SYSU lectured by [*Qing Ling*](http://sdcs.sysu.edu.cn/content/3112).
 
 Detailed problems can be found in `Optimization-2019.pdf`.
 
