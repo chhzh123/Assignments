@@ -47,4 +47,9 @@ Below is the list of the courses I took in CS major.
 | Scientific Reading and Writing      | 2019 Autumn |                        |                        | |
 | Principles of Compilers             | 2020 Spring | :white_check_mark:     |                        | |
 | Principles of Compilers (Lab)       | 2020 Spring | :white_check_mark:     |                        | |
+| Artificial Neural Network / Deep Learning | 2020 Spring |                  |                        | |
+| Artificial Neural Network / Deep Learning (Lab) | 2020 Spring |            |                        | |
+| Multi-core Programming / CUDA       | 2020 Spring |                        |                        | |
 | Machine Learning and Data Mining    | 2020 Spring | :o:                    |                        | |
+| Internship                          | 2020 Autumn |                        |                        | |
+| Graduation Dissertation             | 2021 Spring | :white_check_mark:     |                        | |
