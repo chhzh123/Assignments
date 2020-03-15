@@ -50,6 +50,6 @@ Below is the list of the courses I took in CS major.
 | Artificial Neural Network / Deep Learning | 2020 Spring |                  |                        | |
 | Artificial Neural Network / Deep Learning (Lab) | 2020 Spring |            | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DeepLearning) | |
 | Multi-core Programming / CUDA       | 2020 Spring |                        |                        | |
-| Machine Learning and Data Mining    | 2020 Spring | :o:                    |                        | |
+| Machine Learning and Data Mining    | 2020 Spring | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/MachineLearning&DataMining) | |
 | Internship                          | 2020 Autumn |                        |                        | |
 | Graduation Dissertation             | 2021 Spring | :white_check_mark:     |                        | |
