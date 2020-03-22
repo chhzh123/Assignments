@@ -6,3 +6,7 @@ Detailed information can be found in each folder.
 
 1. Lab 01 - Python
 2. Lab 02 - NumPy & PyTorch
+3. Lab 03 - Fully connected networks (FCN)
+
+The assignments of theory courses are listed below. The mindmaps are drawn with XMind.
+1. T01 - Introduction
