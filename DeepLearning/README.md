@@ -11,3 +11,4 @@ Detailed information can be found in each folder.
 The assignments of theory courses are listed below. The mindmaps are drawn with XMind.
 1. T01 - Introduction
 2. T02 - Artificial Neural Network: Basics
+3. T03 - Optimization
