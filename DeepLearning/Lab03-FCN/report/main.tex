@@ -1,0 +1,35 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[python,pseudo,linenum]{mypackage}
+\usepackage{relsize}
+
+\setcounter{secnumdepth}{4}
+\titleformat{\paragraph}{\bfseries}{\alph{paragraph})~~}{0em}{}
+\titlespacing*{\paragraph}{0pt}{0pt}{0pt}[0pt]
+
+\title{人工神经网络}
+\subtitle{Lab 3：全连接神经网络(FCN)}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{人工神经网络作业}
+
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\kaiti\em}
+\AtBeginEnvironment{quote}{\kaiti\small}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\newpage
+
+\section{项目概览}
+
+\end{document}
+% 请提交一份简短的实验报告，说明神经网络的实现过程以及模型在数据集上的表现。代码应有适量注释，并与报告一起提交。
+% 说明：
+% （1） 需要设计部分网络的结构，比如两层隐含层的神经元数，激活函数等；
+% （2） 全连接层的参数初始化无需自己实现， 可直接调用函数；
+% （3） 对类的设计没有具体要求， 在代码注释或报告中简要说明即可；
