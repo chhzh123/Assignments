@@ -22,6 +22,12 @@ class SGD(Optimizer):
         self.momentum = momentum
 
     def step(self):
+        """
+        https://d2l.ai/chapter_optimization/momentum.html
+        """
         for param in reversed(self.params):
-            param["w"] -= self.lr * param["d_w"]
-            param["b"] -= self.lr * param["d_b"]
+            for item in ["w", "b"]:
+                if param.get("v_{}".format(item),None) == None:
+                    param["v_{}".format(item)] = torch.zeros(param[item].shape)
+                param["v_{}".format(item)] = self.momentum * param["v_{}".format(item)] - self.lr * param["d_{}".format(item)]
+                param[item] += param["v_{}".format(item)]

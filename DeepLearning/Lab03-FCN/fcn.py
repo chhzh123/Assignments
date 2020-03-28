@@ -40,7 +40,6 @@ class Net(nn.Module):  # TODO:在这里实现全连接神经网络
 
     def forward(self,x):
         x = self.fcn1(x)
-        # print(x)
         x = self.relu1(x)
         x = self.fcn2(x)
         x = self.relu2(x)
@@ -95,7 +94,7 @@ if __name__ == "__main__":
     # 可直接使用这组超参数进行训练，也可以自己尝试调整
     lr = 0.02  # 学习率
     epoch = 20  # 迭代次数
-    batch_size = 32#128  # 每一批次的大小
+    batch_size = 128  # 每一批次的大小
 
     # 训练数据的记录
     train_acc = np.zeros(epoch)
@@ -129,12 +128,12 @@ if __name__ == "__main__":
     # TODO:在这里对你实现的类进行实例化，之后开始对模型进行训练
     net = Net()  # 具体的实例化根据你的实现而定，此处只做示意(包括下面两行)
     criterion = CrossEntropyLoss()
-    optimizer = SGD(net.parameters(), lr=0.01, momentum=0.9)
+    optimizer = SGD(net.parameters(), lr=lr, momentum=0.9)
 
     # pytorch version
     torch_net = TorchNet()
     torch_criterion = TorchCrossEntropyLoss()
-    torch_optimizer = TorchSGD(torch_net.parameters(), lr=0.01, momentum=0.9)
+    torch_optimizer = TorchSGD(torch_net.parameters(), lr=lr, momentum=0.9)
 
     # 重复训练epoch次
     print("Begin training...")
