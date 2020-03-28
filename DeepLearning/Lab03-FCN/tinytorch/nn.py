@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
 
-class Layer: # Base class
+class Layer(object): # Base class
     def __init__(self, name):
         self.name = name
         self.inputs = None
-        # self.grads = None
         self.params = None
 
     def forward(self, inputs):
@@ -32,9 +31,9 @@ class Linear(Layer):
                 w_init=nn.init.kaiming_uniform_,
                 b_init=nn.init.kaiming_uniform_):
         """
-        https://pytorch.org/docs/stable/nn.html#linear
         w: (in_feat, out_feat)
         b: (1, out_feat)
+        Ref: https://pytorch.org/docs/stable/nn.html#linear
         """
         super().__init__("Linear")
 
@@ -51,14 +50,15 @@ class Linear(Layer):
         inputs: (N, in_feat)
         inputs * w: (N, out_feat)
         b: (1, out_feat) # broadcasting
+            inputs * w + b
         """
         return self.inputs @ self.params["w"] + self.params["b"]
 
     def _backward(self, delta):
         """
-        delta: (N, out_feat)
+        delta_{l+1}: (N, out_feat)
         inputs: (N, in_feat)
-        delta_this: (N, in_feat)
+        delta_l: (N, in_feat)
         """
         self.params["d_w"] = self.inputs.T @ delta
         self.params["d_b"] = torch.sum(delta, axis=0) # need to sum over batch
@@ -69,6 +69,7 @@ class Module(object):
     def __init__(self, name):
         super(Module, self).__init__()
         self.name = name
+        self.params = []
         
     def forward(self, inputs):
         raise NotImplementedError
@@ -77,7 +78,11 @@ class Module(object):
         raise NotImplementedError
 
     def parameters(self):
-        raise NotImplementedError
+        return self.params
+
+    def add_layers(self,layers):
+        for layer in layers:
+            self.params.append(layer.parameters())
 
     def __call__(self, inputs):
         return self.forward(inputs)

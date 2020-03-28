@@ -1,7 +1,8 @@
 import torch
 import numpy as np
 
-class Activation(): # Base class
+class Activation(object): # Base class
+
     def __init__(self, name):
         self.name = name
         self.inputs = None
@@ -11,7 +12,7 @@ class Activation(): # Base class
         return self.func(inputs)
 
     def backward(self, grad):
-        return self.d_func(self.inputs) * grad
+        return self.d_func(self.inputs) * grad # element-wise
 
     def func(self, x):
         raise NotImplementedError
@@ -23,7 +24,7 @@ class Activation(): # Base class
         return self.forward(inputs)
 
 class ReLU(Activation):
-    """docstring for ReLU"""
+
     def __init__(self):
         super().__init__("ReLU")
 
@@ -31,7 +32,36 @@ class ReLU(Activation):
         """
         x: (N, out_feat)
         """
+        # Since torch has no maximum function,
+        # use numpy to implement here
         return np.maximum(x, 0.0) # element-wise
 
     def d_func(self, x):
-        return x > 0.0 # 1 if x > 0 else 0
+        """
+        x: (N, out_feat)
+        dx = 1 if x > 0
+             0 if x <= 0
+        """
+        return x > 0.0
+
+class Sigmoid(Activation):
+
+    def __init__(self):
+        super().__init__("Sigmoid")
+
+    def func(self, x):
+        return 1.0 / (1.0 + torch.exp(-x))
+
+    def d_func(self, x):
+        return self.func(x) * (1.0 - self.func(x))
+
+class Tanh(Activation):
+
+    def __init__(self):
+        super().__init__("Tanh")
+
+    def func(self, x):
+        return (torch.exp(x) - torch.exp(-x)) / (torch.exp(x) + torch.exp(-x))
+
+    def d_func(self, x):
+        return 1.0 - self.func(x) ** 2

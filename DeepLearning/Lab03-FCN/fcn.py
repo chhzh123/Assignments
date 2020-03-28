@@ -29,7 +29,8 @@ from torch.optim import SGD as TorchSGD
 # 可单独设置Loss类与SGD类，也可以将这些功能的实现放到Net类中
 
 # 一种可能的类的设计为
-class Net(nn.Module):  # TODO:在这里实现全连接神经网络
+# TODO:在这里实现全连接神经网络
+class Net(nn.Module):
     def __init__(self):
         super().__init__("FCN")
         self.fcn1 = nn.Linear(28*28,256)
@@ -37,6 +38,9 @@ class Net(nn.Module):  # TODO:在这里实现全连接神经网络
         self.fcn3 = nn.Linear(128,10)
         self.relu1 = ReLU()
         self.relu2 = ReLU()
+        self.add_layers([self.fcn1,
+                         self.fcn2,
+                         self.fcn3])
 
     def forward(self,x):
         x = self.fcn1(x)
@@ -52,11 +56,6 @@ class Net(nn.Module):  # TODO:在这里实现全连接神经网络
         grad = self.fcn2.backward(delta)
         delta = self.relu1.backward(grad)
         grad = self.fcn1.backward(delta)
-
-    def parameters(self):
-        return [self.fcn1.parameters(),
-                self.fcn2.parameters(),
-                self.fcn3.parameters()]
 
 # class Loss: # TODO:在这里实现交叉熵损失函数
 # 已在tinytorch.loss.CrossEntropyLoss中实现

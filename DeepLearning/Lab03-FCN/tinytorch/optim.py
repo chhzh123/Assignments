@@ -1,11 +1,21 @@
 import torch
 
-class Optimizer:
+class Optimizer(object): # Base class
     def __init__(self, params, lr):
+        """
+        params: All network layer parameters (in a list),
+                needed to be added before training,
+                stored by references/objects, thus can be modified later
+                For linear layer, there are w, b, d_w, d_b four params.
+        lr: learning rate
+        """
         self.params = params
         self.lr = lr
 
     def zero_grad(self):
+        """
+        Needed to be call before each epoch
+        """
         for param in self.params:
             param["d_w"] = torch.zeros(param["w"].shape)
             param["d_b"] = torch.zeros(param["b"].shape)
@@ -23,7 +33,12 @@ class SGD(Optimizer):
 
     def step(self):
         """
-        https://d2l.ai/chapter_optimization/momentum.html
+        SGD with momentum, need to store v for each param
+
+        v_{t+1}=\gamma v_t - \eta\nabla L(\theta_t)
+        \theta_{t+1} = \theta_t + v_{t+1}
+
+        Ref: https://d2l.ai/chapter_optimization/momentum.html
         """
         for param in reversed(self.params):
             for item in ["w", "b"]:
