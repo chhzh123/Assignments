@@ -66,22 +66,26 @@ class Net(nn.Module):  # TODO:在这里实现全连接神经网络
 # 已在tinytorch.optim.SGD中实现
 
 # 对训练过程的准确率和损失画图
-def training_process(train_loss, train_acc, test_acc):
+def training_process(train_loss, train_acc, test_acc,
+                     train_loss_torch, train_acc_torch, test_acc_torch):
     shape = train_loss.shape[0]
     epoch = np.arange(1, shape+1)
 
-    plt.plot(epoch, test_acc, label="testAcc")
-    plt.plot(epoch, train_acc, label="trainAcc")
-    plt.xlabel("epoch")
-    plt.ylabel("accuracy")
-    plt.title("accuracy on train set and test set")
+    plt.plot(epoch, train_acc, label="trainAcc (TinyTorch)")
+    plt.plot(epoch, test_acc, label="testAcc (TinyTorch)")
+    plt.plot(epoch, train_acc_torch, label="trainAcc (PyTorch)")
+    plt.plot(epoch, test_acc_torch, label="testAcc (PyTorch)")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Accuracy on train set and test set")
     plt.legend()
     plt.show()
 
-    plt.plot(epoch, train_loss, label="loss")
-    plt.xlabel("epoch")
-    plt.ylabel("loss")
-    plt.title("loss on train set")
+    plt.plot(epoch, train_loss, label="TinyTorch")
+    plt.plot(epoch, train_loss_torch, label="PyTorch")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Loss on train set")
     plt.legend()
     plt.show()
 
@@ -97,6 +101,10 @@ if __name__ == "__main__":
     train_acc = np.zeros(epoch)
     test_acc = np.zeros(epoch)
     train_loss = np.zeros(epoch)
+
+    train_acc_torch = np.zeros(epoch)
+    test_acc_torch = np.zeros(epoch)
+    train_loss_torch = np.zeros(epoch)
 
     # 对数据集图片做标准化并转为tensor
     transform_train = transforms.Compose([
@@ -136,37 +144,44 @@ if __name__ == "__main__":
         correct1 = 0  # 当前epoch的训练集准确率
         correct2 = 0  # 当前epoch的测试集准确率
 
+        epoch_loss_torch = 0  # 当前epoch的损失
+        correct1_torch = 0  # 当前epoch的训练集准确率
+        correct2_torch = 0  # 当前epoch的测试集准确率
+
         # 训练阶段
         # 利用每个mini-batch对网络进行更新
         for index, (data, label) in enumerate(trainLoader):  # 从trainLoader读取一个mini-batch
             # index是当前mini-batch的序号，data是图像，label是标签，data和label都有batch_size个
             data = data.view(data.size(0), -1)  # 展开，将输入的维度从[batch_size, 1, 28, 28]变成[batch_size, 784]
-            optimizer.zero_grad() # 添加！
-            torch_optimizer.zero_grad()
-            # torch_net.reset_parameters(net.parameters())
-            output = net(data.clone().detach())  # TODO:完成前向传播，其中net是你实现的三层全连接神经网络，具体调用形式根据你的实现而定(包括下面三个)
 
-            # torch_data = data.clone().detach()
-            # torch_output = torch_net(torch_data)
+            def train(net, criterion, optimizer, data, label, name="TinyTorch"):
+                optimizer.zero_grad() # 添加！
+                output = net(data)  # TODO:完成前向传播，其中net是你实现的三层全连接神经网络，具体调用形式根据你的实现而定(包括下面三个)
 
-            # 计算训练集准确率，output是网络的输出，维度应为[batch_size, 10]
-            _, prediction = torch.max(output.data, 1)
-            correct1 += (prediction == label).sum()
+                # 计算训练集准确率，output是网络的输出，维度应为[batch_size, 10]
+                _, prediction = torch.max(output.data, 1)
+                correct = (prediction == label).sum()
 
-            loss = criterion(output, label)  # TODO:计算损失
-            # torch_loss = torch_criterion(torch_output,label)
-            # loss.backward()  # TODO:完成反向传播（计算梯度）
-            net.backward(criterion.grad(output,label))
-            # torch_loss.backward()
-            # print(torch_net.fcn1.weight.grad.T)
-            # print(net.fcn1.params["d_w"])
-            optimizer.step()  # TODO:实现网络参数的更新
-            # torch_optimizer.step()
-            # print(type(loss),loss,loss.item())
-            # print("Torch:",torch_loss.item())
+                loss = criterion(output, label)  # TODO:计算损失
+                # torch_loss = torch_criterion(torch_output,label)
+                if name == "TinyTorch":
+                    net.backward(criterion.grad(output,label))
+                else:
+                    loss.backward()  # TODO:完成反向传播（计算梯度）
+                optimizer.step()  # TODO:实现网络参数的更新
 
-            epoch_loss += loss.item() # 加上当前batch的损失
-            # epoch_loss += torch_loss.item() # 加上当前batch的损失
+                return correct, loss.item()
+
+            correct1_epoch, loss = train(net,criterion,optimizer,
+                                   data.clone().detach(),label,"TinyTorch")
+            correct1_epoch_torch, loss_torch = train(torch_net,
+                                   torch_criterion,torch_optimizer,
+                                   data.clone().detach(),label,"PyTorch")
+
+            correct1 += correct1_epoch
+            correct1_torch += correct1_epoch_torch
+            epoch_loss += loss # 加上当前batch的损失
+            epoch_loss_torch += loss_torch
 
         # 测试阶段
         # 测试时不需要tensor的梯度，可调用no_grad关掉梯度
@@ -174,21 +189,29 @@ if __name__ == "__main__":
             for index, (data, label) in enumerate(testLoader):# 从testLoader读取一个mini-batch
                 data = data.view(data.size(0), -1)
                 output = net(data)  # 与上面对前向传播的实现保持一致
-                # output_torch = torch_net(data)
+                output_torch = torch_net(data)
 
                 # 计算测试集准确率
                 _, prediction = torch.max(output.data, 1)
                 correct2 += (prediction == label).sum()
 
+                # 计算测试集准确率
+                _, prediction_torch = torch.max(output_torch.data, 1)
+                correct2_torch += (prediction_torch == label).sum()
+
         # 计算训练集和测试集准确率
         epoch_train_acc = (int(correct1) * 100 / 60000)
         epoch_test_acc = (int(correct2) * 100 / 10000)
 
+        epoch_train_acc_torch = (int(correct1_torch) * 100 / 60000)
+        epoch_test_acc_torch = (int(correct2_torch) * 100 / 10000)
+
         # 输出当前epoch的信息
         print("-------%2d-------" % epo)
-        print("Epoch loss: %4.2f" % epoch_loss)
-        print("Train acc: %3.2f%%" % epoch_train_acc)
-        print("Test acc: %3.2f%%" % epoch_test_acc)
+        print("            TinyTorch   PyTorch")
+        print("Epoch loss: %4.2f\t%4.2f" % (epoch_loss,epoch_loss_torch))
+        print("Train acc:  %3.2f%%\t%3.2f%%" % (epoch_train_acc,epoch_train_acc_torch))
+        print("Test acc:   %3.2f%%\t%3.2f%%" % (epoch_test_acc,epoch_test_acc_torch))
         print()
 
         # 记录loss和accuracy
@@ -196,10 +219,14 @@ if __name__ == "__main__":
         test_acc[epo] = epoch_test_acc
         train_loss[epo] = epoch_loss
 
+        train_acc_torch[epo] = epoch_train_acc_torch
+        test_acc_torch[epo] = epoch_test_acc_torch
+        train_loss_torch[epo] = epoch_loss_torch
+
         # 至此当前epoch结束
 
     # 当所有epoch结束后，对训练过程中的损失和准确率进行画图
-    training_process(train_loss, train_acc, test_acc)
+    training_process(train_loss, train_acc, test_acc, train_loss_torch, train_acc_torch, test_acc_torch)
 
     # 如果需要，在训练结束时对模型和数据进行保存
     # 由于本次的模型是自定义的小模型，可考虑使用torch.save对整个模型进行保存(可保存为tar格式)
