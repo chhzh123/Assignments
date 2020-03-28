@@ -1,0 +1,152 @@
+# 代码实现了搭建了网络训练的基本框架
+# 在此代码的基础上，需要实现下面的内容（请留意TODO）：
+# 1、实现全连接神经网络的前向传播和反向传播（不使用torch.nn搭建网络，不使用backward方法进行反传）
+# 2、实现交叉熵损失函数(不使用torch.nn.CrossEntropyLoss)
+# 3、实现带动量的SGD优化器（不使用torch.optim.SGD）
+# 代码可根据自己需要修改，实现上述内容即可
+#  提示：
+# 在实现过程中，可使用xxx.shape观察网络和数据的维度
+# 可以将自己实现的输出与pytorch函数的输出进行比较(如损失函数与优化器)，观察自己的模块是否正常工作
+
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+from torchvision.datasets import MNIST
+import torchvision.transforms as transforms
+
+
+# TODO：在这里你需要实现一些类来实现上述三个内容
+# 类的设计并无具体要求，能实现所需功能即可
+# 比如，可以考虑先构建单层全连接层Layer类，再组成整体网络Net类
+# 可单独设置Loss类与SGD类，也可以将这些功能的实现放到Net类中
+
+# 一种可能的类的设计为
+class Net:  # TODO:在这里实现全连接神经网络
+    pass
+
+
+class Loss: # TODO:在这里实现交叉熵损失函数
+    pass
+
+
+class SGD: # TODO:在这里实现SGD优化器
+    pass
+
+
+# 对训练过程的准确率和损失画图
+def training_process(train_loss, train_acc, test_acc):
+    shape = train_loss.shape[0]
+    epoch = np.arange(1, shape+1)
+
+    plt.plot(epoch, test_acc, label="testAcc")
+    plt.plot(epoch, train_acc, label="trainAcc")
+    plt.xlabel("epoch")
+    plt.ylabel("accuracy")
+    plt.title("accuracy on train set and test set")
+    plt.legend()
+    plt.show()
+
+    plt.plot(epoch, train_loss, label="loss")
+    plt.xlabel("epoch")
+    plt.ylabel("loss")
+    plt.title("loss on train set")
+    plt.legend()
+    plt.show()
+
+
+if __name__ == "__main__":
+
+    # 可直接使用这组超参数进行训练，也可以自己尝试调整
+    lr = 0.02  # 学习率
+    epoch = 20  # 迭代次数
+    batch_size = 128  # 每一批次的大小
+
+    # 训练数据的记录
+    train_acc = np.zeros(epoch)
+    test_acc = np.zeros(epoch)
+    train_loss = np.zeros(epoch)
+
+    # 对数据集图片做标准化并转为tensor
+    transform_train = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])  # 对训练集的transform
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])  # 对测试集的transform
+
+    # 借助torchvision中的函数读取MNIST，请将参数root换为自己数据存放的路径，或者设置download=True下载数据集
+    # 读MNIST训练集
+    trainSet = MNIST(root="D:/dataset", train=True, transform=transform_train, download=False)
+    trainLoader = torch.utils.data.DataLoader(trainSet, batch_size=batch_size, shuffle=True, num_workers=4)
+    # 读MNIST测试集
+    testSet = MNIST(root="D:/dataset", train=False, transform=transform_test, download=False)
+    testLoader = torch.utils.data.DataLoader(testSet, batch_size=batch_size, shuffle=False, num_workers=4)
+
+    # TODO：在这里对你实现的类进行实例化，之后开始对模型进行训练
+    net = Net()  # 具体的实例化根据你的实现而定，此处只做示意（包括下面两行）
+    criterion = Loss()
+    optimizer = SGD()
+
+    # 重复训练epoch次
+    for epo in range(epoch):
+        epoch_loss = 0  # 当前epoch的损失
+        correct1 = 0  # 当前epoch的训练集准确率
+        correct2 = 0  # 当前epoch的测试集准确率
+
+        # 训练阶段
+        # 利用每个mini-batch对网络进行更新
+        for index, (data, label) in enumerate(trainLoader):  # 从trainLoader读取一个mini-batch
+            # index是当前mini-batch的序号，data是图像，label是标签，data和label都有batch_size个
+            data = data.view(data.size(0), -1)  # 展开，将输入的维度从[batch_size, 1, 28, 28]变成[batch_size, 784]
+            output = net(data)  # TODO：完成前向传播，其中net是你实现的三层全连接神经网络，具体调用形式根据你的实现而定（包括下面三个）
+
+            # 计算训练集准确率，output是网络的输出，维度应为[batch_size, 10]
+            _, prediction = torch.max(output.data, 1)
+            correct1 += (prediction == label).sum()
+
+            loss = criterion(output, label)  # TODO：计算损失
+            loss.backward()  # TODO: 完成反向传播
+            optimizer.step()  # TODO：实现网络参数的更新
+
+            epoch_loss += loss.item() # 加上当前batch的损失
+
+        # 测试阶段
+        # 测试时不需要tensor的梯度，可调用no_grad关掉梯度
+        with torch.no_grad():
+            for index, (data, label) in enumerate(testLoader):# 从testLoader读取一个mini-batch
+                data = data.view(data.size(0), -1)
+                output = net(data)  # 与上面对前向传播的实现保持一致
+
+                # 计算测试集准确率
+                _, prediction = torch.max(output.data, 1)
+                correct2 += (prediction == label).sum()
+
+        # 计算训练集和测试集准确率
+        epoch_train_acc = (int(correct1) * 100 / 60000)
+        epoch_test_acc = (int(correct2) * 100 / 10000)
+
+        # 输出当前epoch的信息
+        print("-------%2d-------" % epo)
+        print("Epoch loss: %4.2f" % epoch_loss)
+        print("Train acc: %3.2f%%" % epoch_train_acc)
+        print("Test acc: %3.2f%%" % epoch_test_acc)
+        print()
+
+        # 记录loss和accuracy
+        train_acc[epo] = epoch_train_acc
+        test_acc[epo] = epoch_test_acc
+        train_loss[epo] = epoch_loss
+
+        # 至此当前epoch结束
+
+    # 当所有epoch结束后，对训练过程中的损失和准确率进行画图
+    training_process(train_loss, train_acc, test_acc)
+
+    # 如果需要，在训练结束时对模型和数据进行保存
+    # 由于本次的模型是自定义的小模型，可考虑使用torch.save对整个模型进行保存（可保存为tar格式）
+    # 训练过程的数据可使用numpy的save（savez）进行保存
+    # 比如：
+    # torch.save(net, model_path)
+    # np.savez(data_path, train_acc=train_acc, test_acc=test_acc, train_loss=train_loss)
