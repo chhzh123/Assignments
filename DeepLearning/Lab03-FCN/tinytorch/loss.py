@@ -8,9 +8,6 @@ class Loss(object): # Base class
     def grad(self, pred, target):
         raise NotImplementedError
 
-    def backward(self):
-        raise NotImplementedError
-
     def __call__(self, pred, target): # overload
         return self.loss(pred, target)
 

@@ -1,27 +1,6 @@
 import torch
 import numpy as np
-
-class Activation(object): # Base class
-
-    def __init__(self, name):
-        self.name = name
-        self.inputs = None
-    
-    def forward(self, inputs):
-        self.inputs = inputs.clone().detach() # for backprop
-        return self.func(inputs)
-
-    def backward(self, grad):
-        return self.d_func(self.inputs) * grad # element-wise
-
-    def func(self, x):
-        raise NotImplementedError
-
-    def d_func(self, x):
-        raise NotImplementedError
-
-    def __call__(self, inputs):
-        return self.forward(inputs)
+from tinytorch.nn import Activation
 
 class ReLU(Activation):
 

@@ -156,7 +156,6 @@ if __name__ == "__main__":
                 correct = (prediction == label).sum()
 
                 loss = criterion(output, label)  # TODO:计算损失
-                # torch_loss = torch_criterion(torch_output,label)
                 if name == "TinyTorch":
                     net.backward(criterion.grad(output,label))
                 else:

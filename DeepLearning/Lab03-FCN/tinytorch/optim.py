@@ -21,9 +21,6 @@ class Optimizer(object): # Base class
             param["d_b"] = torch.zeros(param["b"].shape)
 
     def step(self):
-        return self._step()
-
-    def _step(self):
         raise NotImplementedError
 
 class SGD(Optimizer):
