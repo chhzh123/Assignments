@@ -5,8 +5,9 @@ This is the repository of chhzh123's assignments of *Artificial Neural Networks 
 Detailed information can be found in each folder.
 
 1. Lab 01 - Python
-2. Lab 02 - NumPy & PyTorch
+2. Lab 02 - NumPy & PyTorch Basics
 3. Lab 03 - Fully connected networks (FCN)
+4. Lab 04 - PyTorch Project (CNN)
 
 The assignments of theory courses are listed below. The mindmaps are drawn with XMind.
 1. T01 - Introduction
