@@ -34,7 +34,7 @@ TinyTorch的整体架构如图\ref{fig:overview}所示，主要分为网络层(L
 数据通过前端读入后，经过神经网络模块前向传播(forward)，计算损失及其梯度，并反向传播(backward)，输出结果。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\linewidth]{fig/tinytorch.pdf}
+\includegraphics[width=0.8\linewidth]{fig/tinytorch.pdf}
 \caption{TinyTorch概览}
 \label{fig:overview}
 \end{figure}
@@ -61,16 +61,16 @@ TinyTorch的整体架构如图\ref{fig:overview}所示，主要分为网络层(L
 \lstinputlisting[linerange={4-28},firstnumber=4]{../tinytorch/nn.py}
 
 有了基类便可实现线性层\verb'Linear'，其前向传播计算方式如下
-\[\layer{\vz}{l}=\mathrm{Linear}(\layer{\va}{l-1}) = \layer{\va}{l-1} W + \vb\]
-其中$W\in\rr^{d_in\times d_out}$为权重参数，$\vb\in\rr^{1\times d_out}$为偏置参数，$\layer{\va}{k-1}$为上一层激活后的输出。
+\[\layer{\vz}{l}=\mathrm{Linear}(\layer{\va}{l-1}) = \layer{\va}{l-1} \layer{W}{l} + \layer{\vb}{l}\]
+其中$\layer{W}{l}\in\rr^{d_{in}\times d_{out}}$为权重参数，$\layer{\vb}{l}\in\rr^{1\times d_{out}}$为偏置参数，$\layer{\va}{k-1}$为上一层激活后的输出。
 注意这里将权重参数右乘输入向量，只是为了方便存储和计算，与后面的推导可能存在差异。
 
 反向传播（具体理论推导见第\ref{sec:theory}节）
 \[\begin{cases}
-\pd{\mL}{W}=\layer{\va}{l-1}^\T\layer{\delta}{l}\\
-\pd{\mL}{\vb}=\layer{\delta}{l}
+\pd{\mL}{\layer{W}{l}}=\layer{\va}{l-1}^\T\layer{\delta}{l}\\
+\pd{\mL}{\layer{\vb}{l}}=\layer{\delta}{l}
 \end{cases}\]
-同时一并计算$\layer{\tilde{\delta}}{l-1}=\layer{\delta}{l}W^\T$。
+同时一并计算$\layer{\tilde{\delta}}{l-1}=\layer{\delta}{l}\layer{W}{l}^\T$。
 另外注意由于是批训练，故$\partial\mL/\partial \vb$计算时是对批内所有值求和。
 
 初始化$W$和$\vb$直接调用\verb'torch.nn.init.kaiming_uniform_'，存储在\verb'params'字典中。
@@ -110,17 +110,17 @@ TinyTorch的整体架构如图\ref{fig:overview}所示，主要分为网络层(L
 这一部分还是因为没有实现AD，故没有办法像PyTorch一样做到\verb'loss.backward()'回传，只能分开实现计算梯度后再回传。
 
 下面以交叉熵函数为例，前向传播公式为（已经结合了Softmax和NLLLoss）
-\begin{equation}
+\begin{align}
+\mL&=\frac{1}{N}\sum_{i=1}^N\mathrm{Loss}(\smp{\vx}{i},\smp{y}{i})\\
+&=-\frac{1}{N}\sum_{i=1}^N\log\frac{\exp(\smp{\vx}{i}[\smp{y}{i}])}{\sum_{j=1}^d\exp(\smp{\vx}{i}_j)}\\
+&=-\frac{1}{N}\sum_{i=1}^N\lrp{\smp{\vx}{i}[\smp{y}{i}]-\log\lrp{\sum_{j=1}^d\exp(\smp{\vx}{i}_j)}}
 \label{equ:cross_entropy}
-\mL=\frac{1}{N}\sum_{i=1}^N\mathrm{Loss}(\smp{\vx}{i},\smp{y}{i})
-=-\frac{1}{N}\sum_{i=1}^N\log\frac{\exp(\smp{\vx}{i}[\smp{y}{i}])}{\sum_{j=1}^d\exp(\smp{\vx}{i}_j)}
-=-\frac{1}{N}\sum_{i=1}^N\lrp{\smp{\vx}{i}[\smp{y}{i}]-\log\lrp{\sum_{j=1}^d\exp(\smp{\vx}{i}_j)}}
-\end{equation}
+\end{align}
 这一部分要特别小心，非常容易出错。
 在具体实施上需要关注以下两个点：
 \begin{itemize}
-	\item \textbf{避免指数爆炸}：直接计算Softmax会导致指数过大，因此需要对分子分母同除$\exp(\max)$，相当于指数作差，确保指数都小于等于$0$，进而指数项落在$(0,1]$的区间
-	\item \textbf{避免对数爆炸}：由于计算机精度原因，一些过小的值会被直接当作$0$处理（数值下溢），若直接取对数会导致出现\verb'-inf'，故应该把Softmax计算和NLLLoss计算合并，变成(\ref{equ:cross_entropy})后面的公式，对指数项求和后可确保值不再为$0$，进而可以正常取对数。
+	\item \textbf{避免指数爆炸}：直接计算Softmax会导致指数过大，因此需要对分子分母同除$\exp(\max)$，相当于指数作差，确保指数都小于等于$0$，进而指数项落在$(0,1]$的区间。
+	\item \textbf{避免对数爆炸}：由于计算机精度原因，一些过小的值会被直接当作$0$处理（数值下溢），若直接取对数会导致出现\verb'-inf'，故应该把Softmax计算和NLLLoss计算合并，变成公式(\ref{equ:cross_entropy})，对指数项求和后可确保值不再为$0$，进而可以正常取对数。
 \end{itemize}
 
 反向传播的公式为（推导见第\ref{sec:theory}节）
@@ -133,7 +133,7 @@ TinyTorch的整体架构如图\ref{fig:overview}所示，主要分为网络层(L
 
 带动量的SGD更新公式如下。
 \[\begin{cases}
-    \vnu_{t+1}=\textcolor{red}{\gamma\vnu_t}-\eta\nabla\mL(\vtheta_t)\\
+    \vnu_{t+1}=\gamma\vnu_t-\eta\nabla\mL(\vtheta_t)\\
     \vtheta_{t+1}=\vtheta_t+\vnu_{t+1}
 \end{cases}\]
 注意需要为每个参数单独创建$\vnu$值，且初始化为$\vzero$。
@@ -153,7 +153,8 @@ TinyTorch的整体架构如图\ref{fig:overview}所示，主要分为网络层(L
 
 \section{实验设置}
 实验MNIST数据集上进行测试，并将TinyTorch与PyTorch进行比较。
-完整代码可见\verb'fcn.py'和\verb'fcn_torch.py'，后者是PyTorch实现的神经网络，采用的网络结构、优化器及损失函数均与TinyTorch相同。
+完整代码可见\verb'fcn.py'\\
+和\verb'fcn_torch.py'，后者是PyTorch实现的神经网络，采用的网络结构、优化器及损失函数均与TinyTorch相同。
 
 实验在CPU上进行，超参数设置如表\ref{tab:hyper}所示。
 \begin{table}[H]
