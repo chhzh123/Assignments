@@ -35,7 +35,19 @@ class Net(nn.Module):
           the document of PyTorch from the official website.
     """
     """YOUR CODE HERE"""
-    pass
+    def __init__(self):
+        super(Net, self).__init__()
+        # in_chan, out_chan, kernel_size
+        self.conv1 = nn.Conv2d(1, 8, 3, stride=1)
+        self.relu = nn.ReLU()
+        self.fc = nn.Linear(26 * 26 * 8, 10)
+
+    def forward(self, x):
+        output = self.conv1(x)
+        output = self.relu(output)
+        output = output.view(output.shape[0],-1)
+        output = self.fc(output)
+        return output
     """END OF YOUR CODE"""
 
 model = Net().to(device=DEVICE)

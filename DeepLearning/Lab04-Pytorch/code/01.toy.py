@@ -65,7 +65,10 @@ def mse_loss(input, target):
     """
 
     """YOUR CODE HERE"""
-    pass
+    n = input.shape[0]
+    one_hot = torch.zeros(input.shape)
+    one_hot[torch.arange(n),target] = 1
+    return torch.mean((input - one_hot) ** 2)
     """END OF YOUR CODE"""
 
 criterion = mse_loss
