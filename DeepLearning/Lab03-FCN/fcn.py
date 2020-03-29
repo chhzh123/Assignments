@@ -39,7 +39,9 @@ class Net(nn.Module):
         self.relu1 = ReLU()
         self.relu2 = ReLU()
         self.add_layers([self.fcn1,
+                         self.relu1,
                          self.fcn2,
+                         self.relu2,
                          self.fcn3])
 
     def forward(self,x):
@@ -49,13 +51,6 @@ class Net(nn.Module):
         x = self.relu2(x)
         x = self.fcn3(x)
         return x
-
-    def backward(self,delta):
-        grad = self.fcn3.backward(delta)
-        delta = self.relu2.backward(grad)
-        grad = self.fcn2.backward(delta)
-        delta = self.relu1.backward(grad)
-        grad = self.fcn1.backward(delta)
 
 # class Loss: # TODO:在这里实现交叉熵损失函数
 # 已在tinytorch.loss.CrossEntropyLoss中实现

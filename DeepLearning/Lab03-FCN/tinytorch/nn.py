@@ -1,5 +1,6 @@
 import torch
-import torch.nn as nn
+from torch.nn.init import kaiming_uniform_
+from tinytorch.activation import Activation
 
 class Layer(object): # Base class
     def __init__(self, name):
@@ -28,8 +29,8 @@ class Layer(object): # Base class
 
 class Linear(Layer):
     def __init__(self, in_feat, out_feat,
-                w_init=nn.init.kaiming_uniform_,
-                b_init=nn.init.kaiming_uniform_):
+                w_init=kaiming_uniform_,
+                b_init=kaiming_uniform_):
         """
         w: (in_feat, out_feat)
         b: (1, out_feat)
@@ -69,20 +70,25 @@ class Module(object):
     def __init__(self, name):
         super(Module, self).__init__()
         self.name = name
+        self.layers = []
         self.params = []
-        
+
     def forward(self, inputs):
         raise NotImplementedError
 
-    def backward(self, grad):
-        raise NotImplementedError
+    def backward(self, delta):
+        grad = delta
+        for layer in reversed(self.layers):
+            grad = layer.backward(grad)
 
     def parameters(self):
         return self.params
 
     def add_layers(self,layers):
+        self.layers = layers
         for layer in layers:
-            self.params.append(layer.parameters())
+            if isinstance(layer,Layer):
+                self.params.append(layer.parameters())
 
     def __call__(self, inputs):
         return self.forward(inputs)
