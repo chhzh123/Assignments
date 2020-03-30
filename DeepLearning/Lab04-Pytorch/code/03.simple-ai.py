@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 import numpy as np
-from mynet import LeNet
+from mynet import LeNet, VGG
 from myutils import EarlyStopping
 
 from tqdm import tqdm
@@ -20,11 +20,11 @@ from utils import check
 """
 Some 'hyperparameters'.
 """
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-2
 NUM_EPOCHS = 100
 BATCH_SIZE = 32 # Mini-batch size
 DEVICE = torch.device('cuda')
-CONFIG = {"network": "LeNet5-3",
+CONFIG = {"network": "VGG16",
           "lr": LEARNING_RATE,
           "optim": "Adam",
           "num_epochs": NUM_EPOCHS,
@@ -34,7 +34,9 @@ CONFIG = {"network": "LeNet5-3",
 Define a model here.
 """
 
-model = LeNet().to(device=DEVICE)
+# model = LeNet().to(device=DEVICE)
+model = VGG("VGG16").to(device=DEVICE)
+print(model)
 
 """
 Dataset here.
@@ -46,7 +48,8 @@ HINT: You can refer to dataloader of MNIST in `02.learn-to-count.py`
 """YOUR CODE HERE"""
 transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # 3 channels
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], # magic numbers
+                         std=[0.229, 0.224, 0.225]) # 3 channels
 ])
 
 train_dataset = datasets.CIFAR10(root='../data', train=True, download=True, transform=transform)
