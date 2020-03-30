@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 import numpy as np
+from myutils import EarlyStopping
 
 from tqdm import tqdm
 import sys
@@ -22,6 +23,11 @@ LEARNING_RATE = 1e-3
 NUM_EPOCHS = 100
 BATCH_SIZE = 32 # Mini-batch size
 DEVICE = torch.device('cuda')
+CONFIG = {"network": "LeNet5-2",
+          "lr": LEARNING_RATE,
+          "optim": "Adam",
+          "num_epochs": NUM_EPOCHS,
+          "batch_size": BATCH_SIZE}
 
 """
 Define a model here.
@@ -95,6 +101,7 @@ Define an optimizer here.
 CAN BE MODIFIED.
 """
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+early_stopping = EarlyStopping(patience=5)
 
 """
 Evaluation function here.
@@ -169,5 +176,12 @@ for epoch_idx in range(NUM_EPOCHS):
     train_loss[epoch_idx] = train_resp['loss']
     eval_loss[epoch_idx] = eval_resp['loss']
 
-    torch.save(model, 'simple-ai.pth')
-    np.savez('simple-ai_loss', train_acc=train_acc, eval_acc=eval_acc, train_loss=train_loss, eval_loss=eval_loss)
+    torch.save(model, 'simple-ai-{}.pth'.format(CONFIG["network"]))
+    np.savez('results/simple-ai-{}'.format(CONFIG["network"]),
+             config=CONFIG, train_acc=train_acc, eval_acc=eval_acc,
+             train_loss=train_loss, eval_loss=eval_loss)
+    # load by np.load(..., allow_pickle=True)
+
+    if early_stopping(eval_loss[epoch_idx]): # early stopping
+        print ("Early stopping at Epoch {}!".format(epoch_idx))
+        break
