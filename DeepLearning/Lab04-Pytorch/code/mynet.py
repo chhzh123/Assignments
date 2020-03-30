@@ -51,7 +51,7 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = self._make_layers(vgg_config[name])
         self.classifier = nn.Sequential( # three fcns
-            nn.Dropout(),
+            nn.Dropout(), # avoid overfitting
             nn.Linear(512, 512),
             nn.ReLU(inplace=True),
             nn.Dropout(),
@@ -70,12 +70,12 @@ class VGG(nn.Module):
         layers = []
         in_channels = 3
         for out_channels in cfg:
-            if out_channels == "M":
+            if out_channels == "M": # max pooling
                 layers += [nn.MaxPool2d(2)]
             else:
                 # preserve image resolution
                 layers += [nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-                           nn.BatchNorm2d(out_channels),
+                           nn.BatchNorm2d(out_channels), # avoid overfitting
                            nn.ReLU(inplace=True)]
                 in_channels = out_channels
         return nn.Sequential(*layers)

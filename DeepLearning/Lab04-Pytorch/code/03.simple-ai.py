@@ -20,7 +20,7 @@ from utils import check
 """
 Some 'hyperparameters'.
 """
-LEARNING_RATE = 1e-2
+LEARNING_RATE = 1e-3
 NUM_EPOCHS = 100
 BATCH_SIZE = 32 # Mini-batch size
 DEVICE = torch.device('cuda')
@@ -34,6 +34,7 @@ CONFIG = {"network": "VGG16",
 Define a model here.
 """
 
+# model definitions are in mynet.py, check for that!
 # model = LeNet().to(device=DEVICE)
 model = VGG("VGG16").to(device=DEVICE)
 print(model)

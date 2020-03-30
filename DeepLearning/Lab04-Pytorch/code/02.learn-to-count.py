@@ -22,7 +22,7 @@ Some 'hyperparameters'.
 LEARNING_RATE = 1e-1
 NUM_EPOCHS = 20
 BATCH_SIZE = 20 # Mini-batch size
-DEVICE = torch.device('cpu')
+DEVICE = torch.device('cuda')
 
 """
 Define a model here.
@@ -37,7 +37,7 @@ class Net(nn.Module):
     """YOUR CODE HERE"""
     def __init__(self):
         super(Net, self).__init__()
-        # in_chan, out_chan, kernel_size
+        # in\_chan, out\_chan, kernel\_size
         self.conv1 = nn.Conv2d(1, 8, 3, stride=1)
         self.relu = nn.ReLU()
         self.fc = nn.Linear(26 * 26 * 8, 10)
