@@ -1,0 +1,5 @@
+data
+*.pt
+*.pth
+*.npz
+*.npy
