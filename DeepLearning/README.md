@@ -7,7 +7,8 @@ Detailed information can be found in each folder.
 1. Lab 01 - Python
 2. Lab 02 - NumPy & PyTorch Basics
 3. Lab 03 - Fully connected networks (FCN)
-4. Lab 04 - PyTorch Project (CNN)
+4. Lab 04 - PyTorch projects (CNN)
+5. Lab 05 - Training issues
 
 The assignments of theory courses are listed below. The mindmaps are drawn with XMind.
 1. T01 - Introduction
