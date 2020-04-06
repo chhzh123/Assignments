@@ -15,3 +15,4 @@ The assignments of theory courses are listed below. The mindmaps are drawn with 
 2. T02 - Artificial Neural Network: Basics
 3. T03 - Optimization
 4. T04 - CNN Training Issues & Developments
+5. T05 - Segmentation
