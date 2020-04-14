@@ -9,6 +9,7 @@ Detailed information can be found in each folder.
 3. Lab 03 - Fully connected networks (FCN)
 4. Lab 04 - PyTorch projects (CNN)
 5. Lab 05 - Training issues
+6. Lab 06 - Visualization
 
 The assignments of theory courses are listed below. The mindmaps are drawn with XMind.
 1. T01 - Introduction
