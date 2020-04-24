@@ -45,11 +45,11 @@ Below is the list of the courses I took in CS major.
 | Computer Graphics                   | 2019 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/ComputerGraphics) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/ComputerGraphics) |
 | Distributed Systems                 | 2019 Autumn |                        | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DistributedSystems) | [:page_facing_up:](https://chhzh123.github.io/summary/distributed-systems/) |
 | Scientific Reading and Writing      | 2019 Autumn |                        |                        | |
-| Principles of Compilers             | 2020 Spring | :white_check_mark:     |                        | |
-| Principles of Compilers (Lab)       | 2020 Spring | :white_check_mark:     |                        | |
+| Principles of Compilers             | 2020 Spring | :white_check_mark:     | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/Compilers) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/Compilers) |
+| Principles of Compilers (Lab)       | 2020 Spring | :white_check_mark:     | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/Compilers) | |
 | Artificial Neural Network / Deep Learning | 2020 Spring |                  | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DeepLearning) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/DeepLearning) |
 | Artificial Neural Network / Deep Learning (Lab) | 2020 Spring |            | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/DeepLearning) | |
 | Multi-core Programming / CUDA       | 2020 Spring |                        |                        | |
-| Machine Learning and Data Mining    | 2020 Spring | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/MachineLearning&DataMining) | |
+| Machine Learning and Data Mining    | 2020 Spring | :o:                    | [:white_check_mark:](https://github.com/chhzh123/Assignments/tree/master/MachineLearning&DataMining) | [:green_book:](https://github.com/chhzh123/CS-Notes/tree/master/MachineLearning) |
 | Internship                          | 2020 Autumn |                        |                        | |
 | Graduation Dissertation             | 2021 Spring | :white_check_mark:     |                        | |
