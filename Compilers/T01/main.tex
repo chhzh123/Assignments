@@ -1,0 +1,57 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+
+\title{编译原理作业一}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{编译原理作业}
+
+% Apr 21 -> Apr 25
+
+\begin{document}
+
+\maketitle
+
+\begin{question}
+一、	下列正则表达式定义了什么语言（用尽可能简短的自然语言描述）？
+\begin{enumerate}
+	\item $b^*(ab^*ab^*)^*$
+	\item $c^*a(a|c)^*b(a|b|c)^*|c^*b(b|c)^*a(a|b|c)^*$
+\end{enumerate}
+\end{question}
+\begin{answer}
+写出一些例子后整理可知
+\begin{enumerate}
+	% aa, aabbbb, abbba, abbabbb, ababbaba
+	\item 所有包含偶数个$a$的由$a$和$b$组成的字符串
+	% cacba, cbcaa
+	\item 所有至少包含$1$个$a$和$1$个$b$的由$a$、$b$、$c$组成的字符串
+\end{enumerate}
+\end{answer}
+
+\begin{question}
+设字母表$\Sigma=\{a,b\}$，用正则表达式（只使用$a$，$b$，$\epsilon$，$|$，${}^*$，$+$，$?$）描述下列语言：
+\begin{enumerate}
+	\item 不包含子串$ab$的所有字符串.
+	\item 不包含子串$abb$的所有字符串.
+	\item 不包含子序列$abb$的所有字符串.
+\end{enumerate}
+注意：关于子串(substring)和子序列(subsequence)的区别可以参考课本第119页方框中的内容.
+\end{question}
+\begin{answer}
+写出一些特殊样例后整理可得
+\begin{enumerate}
+	% eps, a.., b.., b..a..
+	\item 即所有$b$都在$a$前面，\\$b^*a^*$
+	% (a*b?)* -> x a b b
+	\item 即至多有一个$b$紧跟着$a$，\\$b^*(ab?)^*$
+	% a*, b*, a*ba*, b*a*, b*a*b
+	% a*b?a*|b*a*b?
+	\item 即至多有一个$b$在$a$后面，\\$a^*b?a^*|b^*a^*b?$或$b^*a^*b?a^*$
+\end{enumerate}
+\end{answer}
+
+\end{document}
