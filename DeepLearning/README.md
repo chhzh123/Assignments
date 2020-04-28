@@ -18,3 +18,6 @@ The assignments of theory courses are listed below. The mindmaps are drawn with 
 4. T04 - CNN Training Issues & Developments
 5. T05 - Segmentation
 6. T06 - Object Detection
+7. T07 - GAN
+1. Literature Review
+2. Research Process and Paper Writing
