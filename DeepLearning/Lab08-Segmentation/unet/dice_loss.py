@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch.autograd import Function, Variable
 
@@ -48,8 +49,12 @@ class JaccardCoeff(Function):
     def forward(self, input, target):
         #######################################################################
         # finish your code here
+        eps = 0.0001
+        self.inter = torch.dot(input.contiguous().view(-1),\
+                              target.contiguous().view(-1)) + eps
+        self.union = torch.sum(np.logical_or(input,target)) + eps
         
 
         #######################################################################
         # After you finish your code above remember to delete the following pass
-        pass
+        return self.inter.float() / self.union.float()

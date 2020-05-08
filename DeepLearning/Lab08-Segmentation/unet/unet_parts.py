@@ -78,7 +78,7 @@ class up_add(nn.Module):
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         else:
-            self.up = nn.ConvTranspose2d(in_ch//2, in_ch//2, 2, stride=2)
+            self.up = nn.ConvTranspose2d(in_ch//2, in_ch//2, 2, stride=2) # channels do not change
 
         self.conv = double_conv(in_ch, out_ch)
 
@@ -86,16 +86,15 @@ class up_add(nn.Module):
         
         ####################################################################################
         # finish your code here 
-        
-        
-        
-        
-        
+        x1 = self.up(x1)
+        x = torch.add(x2, x1)
+        x = self.conv(x)
+        return x
 
         ####################################################################################
         
         # After you finish your code above remember to delete the following pass
-        pass
+        # pass
 
 
 
