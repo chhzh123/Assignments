@@ -11,6 +11,7 @@ Detailed information can be found in each folder.
 5. Lab 05 - Training issues
 6. Lab 06 - Visualization
 7. Lab 07 - DataLoader & Building blocks (ResNet)
+8. Lab 08 - Segmentation
 
 The assignments of theory courses are listed below. The mindmaps are drawn with XMind.
 1. T01 - Introduction
@@ -21,5 +22,7 @@ The assignments of theory courses are listed below. The mindmaps are drawn with 
 6. T06 - Object Detection
 7. T07 - GAN
 8. T08 - GAN2
+9. T09 - RNN
 1. Literature Review
 2. Research Process and Paper Writing
+3. Final Project
