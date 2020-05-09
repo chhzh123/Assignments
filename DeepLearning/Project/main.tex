@@ -18,7 +18,7 @@
 \caption{对Karate network进行图嵌入的可视化，图源DeepWalk\cite{perozzi:deepwalk_kdd_2014}。}
 \end{figure}
 
-图嵌入方法主要可分为三类：基于矩阵分解的方法、随机游走(random walk)和图神经网络(graph neural network, GNN)。
+图嵌入方法主要可分为三类：基于\underline{矩阵分解}的方法、\underline{随机游走}(random walk)和\underline{图神经网络}(graph neural network, GNN)。
 最早年使用的是基于矩阵分解的方法，但是计算量通常很大，只能处理图或结点特征维度较小的问题。
 现在较多使用后两种方法，随机游走通常限制于转导(transductive)的设定，训练测试集属于同一个图；图神经网络则可以用于归纳(inductive)的设定，泛化能力强，可轻松适应未知的图/结点，因而GNN现在也成为应用和研究的热点。
 % inductive个例到一般，可泛化
@@ -29,7 +29,7 @@ GNN已经在推荐系统\cite{zhu:aligraph_vldb_2019}、生物医学、程序综
 
 但目前的GNN存在以下的问题：
 \begin{itemize}
-\item 从通用的图角度来讲，它具有不规则/非欧(non-Euclidean)结构和幂律分布(power-law)等特性，这与传统深度学习的稠密计算有着巨大差别，可扩展性差，没有办法处理大图。
+\item 从通用的图计算角度来讲，图具有不规则/非欧(non-Euclidean)结构和幂律分布(power-law)等特性，这与传统深度学习的稠密计算有着巨大差别，可扩展性差，没有办法处理大图。
 然而现实世界中的社交网络、商品网络往往都是非常庞大的，要在这些图上采用GNN，算法复杂度一定是一个需要考虑的问题。
 \item 从学习表示的角度来讲，现有的GNN更多捕获的是局部结构特征，而丧失了全局的相对位置信息。
 这会导致GNN无法很好辨别同构子图结点，在一些预测任务上给出错误的结果。
@@ -46,10 +46,10 @@ GNN已经在推荐系统\cite{zhu:aligraph_vldb_2019}、生物医学、程序综
 这里会涉及到不同的距离度量，不同的度量方式则会产生不同的图嵌入方法。
 
 \subsection{随机游走}
-随机游走顾名思义即从图上的一些结点$v$开始向它的邻居进行探索，采样出大量路径$N_S(v)$后，对这些进行路径进行学习。
+随机游走顾名思义即从图上的一些结点$v$开始向它的邻居进行探索，采样出大量路径$\mathcal{N}_S(v)$后，对这些进行路径进行学习。
 
-一个较通用的优化目标如下
-\[\max_\Phi\sum_{v\in V}\log\mathrm{Pr}(N_S(v)\mid \Phi(v))\]
+一个较通用的\textbf{优化目标}如下
+\[\max_\Phi\sum_{v\in V}\log\mathrm{Pr}(\mathcal{N}_S(v)\mid \Phi(v))\]
 即在生成的嵌入表示条件下，这种路径出现的概率尽可能大。
 
 DeepWalk~\cite{perozzi:deepwalk_kdd_2014}最早使用随机游走来做图嵌入任务，每次随机选择一个起始点$v_i$，\textbf{随机选择邻居}，做固定长度的随机游走，依据得到的$\mathcal{W}_{v_i}$，做skip-gram，梯度下降更新参数。
@@ -58,11 +58,14 @@ node2vec~\cite{grover:node2vec_kdd_2016}则不再采用DeepWalk每个结点完�
 可以看到这种方法对图的微观和宏观特性做了权衡，通过设置超参数$p$和$q$，能比较有效地学习到图的局部(BFS)和全局(DFS)特征。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\linewidth]{fig/node2vec.png}
-\caption{图源node2vec~\cite{grover:node2vec_kdd_2016}}
+\begin{tabular}{cc}
+\includegraphics[width=0.6\linewidth]{fig/node2vec.png} &
+\includegraphics[width=0.3\linewidth]{fig/node2vec-transition.png}
+\end{tabular}
+\caption{node2vec~\cite{grover:node2vec_kdd_2016}状态转移}
 \end{figure}
 
-不同随机游走最大的差异在于其在每个结点计算转移概率的方式\cite{yang:knightking_sosp_2019}，这里可用统一的转移概率公式来表达%（注意这里并**未做归一化**）
+不同随机游走最大的差异在于其\textbf{邻居的选择}或在每个结点计算转移概率的方式\cite{yang:knightking_sosp_2019}，这里可用统一的转移概率公式来表达%（注意这里并**未做归一化**）
 \[P(e)=P_s(e)\cdot P_d(e,v,w)\cdot P_e(v,w)\]
 这是十分直接的公式化，即某一条出边$e$的转移概率，等于静态成分、动态成分、扩展成分三者相乘。
 详细地说，游走者$w$当前处于结点$v$，
@@ -73,20 +76,20 @@ node2vec~\cite{grover:node2vec_kdd_2016}则不再采用DeepWalk每个结点完�
 \end{itemize}
 
 \subsection{图神经网络}
-图神经网络的核心思想是从邻居\footnote{这里的邻居是泛化的邻居，不一定需要在图中真实相邻。}结点整合特征，通过黑箱网络，对输出拟合。
+图神经网络的核心思想是从邻居\footnote{这里的邻居是泛化的邻居，不一定需要在图中真实相邻。}结点整合特征，通过不同神经网络架构进行拟合。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/grl-layers.png}
 \caption{图源Jure Leskovec, \href{http://snap.stanford.edu/proj/embeddings-www/}{Tutorial - Representation Learning on Networks (WWW'18)}}
 \end{figure}
 
-现有GNN的传播规则都可表示为\cite{fey:pytorch_geo_2019}
+现有GNN的传播规则都可抽象为\cite{fey:pytorch_geo_2019}
 \[\mathbf{v}_i^{(k+1)}=\gamma\left(\mathbf{v}_i^{(k)},\mathop{Agg}_{j\in\mathcal{N}_i}\phi(\mathbf{v}_i^{(k)},\mathbf{v}_j^{(k)},\mathbf{e}_{j,i}^{(k)})\right)\]
 即包括\textbf{消息聚合}和\textbf{参数更新}两个步骤，其中$Agg$是一个可微、置换不变的函数（求和、求平均、求最值），$\gamma$和$\phi$则是可微函数（如MLP）。
 
 最早提出的GCN~\cite{kipf:gcn_iclr_2017}很好地借鉴了传统CNN中卷积的思想，对网络层\textbf{共享参数}，同时对自身特征进行聚合并做归一化，从而得到了更优的结果。
 之后的GraphSAGE~\cite{hamilton:graphsage_neurips_2017}采用更加一般化的聚合函数，同时考虑合并(concat)自身特征而非相加的方式，进一步提升了GNN的性能。
-以及各种GNN的变体，如GAT~\cite{velickovic:gat_iclr_2018}、GGS-NN~\cite{li:ggsnn_iclr_2016}等，在未经训练时其生成的图嵌入就已经达到随机游走的水准。
+其他各种GNN的变体，如GAT~\cite{velickovic:gat_iclr_2018}、GGS-NN~\cite{li:ggsnn_iclr_2016}等，在未经训练时其生成的图嵌入就已经达到随机游走的水准。
 
 \section{动机}
 我们可以看到，在去年的机器学习顶会上，已经有一些工作对一开始提出的两个问题进行了一定的研究。
@@ -107,22 +110,21 @@ GNN无法捕获全局相对的位置信息，导致对于相同的局部结构�
 \end{figure}
 % 用独热码增量结点特征，让GNN更深
 
-P-GNN采用锚点(anchor)集的方式，每次在全图采样随机数目的点（采样方式根据Bourgain定理），把这些点作为邻居进行聚合。
-给定$k=c\log^2n$个随机结点集$S_{i,j}\subset V,i=1,2,\ldots,\log n,j=1,2,\ldots,c\log n$，其中$S_{i,j}$以$1/2^i$的概率选取，得到的嵌入如下
+P-GNN每轮迭代中选取$k$个锚点(anchor)集（采样方式根据Bourgain定理），并将这些点作为其他所有点的邻居进行消息聚合。
+而Bourgain定理说的是，给定$k=c\log^2n$个随机结点集$S_{i,j}\subset V,i=1,2,\ldots,\log n,j=1,2,\ldots,c\log n$，其中$S_{i,j}$以$1/2^i$的概率选取，以下列方式构造结点$v$的嵌入表示
 \[f(v)=\left(\frac{d(v,S_{1,1})}{k},\frac{d(v,S_{1,2})}{k},\cdots,\frac{d(v,S_{\log n,c\log n})}{k}\right)\]
+可以实现保位置变换，即在向量空间中相对位置信息不会被丢失。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/PGNN.png}
 \caption{P-GNN生成图嵌入方式}
 \end{figure}
 
-这里的insight在于锚点集越大，碰到$v_i$的概率也就越高，获得新的信息却很少，但是有更高的采样效率；
+这里的insight在于选定的锚点集有大有小，我们希望能够通过这些锚点来判断当前结点与其他结点的相对位置。
+锚点集越大，碰到$v_i$的概率也就越高，有很高的采样效率，但是获得的信息量却很少；
 而锚点集小，碰到$v_i$的概率也就小，那么信息量也就大，尽管采样效率低。
 
-这是一个权衡。
-这有点像图层面上的多尺度+空洞卷积，都是为了获得\textbf{更大的感受野}。
-
-进而可以在捕获局部网络特征的同时，保留全局相对位置信息。
+这其实是一个权衡，有点像图层面上的多尺度+空洞卷积，都是为了获得\textbf{更大的感受野}，从而可以捕获局部和全局信息。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/PGNN_results.png}
@@ -132,24 +134,30 @@ P-GNN采用锚点(anchor)集的方式，每次在全图采样随机数目的点�
 % 位置感知：结点空间中的某种距离度量等同于于原始空间的距离，随机游走
 % 结构感知：从当前节点往外扩的k跳可表为函数，GNN
 
-但是这种方法的消息通信复杂度是$O(mn\log^2 n)$，其中$m$为平均锚点集的结点数目，$n$为图的总结点数；
-而现有的GNN通信代价一般都为$O(ne)$，所以开销还是非常大的。
+从上面的叙述可知，P-GNN最大的开销在于锚点集的选取与通信，其消息通信复杂度是$O(mn\log^2 n)$，其中$m$为锚点集的平均结点数目，$n$为图的总结点数；
+而现有的GNN通信代价一般都为$O(ne)$，所以P-GNN的开销还是非常大的。
 
 为了降低这种开销，P-GNN在计算结点与锚点集的距离时采用$k$跳的截断估计法，事实上要计算SSSP依然开销很大。
+\[d_{sp}^k(u,v)=\begin{cases}
+d_{sp}(u,v) & d_{sp}(u,v)\leq q\\
+\infty & \text{otherwise}
+\end{cases}\]
 % 结点标号敏感性
-没有对特征进行处理，事实上特征中也会含有易于区别的位置信息。
+% 没有对特征进行处理，事实上特征中也会含有易于区别的位置信息。
 
 \subsection{多级图嵌入框架}
+大多数图嵌入方法都只提升准确率或者可扩展性当中的其中一个，而GraphZoom则尝试在提升可扩展性的同时，也提升预测的准确率。
+其核心思想是融合结点特征后做降维再进行恢复。
 \begin{enumerate}
-	\item 图融合：邻接矩阵+结点嵌入\\
-	idea:基于属性相似度，对原始图做额外的边扩充
+	\item 图融合：邻接矩阵+结点特征\\
+	Idea:基于属性相似度，对原始图做额外的边扩充（相当于提供了额外的信息）
 	\begin{itemize}
-		\item 基于L2范数利用kNN构建属性图
+		\item 基于L2范数利用kNN构建加权特征图（将结点属性矩阵转为图$A_{feat}$），权重为结点属性向量之间余弦相似度
 		\item $A_{fusion}=A_{topo}+\beta A_{feat}$
 	\end{itemize}
-	\item 谱粗化(spectral coarsening)：降维，取特征值大的重构
+	\item 谱粗化(spectral coarsening)：在谱图上做低通滤波，取前$k$大特征值进行重构
 	\item 图嵌入：用现有图嵌入方法对粗化后的图做嵌入，主要是基于随机游走或GNN的方法
-	\item 嵌入细化：拉普拉斯平滑，映射回原图每一个结点
+	\item 嵌入细化：拉普拉斯平滑后，映射回原图每一个结点
 \end{enumerate}
 \begin{figure}[H]
 \centering
@@ -158,21 +166,19 @@ P-GNN采用锚点(anchor)集的方式，每次在全图采样随机数目的点�
 \end{figure}
 
 这种方法很大程度上解决了可扩展性的问题，也证明了多尺度学习方法的有效性。
-但是这种变化的过程中很可能图的全局结构被破坏了。
+GraphZoom的核心问题在于变换过程中的信息保存度，降维后的图必然会丢失信息，那重要的那些位置信息是否丢失了，这是值得思考的。
 
 \section{我们的方法}
 既要维护位置信息，又要保持高可扩展性，意味着我们的方法不能太复杂。
-维护位置信息需要兼顾局部和全局，保持高可扩展性又需要。
-那么可以有以下两点：
+维护位置信息需要兼顾局部和全局，保持高可扩展性又需要不能太关注于细节。
+那么可以有以下两点研究思路：
 \begin{itemize}
 \item \textbf{高采样效率$\to$宽搜广搜结合}：P-GNN采用了一种非常随机的采样方式，尽管覆盖到了大锚点集也覆盖到小锚点集，但是效率太低，采用$k$截断算距离意味着大多数锚点集都是没有用的。
 其实P-GNN的作者已经提到随机游走和GNN的问题，那么最直接的想法应该是将这两者结合。
 可以参照node2vec~\cite{grover:node2vec_kdd_2016}，采用BFS+DFS的方式来进行采样，而这两者的通信代价都只有$O(|E|)$。
 \item \textbf{高可扩展性$\to$多尺度降维与恢复}：
-降维不失为一种提速的方式，但是核心问题在于在降维后的图准确率会降低。
-因此怎么降以及怎么恢复是需要考虑的。
-很多传统CNN的技术，可以尝试挪过来GNN这边使用。
-比如考虑类似UNet的架构，在恢复过程中复用前面的结果。
+降维不失为一种提速的方式，但是核心问题在于在降维后的图中的信息会丢失，因此怎么降以及怎么恢复是需要考虑的。
+很多传统CNN的技术，可以尝试挪过来GNN这边使用，比如可以考虑类似UNet的架构，在恢复过程中复用前面的结果。
 \end{itemize}
 
 \bibliographystyle{IEEEtran}
