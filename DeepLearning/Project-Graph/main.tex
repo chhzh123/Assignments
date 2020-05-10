@@ -11,7 +11,8 @@
 \maketitle
 
 \section{简介}
-图嵌入(graph embedding)包括对结点、边或（子）图进行编码映射至低维向量空间，是很多下游预测任务的基础，包括结点分类、连边预测、社群检测等\footnote{如无特殊说明，下文说的图嵌入都是指结点嵌入。由结点嵌入生成边或子图的嵌入也是容易的，因此大多数工作都着重于结点嵌入的研究。}。
+图嵌入(graph embedding)包括对结点、边或（子）图进行编码映射至低维向量空间，是很多下游预测任务的基础，包括结点分类(node classification)，图分类(graph classification)，连边预测(link prediction)，图的翻译与生成(graph translation and generation)等\footnote{如无特殊说明，下文说的图嵌入都是指结点嵌入。由结点嵌入生成边或子图的嵌入也是容易的，因此大多数工作都着重于结点嵌入的研究。}。
+%，社群检测（community detection）应该也属于node prediction的一种
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{fig/graph_embedding_intro.png}
@@ -23,15 +24,31 @@
 现在较多使用后两种方法，随机游走通常限制于转导(transductive)的设定，训练测试集属于同一个图；图神经网络则可以用于归纳(inductive)的设定，泛化能力强，可轻松适应未知的图/结点，因而GNN现在也成为应用和研究的热点。
 % inductive个例到一般，可泛化
 % transductive个例到个例，无法迁移到新输入
-GNN已经在推荐系统\cite{zhu:aligraph_vldb_2019}、生物医学、程序综合、语义分割、逻辑推断等大量场景得到广泛应用。
-% 阿里巴巴的电商平台现在部署了大量的GNN，包括GATNE[KDD'19]、Mixture GNN[KDD'19]、Hierarchical GNN[IJCAI'19]、Evolving GNN[IJCAI'19]等，在他们的推荐系统中起到至关重要的作用。不仅仅是阿里巴巴，其他互联网公司如Google、Twitter、Pinterest等，也面临着将这些GNN部署到\textbf{云端}高效执行的问题。
-% 另外，计算机视觉领域最近大量采用GNN进行目标检测及语义分割，包括朱松纯老师的GPNN[ECCV'18]、梁小丹老师的SGR[NeurIPS'18]、代季峰老师的Relation Network[CVPR'18]等，这些模型在部署上\textbf{边缘}设备时必然也会产生模型过大、响应延迟高等问题。
-
-但目前的GNN存在以下的问题：
+GNN已经在推荐系统，计算机视觉，自然语言处理，化学医药，程序综合，逻辑推断等大量场景得到广泛应用。
 \begin{itemize}
-\item 从通用的图计算角度来讲，图具有不规则/非欧(non-Euclidean)结构和幂律分布(power-law)等特性，这与传统深度学习的稠密计算有着巨大差别，可扩展性差，没有办法处理大图。
+    \item 推荐系统：
+    阿里巴巴的电商平台现在部署了大量的GNN\cite{zhu:aligraph_vldb_2019}，包括GATNE[KDD'19]、Mixture GNN[KDD'19]、Hierarchical GNN[IJCAI'19]、Evolving GNN[IJCAI'19]等，在他们的推荐系统中起到至关重要的作用。不仅仅是阿里巴巴，国外的互联网公司如Google、Twitter、Pinterest等，国内的微信和字节跳动也都尝试在他们的产品线上部署各式各样的GNN。
+    
+    \item 计算机视觉：
+    近年来，越来越多的研究者将图网络技术拓展到不同的视觉任务中。场景理解一直是计算机视觉中的重要课题。Danfei Xu等人在场景图生成(scene graph generation)技术的基础上，首次通过消息传递机制(message passing)更好地利用上下文来预测物体和物体间关系\cite{Xu:sgg_cvpr_2017}。
+    不过，随着场景的增大，需要解析的语义增多，将很大程度影响到场景图生成的质量与效率。
+    随着雷达(LiDAR)、Kinect设备的开发，点云数据处理引起了人们的广泛关注，Yue Wang等开发了一种EdgeConv算法\cite{wang:dgcnn_tog_2018}，很好的克服了点云学习中常见的排列不变性问题(permutation invariance)。然而，一个较大物体的点云可能是以万计，而在自动驾驶等领域应用的雷达探测技术，点的数目更是庞大，现有的算法往往是通过迭代最远点等算法进行采样，处理的点往往只有几千个。
+    
+    人体骨架(human skeletons)是一种自然的图结构。在行为识别(action recognition)领域，很多研究者利用GNN技术，对骨架序列的时态图与空间图建模，代表作有Sijie Yan等的\cite{yan:action_aaai_2018}, 以及Ashesh Jain等的\cite{jain:action_cvpr_2016}等等。当我们想捕捉人群行为特征时，很多现有的算法往往是通过单帧分析的方式，很难关注到更长时间的动作。此外，人与人间的交互会产生一系列很难学习的动作，由于算法首先需要识别出哪些点属于同一个人。
+
+    另外，还有采用GNN进行目标检测及语义分割的研究，包括Siyuan Qi等的GPNN[ECCV'18]、Xiaodan Liang等的SGR[NeurIPS'18]、Jifeng Dai等的Relation Network[CVPR'18]等。
+    
+    \item{化学医药}：在化学与生物制药领域，近年来研究者利用GNN技术，研究了一系列包括化合物预测，化学键预测，化合物性质预测，有机合成预测等问题。代表性作品有：David K. Duvenaud等人的\cite{david:conv_nips_2015}，Nicola De Cao等人的\cite{nicola:molgan_icml_2018}。
+    
+    % \item 自然语言处理：
+    % Liang Yao等利用图卷积神经网络来做文本分类[AAAI'19]
+\end{itemize}
+
+尽管目前GNN的发展速度迅猛，但是现有的GNN模型依然存在以下的问题：
+\begin{itemize}
+\item 从通用的图计算角度来讲，图具有不规则/非欧(non-Euclidean)结构和幂律分布(power-law)等特性，这与传统深度学习的稠密计算有着巨大差别，\textbf{可扩展性差}，没有办法处理大图。
 然而现实世界中的社交网络、商品网络往往都是非常庞大的，要在这些图上采用GNN，算法复杂度一定是一个需要考虑的问题。
-\item 从学习表示的角度来讲，现有的GNN更多捕获的是局部结构特征，而丧失了全局的相对位置信息。
+\item 从学习表示的角度来讲，现有的GNN更多捕获的是局部结构特征，而丧失了\textbf{全局的相对位置信息}。
 这会导致GNN无法很好辨别同构子图结点，在一些预测任务上给出错误的结果。
 一个简单的例子，一家三口在社交网络上呈现出来的都是三角形，但是GNN会认为所有这些三角形都是等同的（所有家庭没有区别），做图嵌入时会将这三个结点映射到同样的向量表示。
 \end{itemize}
@@ -168,7 +185,7 @@ d_{sp}(u,v) & d_{sp}(u,v)\leq q\\
 这种方法很大程度上解决了可扩展性的问题，也证明了多尺度学习方法的有效性。
 GraphZoom的核心问题在于变换过程中的信息保存度，降维后的图必然会丢失信息，那重要的那些位置信息是否丢失了，这是值得思考的。
 
-\section{我们的方法}
+\section{我们的初步想法}
 既要维护位置信息，又要保持高可扩展性，意味着我们的方法不能太复杂。
 维护位置信息需要兼顾局部和全局，保持高可扩展性又需要不能太关注于细节。
 那么可以有以下两点研究思路：
@@ -178,7 +195,7 @@ GraphZoom的核心问题在于变换过程中的信息保存度，降维后的�
 可以参照node2vec~\cite{grover:node2vec_kdd_2016}，采用BFS+DFS的方式来进行采样，而这两者的通信代价都只有$O(|E|)$。
 \item \textbf{高可扩展性$\to$多尺度降维与恢复}：
 降维不失为一种提速的方式，但是核心问题在于在降维后的图中的信息会丢失，因此怎么降以及怎么恢复是需要考虑的。
-很多传统CNN的技术，可以尝试挪过来GNN这边使用，比如可以考虑类似UNet的架构，在恢复过程中复用前面的结果。
+很多传统CNN的技术，可以尝试挪过来GNN这边使用，比如可以考虑类似UNet的架构，在恢复过程中做跳连(skip connection)，充分利用不同尺度的结果。
 \end{itemize}
 
 \bibliographystyle{IEEEtran}
