@@ -1,4 +1,6 @@
-TARGET = test
+TARGET = lex
+
+.PHONY: all clean test
 
 all: $(TARGET)
 
@@ -8,6 +10,8 @@ $(TARGET): lex.yy.c
 lex.yy.c: $(TARGET).l
 	lex $<
 
-.PHONY: clean
+test: lex_test.cpp
+	g++ lex_test.cpp -o lex_test
+
 clean:
-	-rm lex.yy.c $(TARGET)
+	-rm lex.yy.c $(TARGET) lex_test
