@@ -1,0 +1,136 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+\usepackage{forest}
+
+\usetikzlibrary{automata,backgrounds,fit,shapes,positioning}
+
+\tikzset{->, % makes the edges directed
+>=stealth, % makes the arrow heads bold
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+every state/.style={thick, fill=gray!10}, % sets the properties for each 'state' node
+}
+
+\title{编译原理作业四}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{编译原理作业}
+
+% May 14 -> May 19
+
+\begin{document}
+
+\maketitle
+
+\begin{question}
+用上下文无关文法描述下列语言：
+\begin{enumerate}
+	\item 定义在字母表$\Sigma=\{a, b\}$上，所有首字符和尾字符相同的非空字符串.
+	\item $L=\{0^i1^j\mid i\leq j\leq 2i\text{且}i\geq 0\}$.
+	\item 定义在字母表$\Sigma=\{0, 1\}$上，所有含有相同个数的$0$和$1$的字符串（包括空串）.
+\end{enumerate}
+\end{question}
+\begin{answer}
+\begin{enumerate}
+	\item $E\to a\mid b\mid aTa\mid bTb$\\
+	$T\to aT\mid bT\mid\epsilon$
+	\item $E\to 0E1\mid 0E11\mid\epsilon$
+	\item $E\to EE\mid 0E1\mid 1E0\mid\epsilon$
+\end{enumerate}
+\end{answer}
+
+\begin{question}
+考虑以下文法：
+\[\begin{aligned}
+S&\to aABe\\
+A&\to Abc\mid b\\
+B&\to d
+\end{aligned}\]
+\begin{enumerate}
+	\item 用最左推导(leftmost derivation)推导出句子$abbcde$.
+	\item 用最右推导(rightmost derivation)推导出句子$abbcde$.
+	\item 画出句子$abbcde$对应的分析树(parse tree).
+\end{enumerate}
+\end{question}
+\begin{answer}
+\begin{enumerate}
+	\item $S\implies aABe\implies aAbcBe\implies abbcBe\implies abbcde$
+	\item $S\implies aABe\implies aAde\implies aAbcde\implies abbcde$
+	\item 语法分析树如下
+\begin{center}
+\begin{forest}
+[S
+	[a]
+	[A
+		[A
+			[b]
+		]
+		[b]
+		[c]
+	]
+	[B
+		[d]
+	]
+	[e]
+]
+\end{forest}
+\end{center}
+\end{enumerate}
+\end{answer}
+
+\begin{question}
+\[\begin{aligned}
+S &\to aSb\\
+S &\to aS\\
+S &\to \epsilon
+\end{aligned}\]
+\begin{enumerate}
+	\item 这一文法产生什么语言（用自然语言描述）？
+	\item 证明这一文法是二义的.
+	\item 写出一个新的文法，要求新文法无二义且和上述文法产生相同的语言.
+\end{enumerate}
+\end{question}
+\begin{answer}
+\begin{enumerate}
+	\item 连续$n$个$a$后紧跟$m$个$b$的字符串，且满足$n\geq m$
+	\item 对于输入$aab$，有以下两棵不同的语法分析树，因此这一文法是二义的\\
+\begin{minipage}{0.5\linewidth}
+\begin{center}
+\begin{forest}
+[S
+	[a]
+	[S
+		[a]
+		[S
+			[$\epsilon$]
+		]
+	]
+	[b]
+]
+\end{forest}
+\end{center}
+\end{minipage}
+\begin{minipage}{0.5\linewidth}
+\begin{center}
+\begin{forest}
+[S
+	[a]
+	[S
+		[a]
+		[S
+			[$\epsilon$]
+		]
+		[b]
+	]
+]
+\end{forest}
+\end{center}
+\end{minipage}
+	\item $S\to aSb\mid T$\\
+	$T\to aT\mid\epsilon$
+\end{enumerate}
+\end{answer}
+
+\end{document}
