@@ -20,8 +20,8 @@ using namespace std;
 //         otherwise, an error indication.
 
 bool is_terminal(char c) {
-    // return (c == '+' || c == '-' || isdigit(c));
-    return !(c == 'E' || c == 'e' || c == 'T' || c == 't' || c == 'F');
+    return (c == '+' || c == '-' || isdigit(c) || c == '(' || c == ')');
+    // return !(c == 'E' || c == 'e' || c == 'T' || c == 't' || c == 'F');
 }
 
 int main() {
@@ -73,30 +73,18 @@ int main() {
                     matched += a;
                 stk.pop();
                 last_str = stack_str[stack_str.size()-1];
-                stack_str.push_back(last_str.substr(1,stack_str.size()-1));
+                stack_str.push_back(last_str.substr(1,last_str.size()-1));
                 ip++;
-            } else if (is_terminal(X) ||
-                       M.count(X) == 0 ||
-                       M[X].count(a) == 0) {
-                flag = true;
-                break;
-            } else { // M[X][a] = X -> Y1Y2...Yk
-                // cout << X << "->";
-                // for (auto it = M[X][a].begin(); it != M[X][a].end(); ++it)
-                //     if (*it == 'e')
-                //         cout << "E'";
-                //     else if (*it == 't')
-                //         cout << "T'";
-                //     else if (*it == 'i')
-                //         cout << str[ip];
-                //     else if (*it == 'p')
-                //         cout << "[e]";
-                //     else
-                //         cout << *it;
-                // cout << endl;
+            // } else if (is_terminal(X) ||
+            //            M.count(X) == 0 ||
+            //            M[X].count(a) == 0) {
+            //     flag = true;
+            //     break;
+            // } else { // M[X][a] = X -> Y1Y2...Yk
+            } else if (M.count(X) != 0 && M[X].count(a) != 0) {
                 last_str = stack_str[stack_str.size()-1];
                 stk.pop();
-                last_str = last_str.substr(1,stack_str.size()-1);
+                last_str = last_str.substr(1,last_str.size()-1);
                 for (auto it = M[X][a].rbegin(); it != M[X][a].rend(); ++it)
                     if (*it != 'p') { // epsilon
                         stk.push(*it);
@@ -104,6 +92,9 @@ int main() {
                     }
                 stack_str.push_back(last_str);
                 results.push_back(matched + last_str);
+            } else {
+                flag = true;
+                break;
             }
             X = stk.top();
         }
