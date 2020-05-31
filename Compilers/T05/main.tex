@@ -1,0 +1,123 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+\usepackage{forest}
+
+\usetikzlibrary{automata,backgrounds,fit,shapes,positioning}
+
+\tikzset{->, % makes the edges directed
+>=stealth, % makes the arrow heads bold
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+every state/.style={thick, fill=gray!10}, % sets the properties for each 'state' node
+}
+
+\title{编译原理作业五}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{编译原理作业}
+
+% May 26 -> May 31
+
+\begin{document}
+
+\maketitle
+
+\begin{question}
+考虑以下文法：
+\[\begin{aligned}
+S &\to aTUV \mid bV\\
+T &\to U \mid UU\\
+U &\to \epsilon \mid bV\\
+V &\to \epsilon \mid cV
+\end{aligned}\]
+写出每个非终端符号的FIRST集和FOLLOW集.
+\end{question}
+\begin{answer}
+由文法可得
+\[\begin{array}{rlrl}
+FIRST(S) &= \{a,b\} & FOLLOW(S) &= \{\$\}\\
+FIRST(T) &= \{\epsilon,b\} & FOLLOW(T) &= \{b,c,\$\}\\
+FIRST(U) &= \{\epsilon,b\} & FOLLOW(U) &= \{b,c,\$\}\\
+FIRST(V) &= \{\epsilon,c\} & FOLLOW(V) &= \{b,c,\$\}\\
+\end{array}\]
+\end{answer}
+
+\begin{question}
+考虑以下文法：
+\[\begin{aligned}
+S &\to (L) \mid a\\
+L &\to L, S \mid S
+\end{aligned}\]
+\begin{enumerate}
+	\item 消除文法的左递归.
+	\item 构造文法的LL(1)分析表.
+	\item 对于句子$(a, (a, a))$，给出语法分析的详细过程（参照课本228页的图4.21）.
+\end{enumerate}
+\end{question}
+\begin{answer}
+\begin{enumerate}
+	\item 如下
+	\[\begin{aligned}
+	S &\to (L)\mid a\\
+	L &\to SL'\\
+	L' &\to , SL'\mid\epsilon
+	\end{aligned}\]
+	\item 先求出FIRST集和FOLLOW集（由于文法中存在逗号，故将字符用引号括起来以示区分）
+	\[\begin{array}{rlrl}
+	FIRST(S) &= \{'(','a'\} & FOLLOW(S) &= \{'\$',')'\}\\
+	FIRST(L) &= \{'(','a'\} & FOLLOW(L) &= \{')'\}\\
+	FIRST(L') &= \{',',\epsilon\} & FOLLOW(L') &= \{')'\}
+	\end{array}\]
+	LL(1)分析表如下，其中第一列为非终端符号，第一行为输入符号.
+	\begin{center}
+	\begin{tabular}{|c|c|c|c|c|c|}\hline
+	 & $($ & $)$ & $a$ & $,$ & \$\\\hline
+	S & $S\to(L)$ & & $S\to a$ & &\\\hline
+	L & $L\to SL'$ & & $L\to SL'$ & &\\\hline
+	L' & & $L'\to\epsilon$ & & $L'\to,SL'$ & \\\hline
+	\end{tabular}
+	\end{center}
+	\item 语法分析过程如下
+	\begin{center}
+	\begin{tabular}{|l|r|r|l|}\hline
+	Matched & Stack & Input & Action\\\hline
+	 & $S\$$ & $(a,(a,a))\$$ & \\\hline
+	 & $(L)\$$ & $(a,(a,a))\$$ & output $S\to (L)$\\\hline
+	$($ & $L)\$$ & $a,(a,a))\$$ & \\\hline
+	$($ & $SL')\$$ & $a,(a,a))\$$ & output $L\to SL'$\\\hline
+	$($ & $aL')\$$ & $a,(a,a))\$$ & output $S\to a$\\\hline
+	$(a$ & $L')\$$ & $,(a,a))\$$ & \\\hline
+	$(a$ & $,SL')\$$ & $,(a,a))\$$ & output $L'\to ,SL'$\\\hline
+	$(a,$ & $SL')\$$ & $(a,a))\$$ & \\\hline
+	$(a,$ & $(L)L')\$$ & $(a,a))\$$ & output $S\to (L)$\\\hline
+	$(a,($ & $L)L')\$$ & $a,a))\$$ & \\\hline
+	$(a,($ & $SL')L')\$$ & $a,a))\$$ & output $L\to SL'$\\\hline
+	$(a,($ & $aL')L')\$$ & $a,a))\$$ & output $S\to a$\\\hline
+	$(a,(a$ & $L')L')\$$ & $,a))\$$ & \\\hline
+	$(a,(a$ & $,SL')L')\$$ & $,a))\$$ & output $L'\to,SL'$\\\hline
+	$(a,(a,$ & $SL')L')\$$ & $a))\$$ & \\\hline
+	$(a,(a,$ & $aL')L')\$$ & $a))\$$ & output $S\to a$\\\hline
+	$(a,(a,a$ & $L')L')\$$ & $))\$$ & \\\hline
+	$(a,(a,a$ & $)L')\$$ & $))\$$ & output $L'\to\epsilon$\\\hline
+	$(a,(a,a)$ & $L')\$$ & $)\$$ & \\\hline
+	$(a,(a,a)$ & $)\$$ & $)\$$ & output $L'\to\epsilon$\\\hline
+	$(a,(a,a))$ & $\$$ & $\$$ & \\\hline
+	\end{tabular}
+	\end{center}
+\end{enumerate}
+\end{answer}
+
+\begin{question}
+考虑以下文法：
+\[S \to aSbS \mid bSaS \mid \epsilon\]
+这一文法是否是LL(1)文法？给出理由.
+\end{question}
+\begin{answer}
+这一文法不是LL(1)文法.
+$S$有产生式$S\to\epsilon$，但可求得$FIRST(S)=\{a,b,\epsilon\}$及$FOLLOW(S)=\{a,b,\$\}$.
+因为$FIRST(S)\cap FOLLOW(S)\ne\varnothing$，故不是LL(1)文法.
+\end{answer}
+
+\end{document}
