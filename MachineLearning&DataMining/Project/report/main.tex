@@ -1,0 +1,80 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[python,pseudo]{mypackage}
+
+\title{机器学习与数据挖掘大作业}
+\subtitle{多标签用户人格分类（集成学习）}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{机器学习与数据挖掘大作业}
+
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\kaiti\em}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\newpage
+MBTI理论认为一个人的个性可以从四个角度进行分析，用字母代表如下：
+\begin{itemize}
+    \item 驱动力的来源：外向E---内向I
+    \item 接受信息的方式：感觉S---直觉N
+    \item 决策的方式：思维T---情感F
+    \item 对待不确定性的态度：判断J---知觉P
+\end{itemize}
+按照不同的组合，可以产生16种人格类型。
+
+本次大作业要求利用机器学习方法，通过用户的发言记录对用户的人格类型进行分类\footnote{数据集链接：\url{https://www.kaggle.com/datasnaek/mbti-type}}。
+
+本实验报告为大作业的第一部分---集成学习方法。
+
+\section{预处理}
+emoji :sad:
+移除网页超链接
+
+\section{集成模型}
+\subsection{数据生成}
+\subsection{模型搭建}
+\subsection{模型训练}
+\subsection{模型预测}
+\subsection{其他实现细节}
+
+\section{实验结果}
+\subsection{超参数选择}
+\subsection{综合比较}
+\section{总结与思考}
+充分利用上学期自然语言处理课程的知识。
+
+\begin{thebibliography}{99}
+
+\end{thebibliography}
+
+\end{document}
+
+% 作业内容：
+% 1. 使用集成学习方法完成人格分类（6月10日）
+% * 对数据进行预处理
+% * 使用集成学习模型(AdaBoost或Random Forest)进行人格分类
+% * 提交报告及代码
+% 2. 使用SVM进行人格分类（6月30日）
+% * 数据预处理
+% * 使用SVM进行人格分类
+% * 提交报告及代码
+% 3. 使用深度学习模型进行人格分类（7月31日）
+% * 数据预处理
+% * 使用深度学习模型（不限）进行人格分类
+% * 提交代码和报告
+% ** 深度学习方法需要有方法上的创新，如果只简单使用开源代码或框架，最多只能拿8分
+% ** 加分项：使用英文撰写报告，设计合理实验（对比不同模型表现/不同超参数对性能的影响），自己撰写模型代码，尽可能少调用工具
+
+% 评价指标：
+% * 单独对每种类别进行评价/整体评价
+% * F1 \& Accuracy
+
+% 评分：
+% * 集成学习方法：8分
+% * SVM方法：8分
+% * 深度学习方法：14分
