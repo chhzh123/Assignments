@@ -189,13 +189,44 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 \subsection{其他实现细节}
 \begin{itemize}
 \item 只使用了基本了numpy和pandas库用于做矩阵运算及数据处理，引入sklearn库仅用于数据集划分及实验对比。
-\item 中间结果用NumPy或pickle文件保存，不用重复进行预处理。
+\item 预处理的中间结果用NumPy或pickle文件保存。重新执行时会先判断文件是否存在，如果存在则直接读取，而不用重复进行预处理。
 \end{itemize}
 
 \section{实验结果}
 
 \subsection{超参数选择}
+如表\ref{tab:hyperparam}所示。
+\begin{table}[H]
+\caption{超参数设置}
+\label{tab:hyperparam}
+\centering
+\begin{tabular}{|c|c|}\hline
+词典中的最小词频 & 5 \\\hline
+随机森林基学习器数目 & 5\\\hline
+决策树最大深度 & 10\\\hline
+训练集测试集比例 & 7:3\\\hline
+\end{tabular}
+\end{table}
+
+生成的特征矩阵维度为$8676\times 27129$，前者为用户数目，后者为词典大小。
+
 \subsection{综合比较}
+如图\ref{fig:distribution}所示。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/distribution.png}
+\caption{用户个性分布}
+\label{fig:distribution}
+\end{figure}
+
+F1及精确度指标如图\ref{fig:f1}所示。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{fig/report.jpg}
+\caption{实验结果}
+\label{fig:f1}
+\end{figure}
+
 \section{总结与思考}
 充分利用上学期自然语言处理课程的知识。
 
