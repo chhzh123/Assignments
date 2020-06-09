@@ -35,10 +35,11 @@ MBTI理论认为一个人的个性可以从四个角度进行分析，用字母�
 
 \section{预处理}
 由于原始数据集为用户在网页上的发言记录，非常随意及杂乱，故做分类任务前的第一步需要灵活应用上学期自然语言处理学过的知识，对数据集进行预处理操作。
-主要分为以下几个步骤。
+主要分为文本清洗、词典生成、词向量生成三个步骤。
 
 \subsection{文本清洗}
-\begin{itemize}
+文本清洗一步依序进行了以下操作。
+\begin{enumerate}
 	\item 标点后强制添加空格。
 	由于是网页发言记录，很多用户可能不会太过在意标点符号后面是否有空格。如果没有添加，则之后删除标点可能会导致前后两个词语粘连。
 	\item 移除网页链接。
@@ -57,13 +58,13 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 \end{lstlisting}
 	注意两条评论之间采用\verb'|||'进行分隔，但我们直接将其移除了，意味着我们并不关心用户发言记录的先后顺序，我们更关心的其说过什么话。
 	\item 移除空格。
-	句子内部空格用正则表达式匹配\verb' +'后用单一空格代替；句子前后的空格用Python内置的\verb'strip'函数即可移除。
+	句子内部空格用正则表达式匹配\verb'" +"'后用单一空格代替；句子前后的空格用Python内置的\verb'strip'函数即可移除。
 	\item 字母小写化。
 	避免计算机认为不同大小写字母构成的为不同的词语，如"Hello"和"hello"两者意思相同，代表的是同一个词，故要进行规范化。
 	\item 移除停止词(stopping words)。
 	这是很多NLP任务中必备的一步，因为停止词并不会带来任何更多语义上的信息。
 	这里采用上学期NLP大作业提供的停止词列表\cite{bib:stopping_words}。
-\end{itemize}
+\end{enumerate}
 
 做完上述预处理后，即可将处理后的用户发言存成文档/列表，文档中的每一行或列表中的每一项即为对应用户所说过的所有词语。
 
@@ -131,7 +132,7 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 
 为了高效实现信息熵和信息增益的计算，我并没有采用Python的裸循环实现，而是利用NumPy的向量化计算方法。
 对照上述公式实现可得到以下代码。
-\lstinputlisting[firstline=227,lastline=252]{../Ensemble.py}
+\lstinputlisting[firstline=228,lastline=253]{../Ensemble.py}
 
 \subsubsection{树结点}
 决策树最基本的单元即树的结点，这里我采用一个\verb'Node'类进行封装。
@@ -147,7 +148,7 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 
 下列代码中已经将上述的三种情况全部标注出来，详情见代码中的注释。
 为了提升泛化能力，这里还提供了预剪枝(pre-pruning)机制。
-\lstinputlisting[firstline=307,lastline=395]{../Ensemble.py}
+\lstinputlisting[firstline=308,lastline=396]{../Ensemble.py}
 
 从代码中可以看到，对特征数据的处理都尽可能采用NumPy的向量化方式，及fancy indexing进行索引，这样能够最大程度提升性能，避免不必要的解释运行开销。
 
@@ -176,7 +177,7 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 \end{algorithm}
 
 完整的随机森林构造如下所示，这里参照了sklearn的API函数签名以方便后续实验对比，但里面的代码均为自己实现。
-\lstinputlisting[firstline=456,lastline=500]{../Ensemble.py}
+\lstinputlisting[firstline=457,lastline=503]{../Ensemble.py}
 
 注意这里还使用了Python的多进程库\verb'multiprocessing'\footnote{之所以不使用多线程是因为Python具有全局解释器锁(Global Interpreter Lock, GIL)，在多线程执行过程中会造成非常大的性能损耗。}来进行并行计算。
 由于每棵决策树的构造过程都是独立的，因此对每棵树分配一个进程即可。
@@ -184,7 +185,7 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 
 \subsection{模型训练与预测}
 有了上述封装好的模块，要进行模型训练与预测就比较容易了，如下调用函数。
-\lstinputlisting[firstline=506,lastline=509]{../Ensemble.py}
+\lstinputlisting[firstline=509,lastline=512]{../Ensemble.py}
 
 \subsection{其他实现细节}
 \begin{itemize}
@@ -193,16 +194,18 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 \end{itemize}
 
 \section{实验结果}
+本次实验的完整代码可见附件中的\verb'Ensemble.ipynb'或由Jupyter Notebook生成的\verb'Ensemble.py'文件。
 
 \subsection{超参数选择}
-如表\ref{tab:hyperparam}所示。
+实验所采用的超参数如表\ref{tab:hyperparam}所示。
+之所以要设置词典最小词频和决策树最大深度，是为了减少特征维度，进而缩短训练时间。
 \begin{table}[H]
 \caption{超参数设置}
 \label{tab:hyperparam}
 \centering
 \begin{tabular}{|c|c|}\hline
 词典中的最小词频 & 5 \\\hline
-随机森林基学习器数目 & 5\\\hline
+随机森林基学习器数目 & 1,3,5,10\\\hline
 决策树最大深度 & 10\\\hline
 训练集测试集比例 & 7:3\\\hline
 \end{tabular}
@@ -211,24 +214,50 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 生成的特征矩阵维度为$8676\times 27129$，前者为用户数目，后者为词典大小。
 
 \subsection{综合比较}
-如图\ref{fig:distribution}所示。
+最终各类别的F1及精确度指标如图\ref{fig:f1}所示，可以看到我的随机森林最终达到了31\%的准确率。
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{fig/distribution.png}
-\caption{用户个性分布}
-\label{fig:distribution}
-\end{figure}
-
-F1及精确度指标如图\ref{fig:f1}所示。
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\linewidth]{fig/report.jpg}
+\includegraphics[width=0.8\linewidth]{fig/report.jpg}
 \caption{实验结果}
 \label{fig:f1}
 \end{figure}
 
+从图中可以看出能够预测准确的基本上都是出现次数比较多的，而对于出现较少的性格基本预测不出。
+这其实很大程度是因为原始数据集各类别的分布不均，如图\ref{fig:distribution}所示。
+该数据集中ESTJ、ESFJ、ESFP等性格出现的次数本来就少，要从仅仅几十个样本中就学出其规律，对于人类来说都很难，更何况是机器，故可以看到这些类别的F1分数均为0。
+如果要处理好这种情况，则可能会涉及到小样本学习(few-shot learning)。
+这已经超出了本次实验的范围，故在此不做更加深入的分析。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/distribution.png}
+\caption{用户个性分布}
+\label{fig:distribution}
+\end{figure}
+
+为了探究不同超参数对模型的影响，我也比较了我自己实现的随机森林与sklearn默认随机森林的结果，如图\ref{fig:hyper}所示。
+可以看到单棵决策树我的性能要比sklearn的性能高几个百分点，但随着决策树数目的增加，sklearn的效果越来越好，并超过我的随机森林的性能。
+这很大程度取决于自助采样的选择以及超参数随机化因子的设定。
+同时由于没有在决策树内部开启并行计算，我实现的版本比sklearn的版本要慢上几个数量级。
+\begin{figure}[H]
+\centering
+\begin{tabular}{cc}
+\includegraphics[width=0.5\linewidth]{fig/accuracy.png}&
+\includegraphics[width=0.5\linewidth]{fig/exe_time.png}
+\end{tabular}
+\caption{不同超参数下准确率与运行时间比较}
+\label{fig:hyper}
+\end{figure}
+
+但总的来说，我的精度与sklearn的精度控制在合理的范围内，并且对于该数据集表现出了较好的泛化能力。
+
 \section{总结与思考}
-充分利用上学期自然语言处理课程的知识。
+本次实验相对来讲比较简单，对于文本数据充分利用上学期自然语言处理课程的知识来进行处理，而难点应该是在后面的手写决策树及随机森林。
+由于有一定的代码量，因此这一部分还是调试了挺长时间。
+为了验证决策树的正确性，还先利用西瓜书里面的数据集进行测试。
+确保没有问题后，才将其运用到此次Kaggle的数据集中。
+
+此次实验还有很多未完善的地方，如未做特征工程（利用PCA等工具先进行降维），未采用更好的词向量模型（如TF-IDF和word2vec），未对样本量较少的类别进行处理等，这些都可以在之后的实验中继续进行补充。
+另外从本次实验中也可以看出NLP相关任务的难度，即使是采用了强大的机器学习模型，但预测准确率依然比较低，不过这也给了之后的实验更大的探索空间。
 
 \begin{thebibliography}{99}
 \bibitem{bib:stopping_words} Stopwords, \url{https://github.com/goto456/stopwords}
