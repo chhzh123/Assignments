@@ -1,5 +1,6 @@
 \documentclass[logo,reportComp]{thesis}
-\usepackage[python,pseudo]{mypackage}
+\usepackage[python,pseudo,linenum]{mypackage}
+\usepackage{pythonhighlight}
 
 \title{机器学习与数据挖掘大作业}
 \subtitle{多标签用户人格分类（集成学习）}
@@ -18,6 +19,7 @@
 \tableofcontents
 
 \newpage
+\section{题目描述}
 MBTI理论认为一个人的个性可以从四个角度进行分析，用字母代表如下：
 \begin{itemize}
     \item 驱动力的来源：外向E---内向I
@@ -63,6 +65,8 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 	这里采用上学期NLP大作业提供的停止词列表\cite{bib:stopping_words}。
 \end{itemize}
 
+做完上述预处理后，即可将处理后的用户发言存成文档/列表，文档中的每一行或列表中的每一项即为对应用户所说过的所有词语。
+
 这里做的操作都比较常规，并没有对该数据集进行特定优化，如果后续作业中想继续对预处理部分进行改进，可以考虑以下几个方面：
 \begin{itemize}
 	\item 表情符号的处理。
@@ -75,16 +79,120 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 	这可能会对后续词频及词向量的生成造成一定影响。
 \end{itemize}
 
+\subsection{生成词典}
+由于机器学习任务通常都是输入数字值，因此需要将单词全部转为数字标号，以便之后更好送入机器学习模型。
+
+主要的操作有以下几步：
+\begin{enumerate}
+	\item 构造词表。
+	将所有用户所说过的词语合并起来即构成词表。
+	\item 词频计数。
+	将Python标准库中的\verb'Counter'作用在词表上，即可得到每个词语的词频。
+	\item 添加未知词标记。
+	NLP任务中常常有未登录词(Out-of-vocabulary, OOV)的情况出现，即在测试集中出现的词语可能并未在训练集中出现。
+	因此需要添加\verb'<UNK>'标记，并将其标号为$0$，以更好处理这种情况。
+	（之后采用更强大的机器学习模型，可能还需要对句子进行对齐处理，这时还需要添加\verb'<PAD>'标记）
+	\item 删除词频过小的词语。
+	词频过小的词语对预测任务并没有带来太多实质性的帮助，同时还会导致特征空间维度过大，因此需要提前将这些词语给删除。
+	\item 依词频排序。
+	对遗留的词语依照词频降序排序。
+	\item 基于词频生成词嵌入。
+	通过读取排序的序号，即可生成词语到数字标号的双向映射。
+\end{enumerate}
+
+完整过程如下面程序所示。
+\lstinputlisting[firstline=102,lastline=115]{../Ensemble.py}
+
+\subsection{生成词向量}
+由于第一次任务较为简单，故这里直接使用词袋模型(Bag of Words, BoW)\cite{bib:bow}构造词向量。
+
+考虑词典中所有词语为$\{w_i\}_{i=1}^M$，其中$M$为词典大小。
+那么对于每一用户$uid$的发言，可构造词向量
+\[\vv_{uid}=\bmat{\sW_{uid}(w_1) & \sW_{uid}(w_2) & \cdots & \sW_{uid}(w_M)}^\T\]
+其中$\sW_{uid}(w_i)$计算用户$uid$中$w_i$出现的次数。
+这里同样可以直接通过Python标准库的\verb'Counter'类进行计数。
+注意这里需要利用前面构造的词典将字符串单词转换为数字标号，如果词典中该词没有出现，则标号为$0$\verb'<UNK>'。
+
+最终构造出来的词袋模型（也即送入机器学习模型的特征）为$N\times M$大小的矩阵，其中$N$为用户数目。
+
 \section{集成模型}
-\subsection{数据生成}
-\subsection{模型搭建}
-\subsection{模型训练}
-\subsection{模型预测}
+下面将介绍构造集成模型并进行训练预测的完整过程。
+这里我采用了随机森林作为集成模型，基学习器为决策树。
+
+\subsection{决策树}
+在本次实验中，我自己实现了ID3决策树，以信息增益作为决策准测，并添加了预剪枝的机制。
+
+\subsubsection{熵与信息增益}
+依据信息熵的定义，假定当前样本集合$D$中第$k$类样本所占的比例为$p_k(k=1,2,\ldots,|\mathcal{Y}|)$，则$D$的信息熵为
+\[\mathrm{Ent}(D)=-\sum_{k=1}^{|\mathcal{Y}|}p_k\log_2 p_k\]
+
+又假定离散属性$a$有$V$个可能的取值$\{a^1,a^2,\ldots,a^V\}$，若使用$a$来对样本集$D$进行划分，则会产生$V$个分支结点，其中第$v$个分支结点包含了$D$中所有在属性$a$上取值为$a^v$的样本，记为$D^v$，进而可计算出信息增益
+\[\mathrm{Gain}(D,a)=\mathrm{Ent}(D)-\sum_{v=1}^V\frac{|D^v|}{|D|}\mathrm{Ent}(D^v)\]
+
+为了高效实现信息熵和信息增益的计算，我并没有采用Python的裸循环实现，而是利用NumPy的向量化计算方法。
+对照上述公式实现可得到以下代码。
+\lstinputlisting[firstline=227,lastline=252]{../Ensemble.py}
+
+\subsubsection{树结点}
+决策树最基本的单元即树的结点，这里我采用一个\verb'Node'类进行封装。
+其中可以设置是叶子(leaf)结点还是分支(branch)结点，并用字典存储其孩子对象，方便后续的访问及遍历。
+\lstinputlisting[firstline=258,lastline=280]{../Ensemble.py}
+
+\subsubsection{树构造}
+依照西瓜书中给出的决策树算法，可以对应写出\verb'TreeGenerate'函数。
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{fig/dt_pseudo.jpg}
+\end{figure}
+
+下列代码中已经将上述的三种情况全部标注出来，详情见代码中的注释。
+为了提升泛化能力，这里还提供了预剪枝(pre-pruning)机制。
+\lstinputlisting[firstline=307,lastline=395]{../Ensemble.py}
+
+从代码中可以看到，对特征数据的处理都尽可能采用NumPy的向量化方式，及fancy indexing进行索引，这样能够最大程度提升性能，避免不必要的解释运行开销。
+
+另外，在代码第24行引入了随机化特征选择，这会在下面的部分进行叙述。
+
+\subsection{随机森林}
+随机森林如算法\ref{alg:rf}所示。
+这里有几个关键点：
+\begin{itemize}
+	\item 在决策树特征选取过程中引入随机化因素。
+	原来的决策树是在当前结点的所有属性值中挑选最优的一个，现在则是从当前结点所有属性值中先挑选$k$个，再从这$k$个中选择最优的一个。
+	这里$k$取$\lfloor\log_2 d\rfloor+1$，其中$d$为属性数目。
+	\item 采用自助采样法(bootstrap sampling)对输入的训练集进行选择，同样是提升泛化能力的有效机制。
+	\item 最终利用bagging的方式进行预测，具体实现中采用了简单投票法。
+\end{itemize}
+\begin{algorithm}
+\caption{Random Forest (Bagging)}
+\label{alg:rf}
+\begin{algorithmic}[1]
+\For{$t=1,2,\ldots,T$}
+\State Use bootstrap sampling to generate $\mathcal{D}_{bs}$
+\State $h_t=RF(\mathcal{D}_{bs})$
+\EndFor
+\State \Return $\displaystyle H(\vx)=\argmax_{y\in\mathcal{Y}}\sum_{t=1}^T\vone(h_t(\vx)=y)$
+\end{algorithmic}
+\end{algorithm}
+
+完整的随机森林构造如下所示，这里参照了sklearn的API函数签名以方便后续实验对比，但里面的代码均为自己实现。
+\lstinputlisting[firstline=456,lastline=500]{../Ensemble.py}
+
+注意这里还使用了Python的多进程库\verb'multiprocessing'\footnote{之所以不使用多线程是因为Python具有全局解释器锁(Global Interpreter Lock, GIL)，在多线程执行过程中会造成非常大的性能损耗。}来进行并行计算。
+由于每棵决策树的构造过程都是独立的，因此对每棵树分配一个进程即可。
+进程与进程之间直接采用文件进行通信。
+
+\subsection{模型训练与预测}
+有了上述封装好的模块，要进行模型训练与预测就比较容易了，如下调用函数。
+\lstinputlisting[firstline=506,lastline=509]{../Ensemble.py}
+
 \subsection{其他实现细节}
-中间结果文件保存
+\begin{itemize}
+\item 只使用了基本了numpy和pandas库用于做矩阵运算及数据处理，引入sklearn库仅用于数据集划分及实验对比。
+\item 中间结果用NumPy或pickle文件保存，不用重复进行预处理。
+\end{itemize}
 
 \section{实验结果}
-只使用了基本了numpy和pandas库用于做矩阵运算及数据处理。
 
 \subsection{超参数选择}
 \subsection{综合比较}
@@ -92,7 +200,8 @@ new_post = new_post.translate(str.maketrans('', '', string.punctuation))
 充分利用上学期自然语言处理课程的知识。
 
 \begin{thebibliography}{99}
-\bibitem{bib:stopping_words}
+\bibitem{bib:stopping_words} Stopwords, \url{https://github.com/goto456/stopwords}
+\bibitem{bib:bow} Bag of words model, \url{https://en.wikipedia.org/wiki/Bag-of-words_model}
 \end{thebibliography}
 
 \end{document}
