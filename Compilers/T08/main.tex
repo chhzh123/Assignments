@@ -1,0 +1,117 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+\usepackage{forest}
+
+\usetikzlibrary{automata,backgrounds,fit,shapes,positioning}
+
+\tikzset{->, % makes the edges directed
+>=stealth, % makes the arrow heads bold
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+every state/.style={thick, fill=gray!10}, % sets the properties for each 'state' node
+}
+
+\forestset{
+sn edges/.style={for tree={edge={-}}}
+}
+
+\title{编译原理作业八}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{编译原理作业}
+
+% June 16 -> June 21
+
+\begin{document}
+
+\maketitle
+
+\begin{question}
+考虑以下语法制导定义(Syntax Directed Definition)：
+\begin{center}
+\begin{tabular}{|l|l|}\hline
+\multicolumn{1}{|c|}{语法规则} & \multicolumn{1}{c|}{语义规则}\\\hline
+$S \to ABCD$ & $S.val = A.val + B.val + C.val + D.val$\\\hline
+$A \to gBa$ & $A.val = B.val * 5$\\\hline
+$B \to B_1b$ & $B.val = B_1.val * 2$\\\hline
+$B \to b$ & $B.val = 2$\\\hline
+$C \to C_1c$ & $C.val = C_1.val * 3$\\\hline
+$C \to c$ & $C.val = 3$\\\hline
+$D \to d$ & $D.val = 1$\\\hline
+\end{tabular}
+\end{center}
+对于输入串$gbbabbccd$构造带注释的分析树(annotated parse tree).
+\end{question}
+\begin{answer}
+带注释的分析树如下
+\begin{center}
+\begin{forest}
+sn edges
+[{$S.val=20+4+9+1=34$}
+	[{$A.val=4*5=20$}
+		[{$\mathbf{g}$}]
+		[{$B.val=2*2=4$}
+			[{$B.val=2$}
+				[{$\mathbf{b}$}]
+			]
+			[{$\mathbf{b}$}]
+		]
+		[{$\mathbf{a}$}]
+	]
+	[{$B.val=2*2=4$}
+		[{$B.val=2$}
+			[{$\mathbf{b}$}]
+		]
+		[{$\mathbf{b}$}]
+	]
+	[{$C.val=3*3=9$}
+		[{$C.val=3$}
+			[{$\mathbf{c}$}]
+		]
+		[{$\mathbf{c}$}]
+	]
+	[{$D.val=1$}
+		[{$\mathbf{d}$}]
+	]
+]
+\end{forest}
+\end{center}
+\end{answer}
+
+\begin{question}
+以下文法定义了二进制浮点数常量的语法规则：
+\[\begin{aligned}
+S &\to L.L \mid L\\
+L &\to LB \mid B\\
+B &\to 0 \mid 1
+\end{aligned}\]
+试给出一个$S$属性的语法制导定义，其作用是求出该二进制浮点数的十进制值，并存放在开始符号$S$相关联的一个综合属性$value$中。
+例如，对于输入串$101.101$，$S$的$value$属性值结果应该是$5.625$。
+要求在编写语法制导定义时，不得改写文法！
+\end{question}
+\begin{answer}
+语法制导定义如下，按照二进制和十进制转换规则编写即可。
+\begin{center}
+\begin{tabular}{|l|l|}\hline
+\multicolumn{1}{|c|}{语法规则} & \multicolumn{1}{c|}{语义规则}\\\hline
+$S\to L_1.L_2$ & $S.value=L_1.value+L_2.value * 2^{-L_2.length}$\\\hline
+$S\to L$ & $S.value=L.value$\\\hline
+$L\to L_1B$ &
+\begin{tabular}{l}
+$L.value = L_1.value*2 + B.value$\\
+$L.length = L_1.length + 1$
+\end{tabular}\\\hline
+$L\to B$ &
+\begin{tabular}{l}
+$L.value = B.value$\\
+$L.length = 1$
+\end{tabular}\\\hline
+$B\to 0$ & $B.value=0$\\\hline
+$B\to 1$ & $B.value=1$\\\hline
+\end{tabular}
+\end{center}
+\end{answer}
+
+\end{document}
