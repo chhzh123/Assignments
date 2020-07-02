@@ -31,6 +31,7 @@ int main() {
     float *sample, *result;
     while (getNextSample(stream, &width, &height, &sample) != 0) {
         size = width * height;
+        printf("%d * %d\n", width, height);
 
         if (printSample) {
             // Print out a small portion of the sample

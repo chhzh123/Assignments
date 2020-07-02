@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 // kernel is an element-wise kernel function for demonstrating purpose only.
-extern __global__ void kernel(int size, float *input, float *output);
+extern __global__ void kernel(int size, int width, int height, float *input, float *output);
 
 /*
  * In general, you don't need to modify the lines below to finish hw1.
