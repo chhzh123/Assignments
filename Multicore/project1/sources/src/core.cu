@@ -1,5 +1,27 @@
+/*
+ * This code is part of the hw1 of multicore programming in SYSU
+ * Copyright (c) 2020 Hongzheng Chen
+ * Email: chenhzh37@mail2.sysu.edu.cn
+ * 
+ * This file is the kernel part of CUDA implementation
+ * that calculates the central entropy of each point in a matrix.
+ *
+ * This code is a baseline. Only constant lookup table is added,
+ * and no other optimizations are enabled.
+ */
+
 #include "core.h"
 
+/*!
+ * Core execution part of CUDA
+ *   that calculates the central entropy of each point.
+ * \param size The size of the input matrix.
+ * \param width The width of the input matrix.
+ * \param height The height of the input matrix.
+ * \param input The input matrix.
+ * \param output The output matrix.
+ * \return void. Results will be put in output.
+ */
 __global__ void kernel(int size, int width, int height, float *input, float *output) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
@@ -18,15 +40,24 @@ __global__ void kernel(int size, int width, int height, float *input, float *out
             }
         float sum = 0;
         for (int i = 0; i < 16; ++i) {
-            float ni = cnt[i];
+            int ni = cnt[i];
             if (ni != 0) {
-                sum += ni * logf(ni);
+                sum += ni * log_table[ni];
             }
         }
-        output[idx] = -sum / valid + logf(valid);
+        output[idx] = -sum / valid + log_table[valid];
     }
 }
 
+/*!
+ * Wrapper of the CUDA kernel
+ *   used to be called in the main function
+ * \param width The width of the input matrix.
+ * \param height The height of the input matrix.
+ * \param sample The input matrix.
+ * \param result The output matrix.
+ * \return void. Results will be put in result.
+ */
 void cudaCallback(int width, int height, float *sample, float **result) {
     int size = width * height;
     float *input_d, *output_d;

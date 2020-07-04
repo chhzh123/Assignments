@@ -11,7 +11,7 @@ int printResult = 1;
  */
 
 // The relative path to the data file
-char *dataPath = "./data.bin";
+char *dataPath = "../data.bin";
 // The relative path to the output results
 char *outputPath = "./results.csv";
 
