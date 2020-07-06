@@ -2,6 +2,7 @@
 #define _INCL_CORE
 
 #include <stdio.h>
+#include <math.h>
 
 // kernel is an element-wise kernel function for demonstrating purpose only.
 extern __global__ void kernel(int size, int width, int height, float *input, float *output);

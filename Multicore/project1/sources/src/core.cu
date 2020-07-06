@@ -11,6 +11,7 @@
  */
 
 #include "core.h"
+// #define LOOKUP
 
 /*!
  * Core execution part of CUDA
@@ -29,6 +30,7 @@ __global__ void kernel(int size, int width, int height, float *input, float *out
         int valid = 0;
         int x = idx % width;
         int y = idx / width;
+        // each thread first counts the histogram of idx
         for (int i = -2; i < 3; ++i)
             for (int j = -2; j < 3; ++j) {
                 if (y + i >= 0 && y + i < height &&
@@ -38,14 +40,23 @@ __global__ void kernel(int size, int width, int height, float *input, float *out
                     valid++;
                 }
             }
+        // calculate entropy
         float sum = 0;
         for (int i = 0; i < 16; ++i) {
             int ni = cnt[i];
             if (ni != 0) {
+                #ifdef LOOKUP
                 sum += ni * log_table[ni];
+                #else
+                sum += ni * logf(ni);
+                #endif
             }
         }
+        #ifdef LOOKUP
         output[idx] = -sum / valid + log_table[valid];
+        #else
+        output[idx] = -sum / valid + logf(valid);
+        #endif
     }
 }
 
