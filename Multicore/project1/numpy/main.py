@@ -5,7 +5,7 @@ KERNEL_SIZE = 5
 HALF_KERNEL = 2
 
 cnt = 0
-data = open("data.bin","rb")
+data = open("../data.bin","rb")
 samples = []
 while True:
     chunk = data.read(4)
@@ -28,12 +28,20 @@ def calculate(arr):
             res[i][j] = -np.sum(counts_elements * np.log(counts_elements)) / size + np.log(size)
     return res
 
+def print_arr(arr):
+    for i in range(arr.shape[0]):
+        for j in range(arr.shape[1]):
+            print("{:>8.5f}".format(arr[i][j]), end=" ")
+        print()
+
 for sample in samples:
     height, width = sample.shape
     start = time.time()
     result = calculate(sample)
     end = time.time()
     print(sample.shape)
-    print("sample:\n",sample[height-5:,width-5:])
-    print("result:\n",result[height-5:,width-5:])
+    print("sample:")
+    print_arr(sample[height-5:,width-5:])
+    print("result:")
+    print_arr(result[height-5:,width-5:])
     print("numpyCallback: {:.2f} ms\n".format((end - start) * 1000))
