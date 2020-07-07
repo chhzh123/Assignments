@@ -18,6 +18,10 @@
 \DeclareTextFontCommand{\emph}{\kaiti\em}
 \AtBeginEnvironment{quote}{\kaiti\small}
 
+\def\globalmem{\textcolor{black}{\kaiti 全局内存}}
+\def\sharedmem{\textcolor{red}{\kaiti 共享内存}}
+\def\constmem{\textcolor{blue}{\kaiti 常量内存}}
+
 \begin{document}
 
 \maketitle
@@ -46,18 +50,35 @@
 \begin{itemize}
     \item 对于核函数，应该说明每个线程块及每个线程所分配的任务
 \end{itemize}
-\item 解释程序中涉及哪些类型的存储器（如，全局内存，共享内存等），并通过分析数据的访存模式及该存储器的特性说明为何使用该种存储器。（15分）
+\item 解释程序中涉及哪些类型的存储器（如，\globalmem，\sharedmem等），并通过分析数据的访存模式及该存储器的特性说明为何使用该种存储器。（15分）
 \item 程序中的对数运算实际只涉及对整数$[1,25]$的对数运算，为什么？如使用查表对$\log1\thicksim \log25$进行查表，是否能加速运算过程？请通过实验收集运行时间，并验证说明。（15分）
-\item 请给出一个基础版本(baseline)及至少一个优化版本，并分析说明每种优化对性能的影响。（40分）
+\item 请给出一个基础版本（baseline）及至少一个优化版本，并分析说明每种优化对性能的影响。（40分）
 \begin{itemize}
-    \item 例如，使用共享内存及不使用共享内存
+    \item 例如，使用\sharedmem及不使用\sharedmem
     \item 优化失败的版本也可以进行比较
 \end{itemize}
 \item 对实验结果进行分析，从中归纳总结影响CUDA程序性能的因素。（20分）
 \item 可选做：使用OpenMP实现并与CUDA版本进行对比。（20分）
 \end{enumerate}
 
+\section{问题简答}
+\begin{enumerate}
+	\item 见第\ref{sec:prog}节。
+	\item 未加优化前的基线版本，输入矩阵放在\globalmem中，其他计算所需数据则存放在寄存器中。
+	由于输入矩阵在计算过程中需要被频繁访问，因此可将输入矩阵由\globalmem读入至\sharedmem，以提升存储访问性能。
+	而对数表部分由于可以提前计算出来且在程序运行过程中不会修改，因此可以放在GPU的\constmem中。
+	\item 见第\ref{sec:theory}节的推导。
+	由于存在大量的内存访问冲突，同时计算开销小于存储访问开销，因此即使采用\constmem对数表的方式，也没有办法得到性能的大幅提升，见第\ref{sub:exp}的实验结果。
+	\item 见第\ref{sub:cuda}和第\ref{sub:exp}节。
+	\item 实验结果见第\ref{sub:exp}节，可归纳知\textbf{内存访问}是影响CUDA程序性能的最大因素，数据到底放置在\globalmem、\sharedmem还是\constmem对于程序整体性能有着巨大影响。
+	但也并不是说数据存放在\sharedmem或是\constmem就一定快，数据访问模式往往与后面的算法计算方式密切相关。
+	只有计算和存储相辅相成才有办法发挥硬件的最大效用。
+	另外，\textbf{线程块}的大小同样对性能有着不可忽视的影响，要充分利用线程并做到负载均衡，同时要避免由于线程数与任务数除不尽导致的空闲线程，只有任务划分得好性能才会高。
+	\item 见第\ref{sub:openmp}和第\ref{sub:exp}节。
+\end{enumerate}
+
 \section{原理推导}
+\label{sec:theory}
 设窗口大小为$M\times M$，本题中$M=5$，由题意知中心熵为窗口内合法元素的熵之和。
 设窗口内合法的元素数目为$N$，每个元素值的数目为$N_i(i=0,\ldots,15)$，则有中心熵的计算公式
 \begin{equation}
@@ -76,9 +97,20 @@ H(X) &= -\frac{1}{N}\sum_{i=0}^{15}N_i(\log N_i-\log N)\\
 同时可以看到这里的运算变成了整数的对数运算，由于$N_{\max}=M\times M=25$，因此可以先计算出$[1,25]$的所有对数值，然后通过查表法实现上述运算。
 
 \section{程序逻辑}
-在本次实验中我实现了五个版本的程序，包括基础的NumPy实现、OpenMP实现以及CUDA三个版本的实现。
+\label{sec:prog}
+在本次实验中我实现了五个版本的程序，包括
+\begin{itemize}
+\item CPU单核程序：基础NumPy实现，参见\verb'numpy'文件夹
+\item CPU并行程序：OpenMP实现，参见\verb'openmp'文件夹
+\item GPU并行程序：CUDA三个优化版本实现
+\begin{itemize}
+\item 基线版本：参见\verb'sources'文件夹
+\item 2D线程块版本：参见\verb'sources-2d'文件夹
+\item \sharedmem版本：参见\verb'sources-shared_mem'文件夹
+\end{itemize}
+\end{itemize}
 
-这里几个版本分别对应着CPU的单核程序、CPU的并行程序以及GPU的并行程序。
+由于OpenMP和CUDA版本的实现均采用了助教提供的代码模板，因此其中关于文件读入和结果输出的部分在此不再赘述。
 
 \subsection{NumPy实现}
 之所以选择NumPy将本次实验进行实现，一方面是为了提供Baseline程序用于结果验证，另一方面则是尝试探索利用CPU计算性能可以达到多高。
@@ -92,6 +124,7 @@ NumPy实现的亮点在于高效的\textbf{向量化操作}，而非普通的裸
 完整代码请见\verb'numpy/main.py'。
 
 \subsection{OpenMP实现}
+\label{sub:openmp}
 接下来我采用C++实现了CPU的并行版本，利用OpenMP进行加速，测试并行后的性能。
 
 C++的代码逻辑没有Python那么紧凑，但是还是非常清晰的。
@@ -108,7 +141,7 @@ C++的代码逻辑没有Python那么紧凑，但是还是非常清晰的。
 \end{enumerate}
 
 为利用多核的并行计算能力，直接在最外层循环添加\verb'#pragma omp parallel for'。
-由于内层循环并没有发生共享内存的写冲突，因此无需采用原子操作等来对线程进行同步。
+由于内层循环并没有发生\sharedmem的写冲突，因此无需采用原子操作等来对线程进行同步。
 核心代码逻辑如下，完整代码可见\verb'openmp/src/core.cpp'。
 
 \lstinputlisting[firstline=13,lastline=60,language=c++]{../openmp/src/core.cpp}
@@ -118,25 +151,28 @@ C++的代码逻辑没有Python那么紧凑，但是还是非常清晰的。
 两种方法的比较会在最后的实验部分（第\ref{sec:exp}节）给出。
 
 \subsection{CUDA实现}
+\label{sub:cuda}
 然后我又着重在GPU上实现并优化了本次作业的内容。
 
 \subsubsection{基线版本}
 基线版本的CUDA程序与OpenMP的实现非常相似，不同之处在于CUDA的实现需要用\verb'__global__'来声明核函数，同时在核函数内部只用考虑单一线程的计算情况，因此只需描述内部窗口的两层循环。
 
 其他计算过程与OpenMP一致，即统计直方图，并计算中心熵。
-这里同样提供了使用查找表和不使用查找表算对数的方法，后文实验中会做详细比较。
+这里同样提供了使用查找表和不使用查找表算对数的方法。
+由于$[\log1,\log25]$的值是可以预先算出来且在执行过程中保持不变的，因此CUDA里的查找表可放在\constmem中，通过\verb'__constant__'声明。
+后文实验中会详细对这两种方法进行比较。
 
 核函数如下所示，完整代码请见\verb'sources'文件夹。
 \lstinputlisting[firstline=16,lastline=61,language=c++]{../sources/src/core.cu}
 
 基础版本采用一维的Grid和一维的Block，因为本来输入也是线性的，故在计算坐标时稍微转换一下即可。
 每个Block内开$1024$个线程，共开$\lceil W\cdot H/1024\rceil$个Grid，这里的$W$和$H$分别为输入矩阵的宽和高。
-每个线程都计算某一点的中心熵。
+\textbf{每个线程都计算某一点的中心熵。}
 \lstinputlisting[firstline=81,lastline=82,language=c++]{../sources/src/core.cu}
 
 \subsubsection{二维线程块版本}
 第二个版本的CUDA程序采用了二维的Grid和Block，通过对原输入矩阵进行tiling操作，即可将原矩阵划分成多个小矩阵。
-每个Block计算一个小矩阵，而Block内的每一个线程则对小矩阵内的对应元素计算中心熵。
+每个Block计算一个小矩阵，而Block内的\textbf{每一个线程则对小矩阵内的对应元素计算中心熵}。
 
 这里利用\verb'dim3'创建二维的Grid和Block，并按照如下方式调用核函数。
 \lstinputlisting[firstline=87,lastline=90,language=c++]{../sources-2d/src/core.cu}
@@ -145,25 +181,25 @@ C++的代码逻辑没有Python那么紧凑，但是还是非常清晰的。
 完整代码可见\verb'sources-2d'文件夹。
 \lstinputlisting[firstline=30,lastline=32,language=c++]{../sources-2d/src/core.cu}
 
-\subsubsection{共享内存版本}
+\subsubsection{\sharedmem版本}
 注意到程序中涉及到大量输入矩阵的读取，计算每个点的中心熵都需要将周围$5\times 5$的所有元素读入，这显然是一个很大的开销。
-前面两个版本的程序都是将输入矩阵放在全局内存中，那么可以考虑将部分元素提前读入共享内存，以实现加速的读取。
+前面两个版本的程序都是将输入矩阵放在\globalmem中，那么可以考虑将部分元素提前读入\sharedmem，以实现加速的读取。
 
-依然采用二维线程块划分的思路，如果对于每个块，将其对应的所有元素迁移到共享内存，那似乎就可以达成上述目的。
-但事实上在计算该块每个元素的中心熵时，往往还需要周围一些块的对应的元素，因此如果仅仅将块内的元素读入到共享内存则会发生访问错误的问题，因为边界元素未被读入。
+依然采用二维线程块划分的思路，如果对于每个块，将其对应的所有元素迁移到\sharedmem，那似乎就可以达成上述目的。
+但事实上在计算该块每个元素的中心熵时，往往还需要周围一些块的对应的元素，因此如果仅仅将块内的元素读入到\sharedmem则会发生访问错误的问题，因为边界元素未被读入。
 故正确的方式应该是将块内及块周围的元素都一并读入，然后再做计算。
 
-这里我采用了padding的方法，比如对于一个$16\times 16$的Block，那么开$(16+2\times 2)^2=20^2=400$个线程，对这个Block周围一圈宽度为$2$的部分也一并读入共享内存。
-对于这些线程来说，每个线程只要读取它对应的那个元素到共享内存即可，并在读取完成后利用\verb'__syncthreads'同步线程。
+这里我采用了padding的方法，比如对于一个$16\times 16$的Block，那么开$(16+2\times 2)^2=20^2=400$个线程，对这个Block周围一圈宽度为$2$的部分也一并读入\sharedmem。
+对于这些线程来说，每个线程只要读取它对应的那个元素到\sharedmem即可，并在读取完成后利用\verb'__syncthreads'同步线程。
 需要考虑两个边界情况：
 \begin{itemize}
 	\item 如果线程对应的元素超出原始矩阵的范围，那么直接置$0$（不做读入）。
-	\item 如果线程对应的元素在原始矩阵的范围内，但超出了该块对应的范围，那么依然需要算出原始矩阵元素的坐标，并读入共享内存。
+	\item 如果线程对应的元素在原始矩阵的范围内，但超出了该块对应的范围，那么依然需要算出原始矩阵元素的坐标，并读入\sharedmem。
 \end{itemize}
 代码逻辑如下：
 \lstinputlisting[firstline=31,lastline=43,language=c++]{../sources-shared_mem/src/core.cu}
 
-下面的中心熵计算逻辑基本与前面的方法一样，只是读取数据直接从共享内存中读取即可。
+下面的中心熵计算逻辑基本与前面的方法一样，只是读取数据直接从\sharedmem中读取即可。
 另外需要判断当前线程是否是在合法的块内（而不是padding的部分），如果是padding的读入线程，那么其在计算环节将会被闲置（主要是任务不好划分，如果将其也加入到计算中，很容易引起负载不均的问题）。
 由于padding读入的线程数和实际计算的线程数不同，线程对应的ID映射也需要非常小心。
 如下，Grid的划分数目对应原始块的大小，但Block里的线程数目则是要通过padding后的块大小决定。
@@ -172,10 +208,67 @@ C++的代码逻辑没有Python那么紧凑，但是还是非常清晰的。
 这里只放出与前面的版本相比有改动的部分，完整代码请见\verb'sources-shared_mem'文件夹。
 \lstinputlisting[firstline=44,lastline=59,language=c++]{../sources-shared_mem/src/core.cu}
 
-\section{实验结果}
+\section{实验设置与结果}
 \label{sec:exp}
+\subsection{环境设置}
+为了避免占用学院集群环境的大量资源，我采用了另外一台服务器进行测试。
+该服务器上装备了2个Intel Xeon Gold 5118处理器（24物理核/48逻辑核），另有一块Titan V GPU。
+操作系统为Ubuntu 18.04 LTS，编译器采用gcc 7.4.0和nvcc 10.2。
 
-\section{实验心得}
+下列所有实验均为运行多次取平均的结果。
+对于OpenMP，统一使用24线程进行计算。
+为避免\textbf{冷启动}带来的性能损耗，我将第一组样例剔除不计入运行时间的统计。
+LU代表Lookup Table，即$\log$查找表的实现。
+
+同时，我也在学院集群上进行了简单测试，运行时间均与下述在服务器上的测试差异不大。
+
+\subsection{实验结果}
+\label{sub:exp}
+首先我比较了CPU两个版本（NumPy、OpenMP）和GPU版本的性能，结果如图\ref{fig:cpu}所示。
+可以看到，即使运行时间采用了对数坐标，CPU版本与GPU版本依然有明显的差距。
+
+对于小的样例，OpenMP的性能会明显好于CUDA的性能，这很大一部分原因是GPU程序的运行需要进行数据的搬移，而CPU的程序可以直接读取数据进行计算。
+但对于大的样例来说（$128\times 128$及以上），CUDA的实现总能比OpenMP快很多，差不多可以达到一个数量级的稳定提升。
+而对比起CPU单核NumPy的实现，CUDA则最多可快上4个数量级。
+这是由于GPU上有大量的核（成千上万个线程）同时进行计算，而CPU最多也就只有几十个物理核（本实验最多只开了24个线程），因此对于大的任务，也能够有更多的计算资源同时在消耗，进而算得更快。
+
+另外比较奇妙的事情是在CPU的OpenMP实现中采用$\log$查找表可以带来明显的性能提升。
+这可以从图\ref{fig:cpu}的橙色线和绿色线的比较中看出，绿色线（采用查找表）始终在橙色线（不采用查找表）下面，即使用查找表总能带来性能提升。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/cpu-gpu.png}
+\caption{CPU与GPU比较}
+\label{fig:cpu}
+\end{figure}
+
+下面则着重比较CUDA不同优化版本之间的性能，可见图\ref{fig:cuda}的结果。
+这里采用了普通的坐标，可以看到虽然不同优化版本的曲线相距得比较近，但是相对的性能差异还是比较明显。
+有以下几点观察：
+\begin{itemize}
+	\item 在GPU上采用\constmem存储$\log$查找表并不能带来性能提升，甚至可能出现性能下降的情况。
+	猜测可能的原因是GPU计算对数的速度依然快于\constmem的访问时间，因此查表还不如直接算。
+	另一方面则是因为内存的访问冲突，由于对数表是25个元素的数组，但利用公式\ref{equ:ent}计算时可能涉及到成千上万次的查表操作，这样根据抽屉原理，这个数组中的每个元素都会被大量访问，而访问带宽及bank数目是有限的，进而导致性能损耗。
+	\item 从1D的线程块到2D的线程块，再到使用\sharedmem，这几个优化的提升是明显的。
+	最好的\sharedmem版本实现在最大的数据集上达到了$17.749\text{ms}$的速度，相比起基线版本达到了$1.6$x的提升。
+	之所以没有更明显的加速比，推测是因为数据集还是太小，还未充满GPU的计算能力，任务就已经结束了，所以性能的波动都比较大。
+\end{itemize}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/cuda.png}
+\caption{CUDA不同优化版本比较}
+\label{fig:cuda}
+\end{figure}
+
+最后我也测了不同Block大小对整体性能的影响，实验结果如图\ref{fig:blocksize}所示。
+由于实验的GPU最多只能开$1024$个线程，故这里最大的块大小为$28\times 28$，加上padding部分即对应$(28+4)^2=1024$个线程。
+从图中可以看到线程块的大小不能开太大或者太小，只有适中的时候对GPU的性能才最好。
+比如在本实验中就是$16\times 16$的块大小，在大多数样例下都比其他的块大小性能要优。
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{fig/blocksize.png}
+\caption{不同块大小比较}
+\label{fig:blocksize}
+\end{figure}
 
 % \begin{thebibliography}{99}
 % https://www.evl.uic.edu/sjames/cs525/final.html
