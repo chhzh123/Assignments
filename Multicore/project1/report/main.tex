@@ -144,7 +144,7 @@ C++的代码逻辑没有Python那么紧凑，但是还是非常清晰的。
 由于内层循环并没有发生\sharedmem的写冲突，因此无需采用原子操作等来对线程进行同步。
 核心代码逻辑如下，完整代码可见\verb'openmp/src/core.cpp'。
 
-\lstinputlisting[firstline=13,lastline=60,language=c++]{../openmp/src/core.cpp}
+\lstinputlisting[firstline=12,lastline=60,language=c++]{../openmp/src/core.cpp}
 
 这里需要注意，由于C++没有Python中的切片功能，因此需要人工判断数组是否越界。
 同时，OpenMP的实现中也给出了两种不同计算$\log$值的方式，一种采用预设好的对数表进行查表计算（开启\verb'LOOKUP'的宏），另一种则采用\verb'<math.h>'库中的\verb'log'函数。
@@ -181,7 +181,7 @@ C++的代码逻辑没有Python那么紧凑，但是还是非常清晰的。
 完整代码可见\verb'sources-2d'文件夹。
 \lstinputlisting[firstline=30,lastline=32,language=c++]{../sources-2d/src/core.cu}
 
-\subsubsection{\sharedmem版本}
+\subsubsection{共享内存版本}
 注意到程序中涉及到大量输入矩阵的读取，计算每个点的中心熵都需要将周围$5\times 5$的所有元素读入，这显然是一个很大的开销。
 前面两个版本的程序都是将输入矩阵放在\globalmem中，那么可以考虑将部分元素提前读入\sharedmem，以实现加速的读取。
 
