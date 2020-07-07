@@ -11,3 +11,7 @@ cuda_add_executable(
     main
     ${SOURCES}
 )
+
+if (LOOKUP)
+    add_definitions(-DLOOKUP)
+endif()

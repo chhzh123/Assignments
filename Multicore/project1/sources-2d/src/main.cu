@@ -26,6 +26,10 @@ int main() {
         return -1;
     }
 
+#ifdef LOOKUP
+    printf("Use log lookup table\n");
+#endif
+
     // Read in and process the samples one-by-one
     int width, height, size;
     float *sample, *result;

@@ -8,7 +8,6 @@
  */
 
 #include "core.h"
-#define LOOKUP
 
 /*!
  * Core execution part of OpenMP
@@ -20,7 +19,7 @@
  * \return void. Results will be put in output.
  */
 void kernel(int width, int height, float *input, float *output) {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(24)
     for (int h = 0; h < height; ++h) {
         for (int w = 0; w < width; ++w) {
             int idx = h * width + w;
