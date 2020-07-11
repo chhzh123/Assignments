@@ -1,0 +1,127 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,pseudo]{mypackage}
+\usepackage{forest}
+
+\usetikzlibrary{automata,backgrounds,fit,shapes,positioning}
+
+\tikzset{->, % makes the edges directed
+>=stealth, % makes the arrow heads bold
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+every state/.style={thick, fill=gray!10}, % sets the properties for each 'state' node
+}
+
+\forestset{
+sn edges/.style={for tree={edge={-}}}
+}
+
+\title{编译原理作业九}
+\subtitle{}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{编译原理作业}
+
+
+\begin{document}
+
+\maketitle
+\renewcommand\arraystretch{0.8}
+\begin{question}
+令\verb'a'表示一个$2\times 3$的整型数组，\verb'b'表示一个$3\times 4$的整型数组.
+假定一个整数的宽度为$4$.
+试使用课本图6.22的翻译模式，翻译赋值语句\verb'x=a[i][j]+b[i][j]'.
+提示：参考课本例6.12.
+\end{question}
+\begin{answer}
+带注释的分析树如下
+\begin{center}
+\scalebox{0.8}{
+\begin{forest}
+sn edges
+[{$S$}
+	[{$x$}]
+	[{$=$}]
+	[{$E.addr=t_9$}
+		[{$E.addr=t_4$}
+			[{\begin{tabular}{l}$L.array=a$\\ $L.type=int$\\ $L.addr=t_3$\end{tabular}}
+				[{\begin{tabular}{l}$L.array=a$\\ $L.type=array(3,int)$\\ $L.addr=t_1$\end{tabular}}
+					[{\begin{tabular}{l}$a.type=$\\$array(2,array(3,int))$\end{tabular}}]
+					[{$[$}]
+					[{$E.addr=i$}
+						[{$i$}]
+					]
+					[{$]$}]
+				]
+				[{$[$}]
+				[{$E.addr=j$}
+					[{$j$}]
+				]
+				[{$]$}]
+			]
+		]
+		[{$+$}]
+		[{$E.addr=t_8$}
+			[{\begin{tabular}{l}$L.array=b$\\ $L.type=int$\\ $L.addr=t_7$\end{tabular}}
+				[{\begin{tabular}{l}$L.array=b$\\ $L.type=array(4,int)$\\ $L.addr=t_5$\end{tabular}}
+					[{\begin{tabular}{l}$b.type=$\\$array(3,array(4,int))$\end{tabular}}]
+					[{$[$}]
+					[{$E.addr=i$}
+						[{$i$}]
+					]
+					[{$]$}]
+				]
+				[{$[$}]
+				[{$E.addr=j$}
+					[{$j$}]
+				]
+				[{$]$}]
+			]
+		]
+	]
+]
+\end{forest}
+}
+\end{center}
+
+生成的三地址码如下
+\begin{center}
+\begin{tabular}{l}
+$t_1 = i * 12$\\
+$t_2 = j * 4$\\
+$t_3 = t_1 + t_2$\\
+$t_4 = a[t_3]$\\
+$t_5 = i * 16$\\
+$t_6 = j * 4$\\
+$t_7 = t_5 + t_6$\\
+$t_8 = b[t_7]$\\
+$t_9 = t_4 + t_8$\\
+$x   = t_9$
+\end{tabular}
+\end{center}
+\end{answer}
+
+\begin{question}[课本Exercise 6.6.1 a)]
+在图 6-36 的语法制导定义中添加处理下列控制流构造的规则：
+\begin{itemize}
+\item 一个 \verb'repeat' 语句：\verb'repeat S while B'
+\end{itemize}
+\end{question}
+\begin{answer}
+语法制导定义如下
+\begin{center}
+\begin{tabular}{l|l}
+Production & Semantic Rules\\\hline
+\verb'S -> repeat S1 while B' &
+\begin{tabular}{l}
+\verb'S1.next = newlabel()'\\
+\verb'B.true = newlabel()'\\
+\verb'B.false = S.next'\\
+\verb'S.code = label(B.true) || S1.code'\\
+\verb'        || label(S1.next) || B.code'
+\end{tabular}
+\end{tabular}
+\end{center}
+\end{answer}
+
+\end{document}
