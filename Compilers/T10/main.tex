@@ -54,15 +54,16 @@ B   &= t_7 + B
 	\centering
 	\includegraphics[width=0.4\linewidth]{fig/dag-1.pdf}
 	\end{figure}
-	\item 优化后的三地址代码如下
+	\item 由于只有$A$和$B$在基本块后面还要被引用，因此最终只需保留$A$和$B$的结果即可。
+	无依赖关系的代码都可以作为死代码优化删除。
+	最终优化后的三地址代码如下
 \[\begin{aligned}
-t_1 &= 3 + 5\\
-t_4 &= R + r\\
-t_3 &= t_1 + t_4\\
+t_2 &= R + r\\
+t_3 &= 15 * t_2\\
 t_5 &= t_3 - t_2\\
-A &= t_3 - t_5\\
+A &= t_3 + t_5\\
 B &= A - r\\
-B &= t_1 + B
+B &= 15 + B
 \end{aligned}\]
 \end{enumerate}
 \end{answer}
