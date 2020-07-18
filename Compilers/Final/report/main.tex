@@ -1,0 +1,52 @@
+\documentclass[logo,reportComp]{thesis}
+\usepackage[cpp,linenum]{mypackage}
+
+\title{编译原理期末大作业}
+\subtitle{正则表达式等价性}
+\school{数据科学与计算机学院}
+\author{陈鸿峥}
+\classname{17大数据与人工智能}
+\stunum{17341015}
+\headercontext{编译原理期末大作业}
+
+\begin{document}
+
+\maketitle
+
+\section{实验目的}
+对于两个正则表达式$r$和$s$，判断这两个正则表达式的关系。
+正则表达式$r$和$s$的关系有4种：
+\begin{enumerate}
+\item $r$和$s$等价，即$r$描述的语言和$s$描述的语言相等；
+\item $r$描述的语言是$s$描述的语言的真子集；
+\item $s$描述的语言是$r$描述的语言的真子集；
+\item 非上述情况。
+\end{enumerate}
+正则表达式的字符集为小写字母\verb'a'-\verb'z'，\verb'|'号表示或者，\verb'*'号表示闭包，\verb'?'表示出现$0$或$1$次，$+$表示至少出现一次，大写字母$E$表示epsilon（空串）。
+
+编写一个C++程序，实现上述功能。
+
+\textbf{输入格式：}\par
+第一行是测试数的组数$T$。
+接下来的$T$行，每行是两个正则表达式$r$和$s$，每个正则表达式只含\verb'a'-\verb'z'，\verb'|'，\verb'*'，\verb'?'，\verb'+'，\verb'('，\verb')'，\verb'E'。
+两个正则表达式之间用空格分开。
+
+\textbf{输出格式：}\par
+输出有$T$行。
+对于每组数据，如果$r$和$s$等价，输出\verb'='；
+如果$r$是$s$的真子集，输出\verb'<'；
+如果$s$是$r$的真子集，输出\verb'>'；
+非上述情况，输出\verb'!'。
+
+\textbf{提交内容：}
+\begin{enumerate}
+	\item 能在Linux下或在Windows的Dev C++下编译运行的C++源程序；
+	\item 实验报告，包括算法描述，和你的测试用例，及测试结果。
+\end{enumerate}
+
+提交截止日期：7.25
+
+\section{实验结果}
+
+
+\end{document}
