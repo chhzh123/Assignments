@@ -215,11 +215,12 @@ set<int> move_to(const set<int>& T, const vector<NFA_Node*>& nfa, const char a) 
 
 class DFA_Node{
 public:
-	DFA_Node() : id(cnt), accepting(false), group(1) {
+	DFA_Node() : id(cnt), start(false), accepting(false), group(1) {
 		cnt++;
 	}
 	int id;
 	static int cnt;
+	bool start;
 	bool accepting;
 	map<char,int> out;
 	int group;
@@ -252,10 +253,12 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 	lut[q.front()] = 0;
 	while (!q.empty()) {
 		set<int> s = q.front();
-		marked.insert(s);
+		// marked.insert(s);
 		int idx = lut[s];
 		for (auto sym : input_symbol) { // only alphas
 			set<int> move = move_to(s,nfa,sym);
+			if (move.empty())
+				continue;
 			set<int> U = epsilon_closure(move,nfa);
 			cout << sym << " ";
 			print_set<int>(move,false);
@@ -263,6 +266,7 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 			print_set<int>(U);
 			if (marked.find(U) == marked.end()) { // U not in Dstates
 				q.push(U);
+				marked.insert(U);
 				DFA_Node* node = new DFA_Node();
 				dfa.push_back(node);
 				lut[U] = dfa.size() - 1;
@@ -274,16 +278,21 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 		q.pop();
 	}
 	for (auto& item : lut) {
+		int idx = item.second;
 		if (item.first.count(end->id) != 0) {
 			cout << end->id << " " << item.second << endl;
-			dfa[item.second]->accepting = true;
-			dfa[item.second]->group = 0;
+			dfa[idx]->accepting = true;
+			dfa[idx]->group = 0;
+		} else if (item.first.count(start->id) != 0) {
+			dfa[idx]->start = true;
 		}
 	}
 	for (auto& item : lut) {
 		print_set<int>(item.first,false);
 		cout << " -> " << item.second;
-		if (dfa[item.second]->accepting)
+		if (dfa[item.second]->start)
+			cout << "(S)";
+		else if (dfa[item.second]->accepting)
 			cout << "(A)";
 		cout << endl;
 	}
@@ -302,8 +311,9 @@ void minimize_dfa(vector<DFA_Node*>& dfa,
 			s2.push_back(state->id);
 	}
 	int group_id = 1; // count from 0
+	partition.push(s2);
 	partition.push(s1);
-	map<int,int> state_map;
+	vector<int> state_map;
 	while (!partition.empty()) {
 		vector<int> p = partition.front();
 		partition.pop();
@@ -322,7 +332,7 @@ void minimize_dfa(vector<DFA_Node*>& dfa,
 					for (auto idx : item.second)
 						dfa[idx]->group = group_id;
 					partition.push(item.second);
-					state_map[group_id] = item.second[0];
+					state_map.push_back(item.second[0]);
 					group_id++;
 				}
 				group_id--; // reduce the initial group
@@ -330,21 +340,27 @@ void minimize_dfa(vector<DFA_Node*>& dfa,
 			}
 		}
 	}
-	DFA_Node::cnt = 0;
+	int len = dfa.size();
+	vector<int> start_end_flag(group_id+1,0); // 1 start, 2 end
+	for (int i = 0; i < len; ++i) {
+		if (dfa[i]->start)
+			start_end_flag[dfa[i]->group] = 1;
+		else if (dfa[i]->accepting)
+			start_end_flag[dfa[i]->group] = 2;
+	}
 	for (int i = 0; i <= group_id; ++i) {
 		DFA_Node* node = new DFA_Node();
 		for (auto c : input_symbol) {
 			int out = dfa[state_map[i]]->out[c];
 			node->out[c] = dfa[out]->group;
 		}
-		if (i == 0)
+		if (start_end_flag[i] == 1)
+			node->start = true;
+		else if (start_end_flag[i] == 2)
 			node->accepting = true;
 		min_dfa.push_back(node);
 	}
 }
-
-int NFA_Node::cnt = 0;
-int DFA_Node::cnt = 0;
 
 void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
 	for (auto c : input_symbol)
@@ -352,7 +368,9 @@ void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
 	cout << endl;
 	for (auto node : dfa) {
 		cout << node->id;
-		if (node->accepting)
+		if (node->start)
+			cout << "S";
+		else if (node->accepting)
 			cout << "*";
 		cout << "\t";
 		for (auto c : input_symbol)
@@ -361,21 +379,15 @@ void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
 	}
 }
 
-// 3.9 Optimization of DFA-Based Pattern Matchers
-int main() {
-	string str;
-	// cin >> str;
-	// str = "(ab)*c+(d|e)?";
-	// str = "(a|b)*cd";
-	str = "(a|b)*abb";
-	// str += "#";
+string get_postfix(string str) {
 	str = insert_concat(str);
 	cout << str << endl;
 	str = infix2postfix(str);
 	cout << str << endl;
-	vector<NFA_Node*> nfa;
-	pair<NFA_Node*, NFA_Node*> p;
-	p = regex2nfa(str,nfa);
+	return str;
+}
+
+set<char> get_input_symbol(string str) {
 	set<char> input_symbol(str.begin(),str.end());
 	input_symbol.erase('.');
 	input_symbol.erase('*');
@@ -383,12 +395,101 @@ int main() {
 	input_symbol.erase('+');
 	input_symbol.erase('|');
 	print_set<char>(input_symbol);
+	return input_symbol;
+}
+
+vector<DFA_Node*> build_dfa(string str, set<char>& input_symbol) {
+	NFA_Node::cnt = 0;
+	vector<NFA_Node*> nfa;
+	pair<NFA_Node*, NFA_Node*> p;
+	p = regex2nfa(str,nfa);
+	DFA_Node::cnt = 0;
 	vector<DFA_Node*> dfa;
 	nfa2dfa(p,nfa,input_symbol,dfa);
 	print_dfa(dfa,input_symbol);
+	DFA_Node::cnt = 0;
 	vector<DFA_Node*> min_dfa;
 	minimize_dfa(dfa,input_symbol,min_dfa);
 	print_dfa(min_dfa,input_symbol);
+	return min_dfa;
+}
+
+bool contain(int s1, int s2,
+			 vector<DFA_Node*>& dfa1,
+			 vector<DFA_Node*>& dfa2,
+			 set<char>& input_symbol,
+			 vector<vector<bool>>& visited) {
+	if (visited[s1][s2])
+		return true;
+	visited[s1][s2] = true;
+	bool acc1 = dfa1[s1]->accepting;
+	bool acc2 = dfa2[s2]->accepting;
+	if (acc1 && acc2)
+		return true;
+	else if (acc1 || acc2)
+		return false;
+	for (auto c : input_symbol) {
+		int o1 = dfa1[s1]->out[c];
+		int o2 = dfa2[s2]->out[c];
+		if (!contain(o1,o2,dfa1,dfa2,input_symbol,visited))
+			return false;
+	}
+}
+
+int judge(vector<DFA_Node*>& dfa1, vector<DFA_Node*>& dfa2,
+		  set<char>& symbol1, set<char>& symbol2) {
+	int s1, s2, e1, e2;
+	vector<vector<bool>> visited;
+	int len1 = dfa1.size();
+	int len2 = dfa2.size();
+	for (int i = 0; i < len1; ++i) {
+		vector<bool> tmp(false,len2);
+		visited.push_back(tmp);
+	}
+	bool a_in_b = contain(s1,s2,dfa1,dfa2,symbol1,visited);
+	visited.clear();
+	for (int i = 0; i < len1; ++i) {
+		vector<bool> tmp(false,len2);
+		visited.push_back(tmp);
+	}
+	bool b_in_a = contain(s2,s1,dfa2,dfa1,symbol2,visited);
+	if (a_in_b && b_in_a)
+		return 0;
+	else if (a_in_b && !b_in_a)
+		return 1;
+	else if (!a_in_b && b_in_a)
+		return 2;
+	else
+		return 3;
+}
+
+int NFA_Node::cnt = 0;
+int DFA_Node::cnt = 0;
+
+// 3.9 Optimization of DFA-Based Pattern Matchers
+int main() {
+	string str1, str2;
+	// cin >> str;
+	// str = "(ab)*c+(d|e)?";
+	// str = "(a|b)*cd";
+	str1 = "(a|b)*abb";
+	str2 = "(a|b)*abb";
+	// str += "#";
+	str1 = get_postfix(str1);
+	str2 = get_postfix(str2);
+	set<char> symbol1 = get_input_symbol(str1);
+	set<char> symbol2 = get_input_symbol(str2);
+	vector<DFA_Node*> dfa1 = build_dfa(str1,symbol1);
+	vector<DFA_Node*> dfa2 = build_dfa(str2,symbol2);
+	int res = judge(dfa1,dfa2,symbol1,symbol2);
+	if (res == 0)
+		cout << "=" << endl;
+	else if (res == 1)
+		cout << "<" << endl;
+	else if (res == 2)
+		cout << ">" << endl;
+	else
+		cout << "!" << endl;
 	return 0;
 }
 
