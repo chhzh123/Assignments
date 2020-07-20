@@ -299,7 +299,7 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 }
 
 // 3.9.6 Minimizing the Number of States of a DFA
-void minimize_dfa(vector<DFA_Node*>& dfa,
+int minimize_dfa(vector<DFA_Node*>& dfa,
 				  const set<char>& input_symbol,
 				  vector<DFA_Node*>& min_dfa) {
 	queue<vector<int>> partition;
@@ -342,11 +342,15 @@ void minimize_dfa(vector<DFA_Node*>& dfa,
 	}
 	int len = dfa.size();
 	vector<int> start_end_flag(group_id+1,0); // 1 start, 2 end
+	int res_start;
 	for (int i = 0; i < len; ++i) {
-		if (dfa[i]->start)
-			start_end_flag[dfa[i]->group] = 1;
-		else if (dfa[i]->accepting)
-			start_end_flag[dfa[i]->group] = 2;
+		int group = dfa[i]->group;
+		if (dfa[i]->start) {
+			start_end_flag[group] = 1;
+			res_start = group;
+		} else if (dfa[i]->accepting) {
+			start_end_flag[group] = 2;
+		}
 	}
 	for (int i = 0; i <= group_id; ++i) {
 		DFA_Node* node = new DFA_Node();
@@ -360,6 +364,7 @@ void minimize_dfa(vector<DFA_Node*>& dfa,
 			node->accepting = true;
 		min_dfa.push_back(node);
 	}
+	return res_start;
 }
 
 void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
@@ -398,7 +403,7 @@ set<char> get_input_symbol(string str) {
 	return input_symbol;
 }
 
-vector<DFA_Node*> build_dfa(string str, set<char>& input_symbol) {
+int build_dfa(string str, set<char>& input_symbol,vector<DFA_Node*>& min_dfa) {
 	NFA_Node::cnt = 0;
 	vector<NFA_Node*> nfa;
 	pair<NFA_Node*, NFA_Node*> p;
@@ -408,10 +413,9 @@ vector<DFA_Node*> build_dfa(string str, set<char>& input_symbol) {
 	nfa2dfa(p,nfa,input_symbol,dfa);
 	print_dfa(dfa,input_symbol);
 	DFA_Node::cnt = 0;
-	vector<DFA_Node*> min_dfa;
-	minimize_dfa(dfa,input_symbol,min_dfa);
+	int start = minimize_dfa(dfa,input_symbol,min_dfa);
 	print_dfa(min_dfa,input_symbol);
-	return min_dfa;
+	return start;
 }
 
 bool contain(int s1, int s2,
@@ -429,27 +433,31 @@ bool contain(int s1, int s2,
 	else if (acc1 || acc2)
 		return false;
 	for (auto c : input_symbol) {
+		if (dfa2[s2]->out.find(c) == dfa2[s2]->out.end())
+			return false;
 		int o1 = dfa1[s1]->out[c];
 		int o2 = dfa2[s2]->out[c];
 		if (!contain(o1,o2,dfa1,dfa2,input_symbol,visited))
 			return false;
 	}
+	return true;
 }
 
 int judge(vector<DFA_Node*>& dfa1, vector<DFA_Node*>& dfa2,
-		  set<char>& symbol1, set<char>& symbol2) {
-	int s1, s2, e1, e2;
+		  set<char>& symbol1, set<char>& symbol2,
+		  int s1, int s2) {
+	cout << "start: " << s1 << " " << s2 << endl;
 	vector<vector<bool>> visited;
 	int len1 = dfa1.size();
 	int len2 = dfa2.size();
 	for (int i = 0; i < len1; ++i) {
-		vector<bool> tmp(false,len2);
+		vector<bool> tmp(len2,false);
 		visited.push_back(tmp);
 	}
 	bool a_in_b = contain(s1,s2,dfa1,dfa2,symbol1,visited);
 	visited.clear();
 	for (int i = 0; i < len1; ++i) {
-		vector<bool> tmp(false,len2);
+		vector<bool> tmp(len2,false);
 		visited.push_back(tmp);
 	}
 	bool b_in_a = contain(s2,s1,dfa2,dfa1,symbol2,visited);
@@ -479,9 +487,11 @@ int main() {
 	str2 = get_postfix(str2);
 	set<char> symbol1 = get_input_symbol(str1);
 	set<char> symbol2 = get_input_symbol(str2);
-	vector<DFA_Node*> dfa1 = build_dfa(str1,symbol1);
-	vector<DFA_Node*> dfa2 = build_dfa(str2,symbol2);
-	int res = judge(dfa1,dfa2,symbol1,symbol2);
+	vector<DFA_Node*> dfa1;
+	int s1 = build_dfa(str1,symbol1,dfa1);
+	vector<DFA_Node*> dfa2;
+	int s2 = build_dfa(str2,symbol2,dfa2);
+	int res = judge(dfa1,dfa2,symbol1,symbol2,s1,s2);
 	if (res == 0)
 		cout << "=" << endl;
 	else if (res == 1)
