@@ -180,6 +180,8 @@ pair<NFA_Node*,NFA_Node*> regex2nfa(const string str, vector<NFA_Node*>& nfa) {
 
 void traverse_e(NFA_Node* s, const vector<NFA_Node*>& nfa, set<int>& res) {
 	for (auto neigh : s->e) {
+		if (res.find(neigh) != res.end())
+			break;
 		res.insert(neigh);
 		traverse_e(nfa[neigh], nfa, res);
 	}
@@ -283,7 +285,8 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 			cout << end->id << " " << item.second << endl;
 			dfa[idx]->accepting = true;
 			dfa[idx]->group = 0;
-		} else if (item.first.count(start->id) != 0) {
+		}
+		if (item.first.count(start->id) != 0) {
 			dfa[idx]->start = true;
 		}
 	}
@@ -292,7 +295,7 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 		cout << " -> " << item.second;
 		if (dfa[item.second]->start)
 			cout << "(S)";
-		else if (dfa[item.second]->accepting)
+		if (dfa[item.second]->accepting)
 			cout << "(A)";
 		cout << endl;
 	}
@@ -310,57 +313,72 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 		else // accepting state
 			s2.push_back(state->id);
 	}
-	int group_id = 1; // count from 0
-	partition.push(s2);
+	int n_group = 2;
+	partition.push(s2); // suppose accepting states are in the same group
 	partition.push(s1);
-	vector<int> state_map;
+	map<int,int> state_map;
+	set<int> group_id = {0,1};
 	while (!partition.empty()) {
 		vector<int> p = partition.front();
 		partition.pop();
 		int size = p.size();
 		if (size < 2)
 			continue;
+		int origin_group = dfa[p[0]]->group;
 		for (auto c : input_symbol) {
-			map<int,vector<int>> groups;
+			map<int,vector<int>> groups; // gid, idx in group
 			for (int i = 0; i < size; ++i) {
 				int out = dfa[p[i]]->out[c];
 				groups[dfa[out]->group].push_back(i);
 			}
 			int g_size = groups.size();
 			if (g_size >= 2) {
+				group_id.erase(origin_group);
 				for (auto& item : groups) {
+					n_group++;
+					group_id.insert(n_group);
 					for (auto idx : item.second)
-						dfa[idx]->group = group_id;
+						dfa[idx]->group = n_group;
 					partition.push(item.second);
-					state_map.push_back(item.second[0]);
-					group_id++;
 				}
-				group_id--; // reduce the initial group
 				break;
 			}
 		}
 	}
+	print_set<int>(group_id);
 	int len = dfa.size();
-	vector<int> start_end_flag(group_id+1,0); // 1 start, 2 end
+	// be careful that start and end may overlap
+	vector<bool> start_flag(n_group,false);
+	vector<bool> end_flag(n_group,false);
 	int res_start;
+	map<int,int> group_map;
+	int cnt = 0;
+	for (auto id : group_id) {
+		group_map[id] = cnt;
+		cnt++;
+	}
+	n_group = group_id.size();
 	for (int i = 0; i < len; ++i) {
+		dfa[i]->group = group_map[dfa[i]->group];
 		int group = dfa[i]->group;
+		state_map[group] = i;
 		if (dfa[i]->start) {
-			start_end_flag[group] = 1;
+			start_flag[group] = true;
 			res_start = group;
-		} else if (dfa[i]->accepting) {
-			start_end_flag[group] = 2;
+		}
+		if (dfa[i]->accepting) {
+			end_flag[group] = true;
 		}
 	}
-	for (int i = 0; i <= group_id; ++i) {
+	for (int i = 0; i < n_group; ++i) {
 		DFA_Node* node = new DFA_Node();
 		for (auto c : input_symbol) {
 			int out = dfa[state_map[i]]->out[c];
 			node->out[c] = dfa[out]->group;
 		}
-		if (start_end_flag[i] == 1)
+		if (start_flag[i])
 			node->start = true;
-		else if (start_end_flag[i] == 2)
+		if (end_flag[i])
 			node->accepting = true;
 		min_dfa.push_back(node);
 	}
@@ -372,13 +390,15 @@ void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
 		cout << "\t" << c;
 	cout << endl;
 	for (auto node : dfa) {
+		// cout << (char)(node->id+'A');
 		cout << node->id;
 		if (node->start)
 			cout << "S";
-		else if (node->accepting)
+		if (node->accepting)
 			cout << "*";
 		cout << "\t";
 		for (auto c : input_symbol)
+			// cout << (char)(node->out[c]+'A') << "\t";
 			cout << node->out[c] << "\t";
 		cout << endl;
 	}
@@ -394,6 +414,7 @@ string get_postfix(string str) {
 
 set<char> get_input_symbol(string str) {
 	set<char> input_symbol(str.begin(),str.end());
+	input_symbol.erase('E');
 	input_symbol.erase('.');
 	input_symbol.erase('*');
 	input_symbol.erase('?');
@@ -456,8 +477,8 @@ int judge(vector<DFA_Node*>& dfa1, vector<DFA_Node*>& dfa2,
 	}
 	bool a_in_b = contain(s1,s2,dfa1,dfa2,symbol1,visited);
 	visited.clear();
-	for (int i = 0; i < len1; ++i) {
-		vector<bool> tmp(len2,false);
+	for (int i = 0; i < len2; ++i) {
+		vector<bool> tmp(len1,false);
 		visited.push_back(tmp);
 	}
 	bool b_in_a = contain(s2,s1,dfa2,dfa1,symbol2,visited);
@@ -476,32 +497,47 @@ int DFA_Node::cnt = 0;
 
 // 3.9 Optimization of DFA-Based Pattern Matchers
 int main() {
-	string str1, str2;
-	// cin >> str;
-	// str = "(ab)*c+(d|e)?";
-	// str = "(a|b)*cd";
-	str1 = "(a|b)*abb";
-	str2 = "(a|b)*abb";
-	// str += "#";
-	str1 = get_postfix(str1);
-	str2 = get_postfix(str2);
-	set<char> symbol1 = get_input_symbol(str1);
-	set<char> symbol2 = get_input_symbol(str2);
-	vector<DFA_Node*> dfa1;
-	int s1 = build_dfa(str1,symbol1,dfa1);
-	vector<DFA_Node*> dfa2;
-	int s2 = build_dfa(str2,symbol2,dfa2);
-	int res = judge(dfa1,dfa2,symbol1,symbol2,s1,s2);
-	if (res == 0)
-		cout << "=" << endl;
-	else if (res == 1)
-		cout << "<" << endl;
-	else if (res == 2)
-		cout << ">" << endl;
-	else
-		cout << "!" << endl;
+	int t;
+	t = 1;
+	// cin >> t;
+	while (t--) {
+		string str1, str2;
+		// cin >> str1;
+		// cin >> str2;
+		// str = "(ab)*c+(d|e)?";
+		// str = "(a|b)*cd";
+		// str1 = "(a|b)*abb";
+		// str2 = "(a|b)*abb";
+		str1 = "((E|a)b*)*";
+		str2 = "(a|b)*";
+		// str += "#";
+		str1 = get_postfix(str1);
+		str2 = get_postfix(str2);
+		set<char> symbol1 = get_input_symbol(str1);
+		set<char> symbol2 = get_input_symbol(str2);
+		vector<DFA_Node*> dfa1;
+		int s1 = build_dfa(str1,symbol1,dfa1);
+		vector<DFA_Node*> dfa2;
+		int s2 = build_dfa(str2,symbol2,dfa2);
+		int res = judge(dfa1,dfa2,symbol1,symbol2,s1,s2);
+		if (res == 0)
+			cout << "=" << endl;
+		else if (res == 1)
+			cout << "<" << endl;
+		else if (res == 2)
+			cout << ">" << endl;
+		else
+			cout << "!" << endl;
+	}
 	return 0;
 }
+
+// 5
+// ((E|a)b*)* (a|b)* =
+// b*a*b?a* b*a*ba*|b*a* =
+// b*a*b?a* (b*|a*)(b|E)a* >
+// (c|d)*c(c|d)(c|d) (c|d)*d(c|d)(c|d) !
+// x+y+z+ x*y*z* <
 
 // https://runestone.academy/runestone/books/published/pythonds/BasicDS/InfixPrefixandPostfixExpressions.html
 // http://www.cppblog.com/woaidongmao/archive/2010/09/05/97541.html

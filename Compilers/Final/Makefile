@@ -1,4 +1,4 @@
 all: regex
 
 regex: main.cpp
-	g++ $< -o $@
+	g++ $< -g -o $@
