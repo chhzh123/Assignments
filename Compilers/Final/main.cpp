@@ -97,6 +97,7 @@ public:
 	vector<int> e;
 };
 
+// 3.7.4 Construction of an NFA from a Regular Expression
 // McNaughton-Yamada-Thompson algorithm
 pair<NFA_Node*,NFA_Node*> regex2nfa(const string str, vector<NFA_Node*>& nfa) {
 	stack<NFA_Node*> autostk;
@@ -214,13 +215,14 @@ set<int> move_to(const set<int>& T, const vector<NFA_Node*>& nfa, const char a) 
 
 class DFA_Node{
 public:
-	DFA_Node() : id(cnt), accepting(false) {
+	DFA_Node() : id(cnt), accepting(false), group(1) {
 		cnt++;
 	}
 	int id;
 	static int cnt;
 	bool accepting;
 	map<char,int> out;
+	int group;
 };
 
 template<typename T>
@@ -232,13 +234,14 @@ void print_set(const set<T>& s, bool newline=true) {
 		cout << endl;
 }
 
+// 3.7.1 Conversion of an NFA to a DFA
 void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 			 const vector<NFA_Node*>& nfa,
 			 const set<char>& input_symbol,
 			 vector<DFA_Node*>& dfa) {
 	NFA_Node* start = p.first;
 	NFA_Node* end = p.second;
-	// cout << start->id << " " << end->id << endl;
+	cout << "start: " << start->id << " end: " << end->id << endl;
 	queue<set<int>> q;
 	set<int> start_closure = epsilon_closure(start,nfa);
 	q.push(start_closure);
@@ -250,11 +253,9 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 	while (!q.empty()) {
 		set<int> s = q.front();
 		marked.insert(s);
-		int len = dfa.size();
-		for (auto sym : input_symbol) {
+		int idx = lut[s];
+		for (auto sym : input_symbol) { // only alphas
 			set<int> move = move_to(s,nfa,sym);
-			if (move.empty())
-				continue;
 			set<int> U = epsilon_closure(move,nfa);
 			cout << sym << " ";
 			print_set<int>(move,false);
@@ -267,18 +268,98 @@ void nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 				lut[U] = dfa.size() - 1;
 				cout << "Add state: ^ " << dfa.size() - 1 << endl;
 			}
-			dfa[len-1]->out[sym] = lut[U];
+			dfa[idx]->out[sym] = lut[U];
+			cout << ">" << idx << " " << sym << " " << lut[U] << endl;
 		}
 		q.pop();
 	}
 	for (auto& item : lut) {
+		if (item.first.count(end->id) != 0) {
+			cout << end->id << " " << item.second << endl;
+			dfa[item.second]->accepting = true;
+			dfa[item.second]->group = 0;
+		}
+	}
+	for (auto& item : lut) {
 		print_set<int>(item.first,false);
-		cout << " -> " << item.second << endl;
+		cout << " -> " << item.second;
+		if (dfa[item.second]->accepting)
+			cout << "(A)";
+		cout << endl;
+	}
+}
+
+// 3.9.6 Minimizing the Number of States of a DFA
+void minimize_dfa(vector<DFA_Node*>& dfa,
+				  const set<char>& input_symbol,
+				  vector<DFA_Node*>& min_dfa) {
+	queue<vector<int>> partition;
+	vector<int> s1, s2;
+	for (auto state : dfa) {
+		if (state->group)
+			s1.push_back(state->id);
+		else // accepting state
+			s2.push_back(state->id);
+	}
+	int group_id = 1; // count from 0
+	partition.push(s1);
+	map<int,int> state_map;
+	while (!partition.empty()) {
+		vector<int> p = partition.front();
+		partition.pop();
+		int size = p.size();
+		if (size < 2)
+			continue;
+		for (auto c : input_symbol) {
+			map<int,vector<int>> groups;
+			for (int i = 0; i < size; ++i) {
+				int out = dfa[p[i]]->out[c];
+				groups[dfa[out]->group].push_back(i);
+			}
+			int g_size = groups.size();
+			if (g_size >= 2) {
+				for (auto& item : groups) {
+					for (auto idx : item.second)
+						dfa[idx]->group = group_id;
+					partition.push(item.second);
+					state_map[group_id] = item.second[0];
+					group_id++;
+				}
+				group_id--; // reduce the initial group
+				break;
+			}
+		}
+	}
+	DFA_Node::cnt = 0;
+	for (int i = 0; i <= group_id; ++i) {
+		DFA_Node* node = new DFA_Node();
+		for (auto c : input_symbol) {
+			int out = dfa[state_map[i]]->out[c];
+			node->out[c] = dfa[out]->group;
+		}
+		if (i == 0)
+			node->accepting = true;
+		min_dfa.push_back(node);
 	}
 }
 
 int NFA_Node::cnt = 0;
 int DFA_Node::cnt = 0;
+
+void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
+	for (auto c : input_symbol)
+		cout << "\t" << c;
+	cout << endl;
+	for (auto node : dfa) {
+		cout << node->id;
+		if (node->accepting)
+			cout << "*";
+		cout << "\t";
+		for (auto c : input_symbol)
+			cout << node->out[c] << "\t";
+		cout << endl;
+	}
+}
 
 // 3.9 Optimization of DFA-Based Pattern Matchers
 int main() {
@@ -297,9 +378,17 @@ int main() {
 	p = regex2nfa(str,nfa);
 	set<char> input_symbol(str.begin(),str.end());
 	input_symbol.erase('.');
+	input_symbol.erase('*');
+	input_symbol.erase('?');
+	input_symbol.erase('+');
+	input_symbol.erase('|');
 	print_set<char>(input_symbol);
 	vector<DFA_Node*> dfa;
 	nfa2dfa(p,nfa,input_symbol,dfa);
+	print_dfa(dfa,input_symbol);
+	vector<DFA_Node*> min_dfa;
+	minimize_dfa(dfa,input_symbol,min_dfa);
+	print_dfa(min_dfa,input_symbol);
 	return 0;
 }
 
