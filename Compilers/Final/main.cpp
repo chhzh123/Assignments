@@ -7,7 +7,7 @@
 #include <queue>
 #include <set>
 #include <utility>
-// #include "utils.h"
+#include "utils.h"
 using namespace std;
 
 class NFA_Node{
@@ -71,6 +71,13 @@ void print_dfa(const vector<DFA_Node*>& dfa, const set<char>& input_symbol) {
 	}
 }
 
+template<typename T>
+void free_node(vector<T*> v) {
+	for (auto it = v.begin(); it != v.end(); ++it)
+		delete *it;
+	v.clear();
+}
+
 int prec(char c) {
 	switch (c) {
 		case '(':
@@ -84,12 +91,18 @@ int prec(char c) {
 	}
 }
 
-string insert_plus(const string str) {
+/*
+ * R+ is equivalent to RR* (one or more)
+ * Since NFA engine cannot recognize +,
+ * substitute + using * first.
+ */
+string substitute_plus(const string str) {
 	if (str.find("+") == string::npos)
 		return str;
 	string res = "";
 	stack<int> out_stk;
 	int len = str.size();
+	// do parentheses matching & make duplication
 	for (int i = 0; i < len; ++i) {
 		if (str[i] == '(') {
 			res += "(";
@@ -114,6 +127,11 @@ string insert_plus(const string str) {
 	return res;
 }
 
+/*
+ * To easier parse the regex and change it
+ * to postfix format, need to insert concatenation
+ * sign first. Here use "." to represent.
+ */
 string insert_concat(const string str) {
 	string res = "";
 	int i = 0;
@@ -132,45 +150,48 @@ string insert_concat(const string str) {
 	return res;
 }
 
-// https://www.geeksforgeeks.org/stack-set-2-infix-to-postfix/
+/*
+ * Change the regex to postfix format
+ * Use a stack to maintain operators
+ */
 string infix2postfix(const string str) {
 	string res = "";
-	stack<char> opstk;
+	stack<char> op_stk;
 	for (auto c : str) {
-		// cout << c << " " << res << endl;
 		if (isalpha(c)) // operand
 			res += c;
 		else if (c == '(')
-			opstk.push('(');
+			op_stk.push('(');
 		else if (c == ')') {
-			char top = opstk.top();
+			char top = op_stk.top();
 			while (top != '(') {
 				res += top;
-				opstk.pop();
-				top = opstk.top();
+				op_stk.pop();
+				top = op_stk.top();
 			}
-			opstk.pop(); // discard '('
+			op_stk.pop(); // discard '('
 		} else { // operator
-			while (!opstk.empty() && opstk.top() != '(' && prec(c) <= prec(opstk.top())) {
-				char top = opstk.top();
+			while (!op_stk.empty() && op_stk.top() != '('
+				   && prec(c) <= prec(op_stk.top())) {
+				char top = op_stk.top();
 				res += top;
-				opstk.pop();
+				op_stk.pop();
 			}
-			opstk.push(c);
+			op_stk.push(c);
 		}
 	}
 	// pop all remaining ops in the stack
-	while (!opstk.empty()) {
-		char top = opstk.top();
+	while (!op_stk.empty()) {
+		char top = op_stk.top();
 		res += top;
-		opstk.pop();
+		op_stk.pop();
 	}
 	return res;
 }
 
 string get_postfix(const string str) {
 	string res;
-	res = insert_plus(str);
+	res = substitute_plus(str);
 	// cout << res << endl;
 	res = insert_concat(res);
 	// cout << res << endl;
@@ -191,13 +212,20 @@ set<char> get_input_symbol(const string str) {
 	return input_symbol;
 }
 
-// 3.7.4 Construction of an NFA from a Regular Expression
-// McNaughton-Yamada-Thompson algorithm
-// https://github.com/Ronan-H/regex-nfa-builder/blob/master/nfa_utils.py
-pair<NFA_Node*,NFA_Node*> regex2nfa(const string str, vector<NFA_Node*>& nfa) {
-	stack<NFA_Node*> autostk;
-	for (auto c : str) {
-		if (isalpha(c)) {
+/*
+ * 3.7.4 Construction of an NFA from a Regular Expression
+ * McNaughton-Yamada-Thompson algorithm
+ *
+ * Return:
+ * pair<NFA_Node*,NFA_Node*>: start & accepting state of nfa
+ * vector<NFA_Node*>: The built NFA
+ *
+ */
+pair<NFA_Node*,NFA_Node*> regex2nfa(const string postfix_str,
+									vector<NFA_Node*>& nfa) {
+	stack<NFA_Node*> nfa_stk;
+	for (auto c : postfix_str) {
+		if (isalpha(c)) { // a-z E
 			NFA_Node* begin = new NFA_Node();
 			NFA_Node* end = new NFA_Node();
 			nfa.push_back(begin);
@@ -208,17 +236,19 @@ pair<NFA_Node*,NFA_Node*> regex2nfa(const string str, vector<NFA_Node*>& nfa) {
 			else
 				begin->e.push_back(end->id);
 			end->accepting = true;
-			autostk.push(begin);
-			autostk.push(end);
+			nfa_stk.push(begin);
+			nfa_stk.push(end);
 		} else if (c == '|') { // union
 			NFA_Node* begin = new NFA_Node();
 			NFA_Node* end = new NFA_Node();
 			nfa.push_back(begin);
 			nfa.push_back(end);
-			NFA_Node* d = autostk.top(); autostk.pop();
-			NFA_Node* c = autostk.top(); autostk.pop();
-			NFA_Node* b = autostk.top(); autostk.pop();
-			NFA_Node* a = autostk.top(); autostk.pop();
+            // N(t)
+			NFA_Node* d = nfa_stk.top(); nfa_stk.pop();
+			NFA_Node* c = nfa_stk.top(); nfa_stk.pop();
+            // N(s)
+			NFA_Node* b = nfa_stk.top(); nfa_stk.pop();
+			NFA_Node* a = nfa_stk.top(); nfa_stk.pop();
 			begin->e.push_back(a->id);
 			begin->e.push_back(c->id);
 			b->e.push_back(end->id);
@@ -226,60 +256,61 @@ pair<NFA_Node*,NFA_Node*> regex2nfa(const string str, vector<NFA_Node*>& nfa) {
 			b->accepting = false;
 			d->accepting = false;
 			end->accepting = true;
-			autostk.push(begin);
-			autostk.push(end);
+			nfa_stk.push(begin);
+			nfa_stk.push(end);
 		} else if (c == '.') { // concatenation
 			// N(t)
-			NFA_Node* d = autostk.top(); autostk.pop();
-			NFA_Node* c = autostk.top(); autostk.pop();
+			NFA_Node* d = nfa_stk.top(); nfa_stk.pop();
+			NFA_Node* c = nfa_stk.top(); nfa_stk.pop();
 			// N(s)
-			NFA_Node* b = autostk.top(); autostk.pop();
-			NFA_Node* a = autostk.top(); autostk.pop();
+			NFA_Node* b = nfa_stk.top(); nfa_stk.pop();
+			NFA_Node* a = nfa_stk.top(); nfa_stk.pop();
 			b->e.push_back(c->id);
 			b->accepting = false;
 			d->accepting = true;
-			autostk.push(a);
-			autostk.push(d);
+			nfa_stk.push(a);
+			nfa_stk.push(d);
 		} else if (c == '*') { // Kleen closure
 			NFA_Node* begin = new NFA_Node();
 			NFA_Node* end = new NFA_Node();
 			nfa.push_back(begin);
 			nfa.push_back(end);
-			NFA_Node* b = autostk.top(); autostk.pop();
-			NFA_Node* a = autostk.top(); autostk.pop();
+			NFA_Node* b = nfa_stk.top(); nfa_stk.pop();
+			NFA_Node* a = nfa_stk.top(); nfa_stk.pop();
 			b->e.push_back(a->id);
 			begin->e.push_back(end->id);
 			begin->e.push_back(a->id);
 			b->e.push_back(end->id);
 			b->accepting = false;
 			end->accepting = true;
-			autostk.push(begin);
-			autostk.push(end);
+			nfa_stk.push(begin);
+			nfa_stk.push(end);
 		} else if (c == '?') { // zero or one, E|N(t)
 			NFA_Node* begin = new NFA_Node();
 			NFA_Node* end = new NFA_Node();
 			nfa.push_back(begin);
 			nfa.push_back(end);
-			NFA_Node* b = autostk.top(); autostk.pop();
-			NFA_Node* a = autostk.top(); autostk.pop();
+			NFA_Node* b = nfa_stk.top(); nfa_stk.pop();
+			NFA_Node* a = nfa_stk.top(); nfa_stk.pop();
 			begin->e.push_back(a->id);
 			begin->e.push_back(end->id);
 			b->e.push_back(end->id);
 			b->accepting = false;
 			end->accepting = true;
-			autostk.push(begin);
-			autostk.push(end);
+			nfa_stk.push(begin);
+			nfa_stk.push(end);
 		} else if (c == '+') {
 			// preprocess in input string
 		}
 	}
 	// print_nfa(nfa);
-	NFA_Node* end = autostk.top(); autostk.pop();
-	NFA_Node* begin = autostk.top(); autostk.pop();
+	NFA_Node* end = nfa_stk.top(); nfa_stk.pop();
+	NFA_Node* begin = nfa_stk.top(); nfa_stk.pop();
 	pair<NFA_Node*, NFA_Node*> res(begin,end);
 	return res;
 }
 
+// helper function for calculating e-closure of a state
 void traverse_e(const NFA_Node* s, const vector<NFA_Node*>& nfa, set<int>& res) {
 	for (auto neigh : s->e) {
 		if (res.find(neigh) != res.end())
@@ -289,6 +320,7 @@ void traverse_e(const NFA_Node* s, const vector<NFA_Node*>& nfa, set<int>& res) 
 	}
 }
 
+// e-closure of a state
 set<int> epsilon_closure(const NFA_Node* s, const vector<NFA_Node*>& nfa) {
 	set<int> res;
 	res.insert(s->id);
@@ -296,6 +328,7 @@ set<int> epsilon_closure(const NFA_Node* s, const vector<NFA_Node*>& nfa) {
 	return res;
 }
 
+// e-closure of a set
 set<int> epsilon_closure(const set<int>& T, const vector<NFA_Node*>& nfa) {
 	set<int> res;
 	for (auto s : T) {
@@ -305,12 +338,14 @@ set<int> epsilon_closure(const set<int>& T, const vector<NFA_Node*>& nfa) {
 	return res;
 }
 
+// helper function for calculating transition
 void traverse(NFA_Node* s, const vector<NFA_Node*>& nfa,
 			  const char a, set<int>& res) {
 	if (s->out.count(a) != 0)
 		res.insert(s->out[a]);
 }
 
+// transition of a set
 set<int> move_to(const set<int>& T, const vector<NFA_Node*>& nfa, const char a) {
 	set<int> res;
 	for (auto s : T)
@@ -318,35 +353,39 @@ set<int> move_to(const set<int>& T, const vector<NFA_Node*>& nfa, const char a) 
 	return res;
 }
 
-// 3.7.1 Conversion of an NFA to a DFA
+/*
+ * 3.7.1 Conversion of an NFA to a DFA
+ *
+ * Return:
+ * int: start state id of the DFA (only one entrance)
+ * vector<DFA_Node*>: The built DFA
+ *
+ */
 int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 			const vector<NFA_Node*>& nfa,
 			const set<char>& input_symbol,
 			vector<DFA_Node*>& dfa) {
 	NFA_Node* start = p.first;
 	NFA_Node* end = p.second;
-	// cout << "start: " << start->id << " end: " << end->id << endl;
 	queue<set<int>> q;
 	set<int> start_closure = epsilon_closure(start,nfa);
 	q.push(start_closure);
 	DFA_Node* node = new DFA_Node();
 	dfa.push_back(node);
 	set<set<int>> marked;
+    // loop up table
+    // used to record mapping from NFA states to DFA
+    // set of NFA states -> DFA id
 	map<set<int>,int> lut;
 	lut[q.front()] = 0;
 	while (!q.empty()) {
 		set<int> s = q.front();
-		// marked.insert(s);
 		int idx = lut[s];
 		for (auto sym : input_symbol) { // only alphas
 			set<int> move = move_to(s,nfa,sym);
 			if (move.empty())
 				continue;
 			set<int> U = epsilon_closure(move,nfa);
-			// cout << sym << " ";
-			// print_set<int>(move,false);
-			// cout << " | ";
-			// print_set<int>(U);
 			if (marked.find(U) == marked.end()) { // U not in Dstates
 				q.push(U);
 				marked.insert(U);
@@ -360,6 +399,7 @@ int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 		}
 		q.pop();
 	}
+    // record the start & accepting states
 	for (auto& item : lut) {
 		int idx = item.second;
 		if (item.first.count(end->id) != 0) {
@@ -368,7 +408,6 @@ int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 		}
 		if (item.first.count(start->id) != 0) {
 			dfa[idx]->start = true;
-			dfa[idx]->group = 1;
 		}
 	}
 	int res_start;
@@ -393,20 +432,22 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 				 vector<DFA_Node*>& min_dfa) {
 	queue<vector<int>> partition;
 	vector<int> s1, s2;
+	set<int> group_id;
 	for (auto state : dfa) {
-		if (state->start)
+		if (state->accepting) {
 			s1.push_back(state->id);
-		else
+			group_id.insert(state->group);
+		} else {
 			s2.push_back(state->id);
+			group_id.insert(state->group);
+		}
 	}
 	int n_group = 2;
 	partition.push(s2);
 	partition.push(s1);
 	map<int,int> state_map;
-	set<int> group_id = {0,1};
 	while (!partition.empty()) {
 		vector<int> p = partition.front();
-		// print_vector<int>(p);
 		partition.pop();
 		int size = p.size();
 		if (size < 2)
@@ -417,9 +458,9 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 			for (int i = 0; i < size; ++i) {
 				if (dfa[p[i]]->out.count(c) != 0) {
 					int out = dfa[p[i]]->out.at(c);
-					groups[dfa[out]->group].push_back(i);
+					groups[dfa[out]->group].push_back(p[i]);
 				} else {
-					groups[-1].push_back(i);
+					groups[-1].push_back(p[i]);
 				}
 			}
 			int g_size = groups.size();
@@ -436,7 +477,6 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 			}
 		}
 	}
-	// print_set<int>(group_id);
 	int len = dfa.size();
 	// be careful that start and end may overlap
 	vector<bool> start_flag(n_group,false);
@@ -478,22 +518,24 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 	return res_start;
 }
 
-int build_dfa(const string str,
+int build_dfa(const string postfix_str,
 			  const set<char>& input_symbol,
 			  vector<DFA_Node*>& min_dfa) {
 	NFA_Node::cnt = 0;
 	vector<NFA_Node*> nfa;
 	pair<NFA_Node*, NFA_Node*> p;
-	p = regex2nfa(str,nfa);
+	p = regex2nfa(postfix_str,nfa);
 	DFA_Node::cnt = 0;
 	vector<DFA_Node*> dfa;
 	int start_dfa = nfa2dfa(p,nfa,input_symbol,dfa);
+	free_node<NFA_Node>(nfa);
 	// print_dfa(dfa,input_symbol);
-	min_dfa = dfa;
-	return start_dfa;
+	// min_dfa = dfa;
+	// return start_dfa;
 	DFA_Node::cnt = 0;
 	int start_mindfa = minimize_dfa(dfa,input_symbol,min_dfa);
-	print_dfa(min_dfa,input_symbol);
+	free_node<DFA_Node>(dfa);
+	// print_dfa(min_dfa,input_symbol);
 	return start_mindfa;
 }
 
@@ -527,6 +569,7 @@ void complement(vector<DFA_Node*>& dfa) {
 	}
 }
 
+// https://stackoverflow.com/questions/6905043/equivalence-between-two-automata
 int judge(vector<DFA_Node*>& dfa1,
 		  vector<DFA_Node*>& dfa2,
 		  const set<char>& symbol1,
@@ -556,13 +599,13 @@ int judge(vector<DFA_Node*>& dfa1,
 	// print_dfa(dfa1,symbol1);
 	bool b_in_ca = intersection(s2,s1,dfa2,dfa1,len2,len1,symbol2,visited);
 	if (!a_in_cb && !b_in_ca)
-		return 0;
+		return 0; // dfa1 = dfa2
 	else if (!a_in_cb && b_in_ca)
-		return 1;
+		return 1; // dfa1 in dfa2
 	else if (a_in_cb && !b_in_ca)
-		return 2;
+		return 2; // dfa2 in dfa1
 	else
-		return 3;
+		return 3; // none
 }
 
 int NFA_Node::cnt = 0;
@@ -597,14 +640,14 @@ int main() {
 #else
 		cin >> str1 >> str2;
 #endif
-		str1 = get_postfix(str1);
-		str2 = get_postfix(str2);
+		string postfix_str1 = get_postfix(str1);
+		string postfix_str2 = get_postfix(str2);
 		set<char> symbol1 = get_input_symbol(str1);
 		set<char> symbol2 = get_input_symbol(str2);
 		vector<DFA_Node*> dfa1;
-		int s1 = build_dfa(str1,symbol1,dfa1);
+		int s1 = build_dfa(postfix_str1,symbol1,dfa1);
 		vector<DFA_Node*> dfa2;
-		int s2 = build_dfa(str2,symbol2,dfa2);
+		int s2 = build_dfa(postfix_str2,symbol2,dfa2);
 		int res = judge(dfa1,dfa2,symbol1,symbol2,s1,s2);
 		if (res == 0)
 			cout << "=" << endl;
@@ -614,9 +657,8 @@ int main() {
 			cout << ">" << endl;
 		else
 			cout << "!" << endl;
+		free_node<DFA_Node>(dfa1);
+		free_node<DFA_Node>(dfa2);
 	}
 	return 0;
 }
-
-// https://runestone.academy/runestone/books/published/pythonds/BasicDS/InfixPrefixandPostfixExpressions.html
-// http://www.cppblog.com/woaidongmao/archive/2010/09/05/97541.html
