@@ -7,7 +7,7 @@
 #include <queue>
 #include <set>
 #include <utility>
-#include "utils.h"
+// #include "utils.h"
 using namespace std;
 
 class NFA_Node{
@@ -221,8 +221,8 @@ set<char> get_input_symbol(const string str) {
  * vector<NFA_Node*>: The built NFA
  *
  */
-pair<NFA_Node*,NFA_Node*> regex2nfa(const string postfix_str,
-									vector<NFA_Node*>& nfa) {
+pair<int,int> regex2nfa(const string postfix_str,
+					    vector<NFA_Node*>& nfa) {
 	stack<NFA_Node*> nfa_stk;
 	for (auto c : postfix_str) {
 		if (isalpha(c)) { // a-z E
@@ -306,7 +306,7 @@ pair<NFA_Node*,NFA_Node*> regex2nfa(const string postfix_str,
 	// print_nfa(nfa);
 	NFA_Node* end = nfa_stk.top(); nfa_stk.pop();
 	NFA_Node* begin = nfa_stk.top(); nfa_stk.pop();
-	pair<NFA_Node*, NFA_Node*> res(begin,end);
+	pair<int,int> res(begin->id,end->id);
 	return res;
 }
 
@@ -361,23 +361,32 @@ set<int> move_to(const set<int>& T, const vector<NFA_Node*>& nfa, const char a) 
  * vector<DFA_Node*>: The built DFA
  *
  */
-int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
+int nfa2dfa(const pair<int,int>& p,
 			const vector<NFA_Node*>& nfa,
 			const set<char>& input_symbol,
 			vector<DFA_Node*>& dfa) {
-	NFA_Node* start = p.first;
-	NFA_Node* end = p.second;
+	int start = p.first;
+	int end = p.second;
 	queue<set<int>> q;
-	set<int> start_closure = epsilon_closure(start,nfa);
+	set<int> start_closure = epsilon_closure(nfa[start],nfa);
 	q.push(start_closure);
 	DFA_Node* node = new DFA_Node();
 	dfa.push_back(node);
-	set<set<int>> marked;
+	set<set<int>> marked; // used to record visited states
     // loop up table
     // used to record mapping from NFA states to DFA
     // set of NFA states -> DFA id
 	map<set<int>,int> lut;
 	lut[q.front()] = 0;
+    int start_id;
+    if (start_closure.count(end) != 0) {
+        node->accepting = true;
+        node->group = 0;
+    }
+    if (start_closure.count(start) != 0) {
+        node->start = true;
+        start_id = dfa.size() - 1;
+    }
 	while (!q.empty()) {
 		set<int> s = q.front();
 		int idx = lut[s];
@@ -392,41 +401,29 @@ int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 				DFA_Node* node = new DFA_Node();
 				dfa.push_back(node);
 				lut[U] = dfa.size() - 1;
-				// cout << "Add state: ^ " << dfa.size() - 1 << endl;
+                // record the start & accepting states
+                if (U.count(end) != 0) {
+                    node->accepting = true;
+                    node->group = 0;
+                }
+                if (U.count(start) != 0) {
+                    node->start = true;
+                    start_id = dfa.size() - 1;
+                }
 			}
 			dfa[idx]->out[sym] = lut[U];
-			// cout << ">" << idx << " " << sym << " " << lut[U] << endl;
 		}
 		q.pop();
 	}
-    // record the start & accepting states
-	for (auto& item : lut) {
-		int idx = item.second;
-		if (item.first.count(end->id) != 0) {
-			dfa[idx]->accepting = true;
-			dfa[idx]->group = 0;
-		}
-		if (item.first.count(start->id) != 0) {
-			dfa[idx]->start = true;
-		}
-	}
-	int res_start;
-	for (auto& item : lut) {
-		// print_set<int>(item.first,false);
-		// cout << " -> " << item.second;
-		if (dfa[item.second]->start) {
-			// cout << "(S)";
-			res_start = item.second;
-		}
-		if (dfa[item.second]->accepting) {
-			// cout << "(A)";
-		}
-		// cout << endl;
-	}
-	return res_start;
+	return start_id;
 }
 
-// 3.9.6 Minimizing the Number of States of a DFA
+/*
+ * 3.9.6 Minimizing the Number of States of a DFA
+ * Return:
+ * int: start state id
+ * vector<DFA_Node*>: Minimum DFA
+ */
 int minimize_dfa(vector<DFA_Node*>& dfa,
 				 const set<char>& input_symbol,
 				 vector<DFA_Node*>& min_dfa) {
@@ -434,24 +431,25 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 	vector<int> s1, s2;
 	set<int> group_id;
 	for (auto state : dfa) {
-		if (state->accepting) {
+		if (state->accepting)
 			s1.push_back(state->id);
-			group_id.insert(state->group);
-		} else {
+		else
 			s2.push_back(state->id);
-			group_id.insert(state->group);
-		}
+        group_id.insert(state->group);
 	}
 	int n_group = 2;
 	partition.push(s2);
 	partition.push(s1);
 	map<int,int> state_map;
+    // do partition
 	while (!partition.empty()) {
 		vector<int> p = partition.front();
 		partition.pop();
 		int size = p.size();
+        // only one state, need not to be partitioned
 		if (size < 2)
 			continue;
+        // more than 2 states
 		int origin_group = dfa[p[0]]->group;
 		for (auto c : input_symbol) {
 			map<int,vector<int>> groups; // gid, idx in group
@@ -460,9 +458,13 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 					int out = dfa[p[i]]->out.at(c);
 					groups[dfa[out]->group].push_back(p[i]);
 				} else {
+                    // be careful of this case!
+                    // no available transition in DFA!
 					groups[-1].push_back(p[i]);
 				}
 			}
+            // if jump to different groups
+            // can be partitioned
 			int g_size = groups.size();
 			if (g_size >= 2) {
 				group_id.erase(origin_group);
@@ -477,30 +479,33 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 			}
 		}
 	}
-	int len = dfa.size();
 	// be careful that start and end may overlap
 	vector<bool> start_flag(n_group,false);
 	vector<bool> end_flag(n_group,false);
-	int res_start;
 	map<int,int> group_map;
+    // reallocate group id
 	int cnt = 0;
 	for (auto id : group_id) {
 		group_map[id] = cnt;
 		cnt++;
 	}
-	n_group = group_id.size();
+    // remap group id
+    int start_id;
+    int len = dfa.size();
 	for (int i = 0; i < len; ++i) {
 		dfa[i]->group = group_map[dfa[i]->group];
 		int group = dfa[i]->group;
 		state_map[group] = i;
 		if (dfa[i]->start) {
 			start_flag[group] = true;
-			res_start = group;
+			start_id = group;
 		}
 		if (dfa[i]->accepting) {
 			end_flag[group] = true;
 		}
 	}
+    // generate new DFA
+    n_group = group_id.size();
 	for (int i = 0; i < n_group; ++i) {
 		DFA_Node* node = new DFA_Node();
 		for (auto c : input_symbol) {
@@ -515,7 +520,7 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 			node->accepting = true;
 		min_dfa.push_back(node);
 	}
-	return res_start;
+	return start_id;
 }
 
 int build_dfa(const string postfix_str,
@@ -523,8 +528,8 @@ int build_dfa(const string postfix_str,
 			  vector<DFA_Node*>& min_dfa) {
 	NFA_Node::cnt = 0;
 	vector<NFA_Node*> nfa;
-	pair<NFA_Node*, NFA_Node*> p;
-	p = regex2nfa(postfix_str,nfa);
+	pair<int,int> p = regex2nfa(postfix_str,nfa);
+
 	DFA_Node::cnt = 0;
 	vector<DFA_Node*> dfa;
 	int start_dfa = nfa2dfa(p,nfa,input_symbol,dfa);
@@ -532,6 +537,7 @@ int build_dfa(const string postfix_str,
 	// print_dfa(dfa,input_symbol);
 	// min_dfa = dfa;
 	// return start_dfa;
+
 	DFA_Node::cnt = 0;
 	int start_mindfa = minimize_dfa(dfa,input_symbol,min_dfa);
 	free_node<DFA_Node>(dfa);
@@ -548,10 +554,10 @@ bool intersection(const int s1, const int s2,
 	visited[s1][s2] = true;
 	bool acc1 = (s1 == len1) ? false : dfa1[s1]->accepting;
 	bool acc2 = (s2 == len2) ? true : dfa2[s2]->accepting;
-	// cout << s1 << " " << acc1 << " " << s2 << " " << acc2 << endl;
 	if (acc1 && acc2)
 		return true;
 	for (auto c : input_symbol) {
+        // be careful of unavailable states of DFA
 		int o1 = (s1 == len1 || dfa1[s1]->out.count(c) == 0) ?
 				  len1 : dfa1[s1]->out.at(c);
 		int o2 = (s2 == len2 || dfa2[s2]->out.count(c) == 0) ?
@@ -569,26 +575,23 @@ void complement(vector<DFA_Node*>& dfa) {
 	}
 }
 
-// https://stackoverflow.com/questions/6905043/equivalence-between-two-automata
 int judge(vector<DFA_Node*>& dfa1,
 		  vector<DFA_Node*>& dfa2,
 		  const set<char>& symbol1,
 		  const set<char>& symbol2,
 		  const int s1, const int s2) {
-	// cout << "start: " << s1 << " " << s2 << endl;
-	vector<vector<bool>> visited;
 	// add a dummy state
 	int len1 = dfa1.size();
 	int len2 = dfa2.size();
+
+    vector<vector<bool>> visited;
 	for (int i = 0; i < len1+1; ++i) {
 		vector<bool> tmp(len2+1,false);
 		visited.push_back(tmp);
 	}
 	complement(dfa2);
-	// print_dfa(dfa1,symbol1);
-	// print_dfa(dfa2,symbol2);
 	bool a_in_cb = intersection(s1,s2,dfa1,dfa2,len1,len2,symbol1,visited);
-	// cout << endl;
+
 	visited.clear();
 	for (int i = 0; i < len2+1; ++i) {
 		vector<bool> tmp(len1+1,false);
@@ -596,8 +599,8 @@ int judge(vector<DFA_Node*>& dfa1,
 	}
 	complement(dfa2);
 	complement(dfa1);
-	// print_dfa(dfa1,symbol1);
 	bool b_in_ca = intersection(s2,s1,dfa2,dfa1,len2,len1,symbol2,visited);
+
 	if (!a_in_cb && !b_in_ca)
 		return 0; // dfa1 = dfa2
 	else if (!a_in_cb && b_in_ca)
