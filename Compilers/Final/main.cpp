@@ -7,16 +7,113 @@
 #include <queue>
 #include <set>
 #include <utility>
+// #include "utils.h"
 using namespace std;
 
-/*
- * a-z E
- * ( )
- * * ? +
- * |
- */
+class NFA_Node{
+public:
+	NFA_Node() : id(cnt), accepting(false) {
+		cnt++;
+	}
+	int id;
+	static int cnt;
+	bool accepting;
+	map<char,int> out;
+	vector<int> e;
+};
 
-string insert_concat(string str) {
+class DFA_Node{
+public:
+	DFA_Node() : id(cnt), start(false), accepting(false), group(1) {
+		cnt++;
+	}
+	int id;
+	static int cnt;
+	bool start;
+	bool accepting;
+	map<char,int> out; // be careful of non-existed keys
+	int group;
+};
+
+void print_nfa(const vector<NFA_Node*>& nfa) {
+	for (auto state : nfa) {
+		cout << state->id;
+		if (state->accepting)
+			cout << "(A)";
+		cout << ": ";
+		for (auto edge : state->e)
+			cout << edge << " ";
+		for (auto& c : state->out)
+			cout << c.first << "(" << c.second << ")";
+		cout << endl;
+	}
+}
+
+void print_dfa(const vector<DFA_Node*>& dfa, const set<char>& input_symbol) {
+	for (auto c : input_symbol)
+		cout << "\t" << c;
+	cout << endl;
+	for (auto node : dfa) {
+		// cout << (char)(node->id+'A');
+		cout << node->id;
+		if (node->start)
+			cout << "S";
+		if (node->accepting)
+			cout << "*";
+		cout << "\t";
+		for (auto c : input_symbol)
+			// cout << (char)(node->out[c]+'A') << "\t";
+			if (node->out.count(c) == 0)
+				cout << (-1) << "\t";
+			else
+				cout << node->out.at(c) << "\t";
+		cout << endl;
+	}
+}
+
+int prec(char c) {
+	switch (c) {
+		case '(':
+		case ')': return 3;
+		case '*':
+		case '?':
+		case '+': return 2;
+		case '.': return 1;
+		case '|': return 0;
+		default: return -1;
+	}
+}
+
+string insert_plus(const string str) {
+	// cannot handle "((x|y)+)+"
+	if (str.find("+") == string::npos)
+		return str;
+	string res = "";
+	stack<int> stk;
+	int len = str.size();
+	for (int i = 0; i < len; ++i) {
+		if (str[i] == '(') {
+			stk.push(i);
+			res += "(";
+		} else if (str[i] == ')') {
+			if (i + 1 < len && str[i+1] == '+') {
+				int front = stk.top();
+				string new_str = str.substr(front,i-front+1);
+				res += ")" + new_str + "*";
+				stk.pop();
+			} else
+				res += ")";
+		} else if (str[i] == '+' && str[i-1] != ')') {
+			char c = str[i-1];
+			res += c;
+			res += "*";
+		} else if (str[i] != '+')
+			res += str[i];
+	}
+	return res;
+}
+
+string insert_concat(const string str) {
 	string res = "";
 	int i = 0;
 	int len = str.size();
@@ -34,21 +131,8 @@ string insert_concat(string str) {
 	return res;
 }
 
-int prec(char c) {
-	switch (c) {
-		case '(':
-		case ')': return 3;
-		case '*':
-		case '?':
-		case '+': return 2;
-		case '.': return 1;
-		case '|': return 0;
-		default: return -1;
-	}
-}
-
 // https://www.geeksforgeeks.org/stack-set-2-infix-to-postfix/
-string infix2postfix(string str) {
+string infix2postfix(const string str) {
 	string res = "";
 	stack<char> opstk;
 	for (auto c : str) {
@@ -83,17 +167,28 @@ string infix2postfix(string str) {
 	return res;
 }
 
-class NFA_Node{
-public:
-	NFA_Node() : id(cnt), accepting(false) {
-		cnt++;
-	}
-	int id;
-	static int cnt;
-	bool accepting;
-	map<char,int> out;
-	vector<int> e;
-};
+string get_postfix(const string str) {
+	string res;
+	res = insert_plus(str);
+	// cout << str << endl;
+	res = insert_concat(res);
+	// cout << str << endl;
+	res = infix2postfix(res);
+	// cout << str << endl;
+	return res;
+}
+
+set<char> get_input_symbol(const string str) {
+	set<char> input_symbol(str.begin(),str.end());
+	input_symbol.erase('E');
+	input_symbol.erase('.');
+	input_symbol.erase('*');
+	input_symbol.erase('?');
+	input_symbol.erase('+');
+	input_symbol.erase('|');
+	// print_set<char>(input_symbol);
+	return input_symbol;
+}
 
 // 3.7.4 Construction of an NFA from a Regular Expression
 // McNaughton-Yamada-Thompson algorithm
@@ -174,26 +269,17 @@ pair<NFA_Node*,NFA_Node*> regex2nfa(const string str, vector<NFA_Node*>& nfa) {
 			autostk.push(begin);
 			autostk.push(end);
 		} else if (c == '+') {
+			// preprocess in input string
 		}
 	}
-	// for (auto state : nfa) {
-	// 	cout << state->id;
-	// 	if (state->accepting)
-	// 		cout << "(A)";
-	// 	cout << ": ";
-	// 	for (auto edge : state->e)
-	// 		cout << edge << " ";
-	// 	for (auto& c : state->out)
-	// 		cout << c.first << "(" << c.second << ")";
-	// 	cout << endl;
-	// }
+	// print_nfa(nfa);
 	NFA_Node* end = autostk.top(); autostk.pop();
 	NFA_Node* begin = autostk.top(); autostk.pop();
 	pair<NFA_Node*, NFA_Node*> res(begin,end);
 	return res;
 }
 
-void traverse_e(NFA_Node* s, const vector<NFA_Node*>& nfa, set<int>& res) {
+void traverse_e(const NFA_Node* s, const vector<NFA_Node*>& nfa, set<int>& res) {
 	for (auto neigh : s->e) {
 		if (res.find(neigh) != res.end())
 			break;
@@ -202,7 +288,7 @@ void traverse_e(NFA_Node* s, const vector<NFA_Node*>& nfa, set<int>& res) {
 	}
 }
 
-set<int> epsilon_closure(NFA_Node* s, const vector<NFA_Node*>& nfa) {
+set<int> epsilon_closure(const NFA_Node* s, const vector<NFA_Node*>& nfa) {
 	set<int> res;
 	res.insert(s->id);
 	traverse_e(s,nfa,res);
@@ -218,7 +304,8 @@ set<int> epsilon_closure(const set<int>& T, const vector<NFA_Node*>& nfa) {
 	return res;
 }
 
-void traverse(NFA_Node* s, const vector<NFA_Node*>& nfa, const char a, set<int>& res) {
+void traverse(NFA_Node* s, const vector<NFA_Node*>& nfa,
+			  const char a, set<int>& res) {
 	if (s->out.count(a) != 0)
 		res.insert(s->out[a]);
 }
@@ -230,41 +317,11 @@ set<int> move_to(const set<int>& T, const vector<NFA_Node*>& nfa, const char a) 
 	return res;
 }
 
-class DFA_Node{
-public:
-	DFA_Node() : id(cnt), start(false), accepting(false), group(1) {
-		cnt++;
-	}
-	int id;
-	static int cnt;
-	bool start;
-	bool accepting;
-	map<char,int> out; // be careful of non-existed keys
-	int group;
-};
-
-template<typename T>
-void print_set(const set<T>& s, bool newline=true) {
-	cout << "Set: ";
-	for (auto x : s)
-		cout << x << " ";
-	if (newline)
-		cout << endl;
-}
-
-template<typename T>
-void print_vector(const vector<T> v) {
-	cout << "Vector: ";
-	for (auto x : v)
-		cout << x << " ";
-	cout << endl;
-}
-
 // 3.7.1 Conversion of an NFA to a DFA
 int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
-			 const vector<NFA_Node*>& nfa,
-			 const set<char>& input_symbol,
-			 vector<DFA_Node*>& dfa) {
+			const vector<NFA_Node*>& nfa,
+			const set<char>& input_symbol,
+			vector<DFA_Node*>& dfa) {
 	NFA_Node* start = p.first;
 	NFA_Node* end = p.second;
 	// cout << "start: " << start->id << " end: " << end->id << endl;
@@ -331,8 +388,8 @@ int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 
 // 3.9.6 Minimizing the Number of States of a DFA
 int minimize_dfa(vector<DFA_Node*>& dfa,
-				  const set<char>& input_symbol,
-				  vector<DFA_Node*>& min_dfa) {
+				 const set<char>& input_symbol,
+				 vector<DFA_Node*>& min_dfa) {
 	queue<vector<int>> partition;
 	vector<int> s1, s2;
 	for (auto state : dfa) {
@@ -352,7 +409,7 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 	set<int> group_id = {0,1};
 	while (!partition.empty()) {
 		vector<int> p = partition.front();
-		print_vector<int>(p);
+		// print_vector<int>(p);
 		partition.pop();
 		int size = p.size();
 		if (size < 2)
@@ -418,49 +475,9 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 	return res_start;
 }
 
-void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
-	for (auto c : input_symbol)
-		cout << "\t" << c;
-	cout << endl;
-	for (auto node : dfa) {
-		// cout << (char)(node->id+'A');
-		cout << node->id;
-		if (node->start)
-			cout << "S";
-		if (node->accepting)
-			cout << "*";
-		cout << "\t";
-		for (auto c : input_symbol)
-			// cout << (char)(node->out[c]+'A') << "\t";
-			if (node->out.count(c) == 0)
-				cout << (-1) << "\t";
-			else
-				cout << node->out.at(c) << "\t";
-		cout << endl;
-	}
-}
-
-string get_postfix(string str) {
-	str = insert_concat(str);
-	// cout << str << endl;
-	str = infix2postfix(str);
-	// cout << str << endl;
-	return str;
-}
-
-set<char> get_input_symbol(string str) {
-	set<char> input_symbol(str.begin(),str.end());
-	input_symbol.erase('E');
-	input_symbol.erase('.');
-	input_symbol.erase('*');
-	input_symbol.erase('?');
-	input_symbol.erase('+');
-	input_symbol.erase('|');
-	// print_set<char>(input_symbol);
-	return input_symbol;
-}
-
-int build_dfa(string str, set<char>& input_symbol,vector<DFA_Node*>& min_dfa) {
+int build_dfa(const string str,
+			  const set<char>& input_symbol,
+			  vector<DFA_Node*>& min_dfa) {
 	NFA_Node::cnt = 0;
 	vector<NFA_Node*> nfa;
 	pair<NFA_Node*, NFA_Node*> p;
@@ -477,12 +494,12 @@ int build_dfa(string str, set<char>& input_symbol,vector<DFA_Node*>& min_dfa) {
 	return start_mindfa;
 }
 
-bool intersection(int s1, int s2,
-			 vector<DFA_Node*>& dfa1,
-			 vector<DFA_Node*>& dfa2,
-			 int len1, int len2,
-			 set<char>& input_symbol,
-			 vector<vector<bool>>& visited) {
+bool intersection(const int s1, const int s2,
+				  const vector<DFA_Node*>& dfa1,
+				  const vector<DFA_Node*>& dfa2,
+				  const int len1, const int len2,
+				  const set<char>& input_symbol,
+			 	  vector<vector<bool>>& visited) {
 	visited[s1][s2] = true;
 	bool acc1 = (s1 == len1) ? false : dfa1[s1]->accepting;
 	bool acc2 = (s2 == len2) ? true : dfa2[s2]->accepting;
@@ -507,9 +524,11 @@ void complement(vector<DFA_Node*>& dfa) {
 	}
 }
 
-int judge(vector<DFA_Node*>& dfa1, vector<DFA_Node*>& dfa2,
-		  set<char>& symbol1, set<char>& symbol2,
-		  int s1, int s2) {
+int judge(vector<DFA_Node*>& dfa1,
+		  vector<DFA_Node*>& dfa2,
+		  const set<char>& symbol1,
+		  const set<char>& symbol2,
+		  const int s1, const int s2) {
 	// cout << "start: " << s1 << " " << s2 << endl;
 	vector<vector<bool>> visited;
 	// add a dummy state
@@ -543,35 +562,6 @@ int judge(vector<DFA_Node*>& dfa1, vector<DFA_Node*>& dfa2,
 		return 3;
 }
 
-string insert_plus(const string str) {
-	// cannot handle "((x|y)+)+"
-	if (str.find("+") == string::npos)
-		return str;
-	string res = "";
-	stack<int> stk;
-	int len = str.size();
-	for (int i = 0; i < len; ++i) {
-		if (str[i] == '(') {
-			stk.push(i);
-			res += "(";
-		} else if (str[i] == ')') {
-			if (i + 1 < len && str[i+1] == '+') {
-				int front = stk.top();
-				string new_str = str.substr(front,i-front+1);
-				res += ")" + new_str + "*";
-				stk.pop();
-			} else
-				res += ")";
-		} else if (str[i] == '+' && str[i-1] != ')') {
-			char c = str[i-1];
-			res += c;
-			res += "*";
-		} else if (str[i] != '+')
-			res += str[i];
-	}
-	return res;
-}
-
 int NFA_Node::cnt = 0;
 int DFA_Node::cnt = 0;
 
@@ -601,9 +591,6 @@ int main() {
 #else
 		cin >> str1 >> str2;
 #endif
-		str1 = insert_plus(str1);
-		str2 = insert_plus(str2);
-		// cout << str1 << endl << str2 << endl;
 		str1 = get_postfix(str1);
 		str2 = get_postfix(str2);
 		set<char> symbol1 = get_input_symbol(str1);
