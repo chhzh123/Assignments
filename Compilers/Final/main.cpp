@@ -15,8 +15,6 @@ using namespace std;
  * * ? +
  * |
  */
-// Construct DFA directly from a regex
-// Minimize # of states of DFA, O(nlogn)
 
 string insert_concat(string str) {
 	string res = "";
@@ -178,17 +176,17 @@ pair<NFA_Node*,NFA_Node*> regex2nfa(const string str, vector<NFA_Node*>& nfa) {
 		} else if (c == '+') {
 		}
 	}
-	for (auto state : nfa) {
-		cout << state->id;
-		if (state->accepting)
-			cout << "(A)";
-		cout << ": ";
-		for (auto edge : state->e)
-			cout << edge << " ";
-		for (auto& c : state->out)
-			cout << c.first << "(" << c.second << ")";
-		cout << endl;
-	}
+	// for (auto state : nfa) {
+	// 	cout << state->id;
+	// 	if (state->accepting)
+	// 		cout << "(A)";
+	// 	cout << ": ";
+	// 	for (auto edge : state->e)
+	// 		cout << edge << " ";
+	// 	for (auto& c : state->out)
+	// 		cout << c.first << "(" << c.second << ")";
+	// 	cout << endl;
+	// }
 	NFA_Node* end = autostk.top(); autostk.pop();
 	NFA_Node* begin = autostk.top(); autostk.pop();
 	pair<NFA_Node*, NFA_Node*> res(begin,end);
@@ -269,7 +267,7 @@ int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 			 vector<DFA_Node*>& dfa) {
 	NFA_Node* start = p.first;
 	NFA_Node* end = p.second;
-	cout << "start: " << start->id << " end: " << end->id << endl;
+	// cout << "start: " << start->id << " end: " << end->id << endl;
 	queue<set<int>> q;
 	set<int> start_closure = epsilon_closure(start,nfa);
 	q.push(start_closure);
@@ -287,20 +285,20 @@ int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 			if (move.empty())
 				continue;
 			set<int> U = epsilon_closure(move,nfa);
-			cout << sym << " ";
-			print_set<int>(move,false);
-			cout << " | ";
-			print_set<int>(U);
+			// cout << sym << " ";
+			// print_set<int>(move,false);
+			// cout << " | ";
+			// print_set<int>(U);
 			if (marked.find(U) == marked.end()) { // U not in Dstates
 				q.push(U);
 				marked.insert(U);
 				DFA_Node* node = new DFA_Node();
 				dfa.push_back(node);
 				lut[U] = dfa.size() - 1;
-				cout << "Add state: ^ " << dfa.size() - 1 << endl;
+				// cout << "Add state: ^ " << dfa.size() - 1 << endl;
 			}
 			dfa[idx]->out[sym] = lut[U];
-			cout << ">" << idx << " " << sym << " " << lut[U] << endl;
+			// cout << ">" << idx << " " << sym << " " << lut[U] << endl;
 		}
 		q.pop();
 	}
@@ -317,15 +315,16 @@ int nfa2dfa(const pair<NFA_Node*,NFA_Node*>& p,
 	}
 	int res_start;
 	for (auto& item : lut) {
-		print_set<int>(item.first,false);
-		cout << " -> " << item.second;
+		// print_set<int>(item.first,false);
+		// cout << " -> " << item.second;
 		if (dfa[item.second]->start) {
-			cout << "(S)";
+			// cout << "(S)";
 			res_start = item.second;
 		}
-		if (dfa[item.second]->accepting)
-			cout << "(A)";
-		cout << endl;
+		if (dfa[item.second]->accepting) {
+			// cout << "(A)";
+		}
+		// cout << endl;
 	}
 	return res_start;
 }
@@ -379,7 +378,7 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 			}
 		}
 	}
-	print_set<int>(group_id);
+	// print_set<int>(group_id);
 	int len = dfa.size();
 	// be careful that start and end may overlap
 	vector<bool> start_flag(n_group,false);
@@ -443,9 +442,9 @@ void print_dfa(vector<DFA_Node*>& dfa, set<char>& input_symbol) {
 
 string get_postfix(string str) {
 	str = insert_concat(str);
-	cout << str << endl;
+	// cout << str << endl;
 	str = infix2postfix(str);
-	cout << str << endl;
+	// cout << str << endl;
 	return str;
 }
 
@@ -457,7 +456,7 @@ set<char> get_input_symbol(string str) {
 	input_symbol.erase('?');
 	input_symbol.erase('+');
 	input_symbol.erase('|');
-	print_set<char>(input_symbol);
+	// print_set<char>(input_symbol);
 	return input_symbol;
 }
 
@@ -469,7 +468,7 @@ int build_dfa(string str, set<char>& input_symbol,vector<DFA_Node*>& min_dfa) {
 	DFA_Node::cnt = 0;
 	vector<DFA_Node*> dfa;
 	int start_dfa = nfa2dfa(p,nfa,input_symbol,dfa);
-	print_dfa(dfa,input_symbol);
+	// print_dfa(dfa,input_symbol);
 	min_dfa = dfa;
 	return start_dfa;
 	DFA_Node::cnt = 0;
@@ -487,7 +486,7 @@ bool intersection(int s1, int s2,
 	visited[s1][s2] = true;
 	bool acc1 = (s1 == len1) ? false : dfa1[s1]->accepting;
 	bool acc2 = (s2 == len2) ? true : dfa2[s2]->accepting;
-	cout << s1 << " " << acc1 << " " << s2 << " " << acc2 << endl;
+	// cout << s1 << " " << acc1 << " " << s2 << " " << acc2 << endl;
 	if (acc1 && acc2)
 		return true;
 	for (auto c : input_symbol) {
@@ -511,7 +510,7 @@ void complement(vector<DFA_Node*>& dfa) {
 int judge(vector<DFA_Node*>& dfa1, vector<DFA_Node*>& dfa2,
 		  set<char>& symbol1, set<char>& symbol2,
 		  int s1, int s2) {
-	cout << "start: " << s1 << " " << s2 << endl;
+	// cout << "start: " << s1 << " " << s2 << endl;
 	vector<vector<bool>> visited;
 	// add a dummy state
 	int len1 = dfa1.size();
@@ -521,10 +520,10 @@ int judge(vector<DFA_Node*>& dfa1, vector<DFA_Node*>& dfa2,
 		visited.push_back(tmp);
 	}
 	complement(dfa2);
-	print_dfa(dfa1,symbol1);
-	print_dfa(dfa2,symbol2);
+	// print_dfa(dfa1,symbol1);
+	// print_dfa(dfa2,symbol2);
 	bool a_in_cb = intersection(s1,s2,dfa1,dfa2,len1,len2,symbol1,visited);
-	cout << endl;
+	// cout << endl;
 	visited.clear();
 	for (int i = 0; i < len2+1; ++i) {
 		vector<bool> tmp(len1+1,false);
@@ -576,40 +575,35 @@ string insert_plus(const string str) {
 int NFA_Node::cnt = 0;
 int DFA_Node::cnt = 0;
 
+#ifdef NO_STDIN
+const vector<vector<string>> input_str = {
+	{"((E|a)b*)*", "(a|b)*"}, // =
+	{"b*a*b?a*", "b*a*ba*|b*a*"}, // =
+	{"b*a*b?a*", "(b*|a*)(b|E)a*"}, // >
+	{"(c|d)*c(c|d)(c|d)", "(c|d)*d(c|d)(c|d)"}, // !
+	{"x+y+z+", "x*y*z*"} // <
+};
+#endif
+
 // 3.9 Optimization of DFA-Based Pattern Matchers
 int main() {
-	int t;
-	t = 1;
-	// cin >> t;
-	while (t--) {
+	int n_case;
+#ifdef NO_STDIN
+	n_case = input_str.size();
+#else
+	cin >> n_case;
+#endif
+	for (int case_id = 0; case_id < n_case; ++case_id) {
 		string str1, str2;
-		// cin >> str1;
-		// cin >> str2;
-		// str = "(ab)*c+(d|e)?";
-		// str = "(a|b)*cd";
-		// str1 = "(a|b)*abb";
-		// str2 = "(a|b)*abb";
-		// str1 = "a";
-		// str2 = "a+";
-		// case 1 =
-		// str1 = "((E|a)b*)*";
-		// str2 = "(a|b)*";
-		// case 2 =
-		// str1 = "b*a*b?a*";
-		// str2 = "b*a*ba*|b*a*";
-		// case 3 >
-		// str1 = "b*a*b?a*";
-		// str2 = "(b*|a*)(b|E)a*";
-		// case 4 !
-		// str1 = "(c|d)*c(c|d)(c|d)";
-		// str2 = "(c|d)*d(c|d)(c|d)";
-		// case 5 <
-		str1 = "x+y+z+";
-		str2 = "x*y*z*";
+#ifdef NO_STDIN
+		str1 = input_str[case_id][0];
+		str2 = input_str[case_id][1];
+#else
+		cin >> str1 >> str2;
+#endif
 		str1 = insert_plus(str1);
 		str2 = insert_plus(str2);
 		// cout << str1 << endl << str2 << endl;
-		// abort();
 		str1 = get_postfix(str1);
 		str2 = get_postfix(str2);
 		set<char> symbol1 = get_input_symbol(str1);
@@ -631,13 +625,12 @@ int main() {
 	return 0;
 }
 
-// 5
-// ((E|a)b*)* (a|b)* =
-// b*a*b?a* b*a*ba*|b*a* =
-// b*a*b?a* (b*|a*)(b|E)a* >
-// (c|d)*c(c|d)(c|d) (c|d)*d(c|d)(c|d) !
-// x+y+z+ x*y*z* <
-
+// str = "(ab)*c+(d|e)?";
+// str = "(a|b)*cd";
+// str1 = "(a|b)*abb";
+// str2 = "(a|b)*abb";
+// str1 = "a";
+// str2 = "a+";
 // str1 = "(x|y)+(y+b*)*";
 // str2 = "((x|y)+)+";
 
