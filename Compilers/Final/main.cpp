@@ -85,24 +85,25 @@ int prec(char c) {
 }
 
 string insert_plus(const string str) {
-	// cannot handle "((x|y)+)+"
 	if (str.find("+") == string::npos)
 		return str;
 	string res = "";
-	stack<int> stk;
+	stack<int> out_stk;
 	int len = str.size();
 	for (int i = 0; i < len; ++i) {
 		if (str[i] == '(') {
-			stk.push(i);
 			res += "(";
+			out_stk.push(res.size()-1);
 		} else if (str[i] == ')') {
 			if (i + 1 < len && str[i+1] == '+') {
-				int front = stk.top();
-				string new_str = str.substr(front,i-front+1);
-				res += ")" + new_str + "*";
-				stk.pop();
-			} else
+				int front = out_stk.top();
 				res += ")";
+				string new_str = res.substr(front,res.size()-front);
+				res += new_str + "*";
+			} else {
+				res += ")";
+			}
+			out_stk.pop();
 		} else if (str[i] == '+' && str[i-1] != ')') {
 			char c = str[i-1];
 			res += c;
@@ -170,11 +171,11 @@ string infix2postfix(const string str) {
 string get_postfix(const string str) {
 	string res;
 	res = insert_plus(str);
-	// cout << str << endl;
+	// cout << res << endl;
 	res = insert_concat(res);
-	// cout << str << endl;
+	// cout << res << endl;
 	res = infix2postfix(res);
-	// cout << str << endl;
+	// cout << res << endl;
 	return res;
 }
 
@@ -393,10 +394,6 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 	queue<vector<int>> partition;
 	vector<int> s1, s2;
 	for (auto state : dfa) {
-		// if (state->group)
-		// 	s1.push_back(state->id);
-		// else // accepting state
-		// 	s2.push_back(state->id);
 		if (state->start)
 			s1.push_back(state->id);
 		else
@@ -418,8 +415,12 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 		for (auto c : input_symbol) {
 			map<int,vector<int>> groups; // gid, idx in group
 			for (int i = 0; i < size; ++i) {
-				int out = dfa[p[i]]->out.at(c);
-				groups[dfa[out]->group].push_back(i);
+				if (dfa[p[i]]->out.count(c) != 0) {
+					int out = dfa[p[i]]->out.at(c);
+					groups[dfa[out]->group].push_back(i);
+				} else {
+					groups[-1].push_back(i);
+				}
 			}
 			int g_size = groups.size();
 			if (g_size >= 2) {
@@ -463,8 +464,10 @@ int minimize_dfa(vector<DFA_Node*>& dfa,
 	for (int i = 0; i < n_group; ++i) {
 		DFA_Node* node = new DFA_Node();
 		for (auto c : input_symbol) {
-			int out = dfa[state_map[i]]->out.at(c);
-			node->out[c] = dfa[out]->group;
+			if (dfa[state_map[i]]->out.count(c) != 0) {
+				int out = dfa[state_map[i]]->out.at(c);
+				node->out[c] = dfa[out]->group;
+			}
 		}
 		if (start_flag[i])
 			node->start = true;
@@ -571,11 +574,14 @@ const vector<vector<string>> input_str = {
 	{"b*a*b?a*", "b*a*ba*|b*a*"}, // =
 	{"b*a*b?a*", "(b*|a*)(b|E)a*"}, // >
 	{"(c|d)*c(c|d)(c|d)", "(c|d)*d(c|d)(c|d)"}, // !
-	{"x+y+z+", "x*y*z*"} // <
+	{"x+y+z+", "x*y*z*"}, // <
+	{"a", "a+"}, // <
+	{"(a|b)*abb", "(a|b)*abbb*"}, // <
+	{"(a|b)*c+(d|e)?", "(a|b)*cd"}, // >
+	{"((x|y)+)+","(x|y)+(y+b*)*"} // <
 };
 #endif
 
-// 3.9 Optimization of DFA-Based Pattern Matchers
 int main() {
 	int n_case;
 #ifdef NO_STDIN
@@ -611,15 +617,6 @@ int main() {
 	}
 	return 0;
 }
-
-// str = "(ab)*c+(d|e)?";
-// str = "(a|b)*cd";
-// str1 = "(a|b)*abb";
-// str2 = "(a|b)*abb";
-// str1 = "a";
-// str2 = "a+";
-// str1 = "(x|y)+(y+b*)*";
-// str2 = "((x|y)+)+";
 
 // https://runestone.academy/runestone/books/published/pythonds/BasicDS/InfixPrefixandPostfixExpressions.html
 // http://www.cppblog.com/woaidongmao/archive/2010/09/05/97541.html
