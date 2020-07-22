@@ -22,4 +22,4 @@ void print_vector(const vector<T> v) {
 	cout << endl;
 }
 
-#endif
+#endif // UTILS_H
