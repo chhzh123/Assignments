@@ -348,7 +348,7 @@ $move(T,a)$ & 从$s\in T$中的状态通过输入符号$a$进行转换\\\hline
 
 这里还需注意对于DFA的某些状态，可能没有对所有输入符号都有出边，这在模拟DFA时可能会出现错误。
 对于这种情况，可以假设有一个冗余结点来接收这些非法输入。
-如对于\verb'a'的DFA来说，右侧结点已经无法再接收其他符号，那么为保持每个结点输入符号都存在，可以添加多一个非接受态结点用以作为输出（即黑洞结点，只进不出），如下图所示。
+如对于\verb'a'的DFA来说，右侧结点已经无法再接收其他符号，那么为保持每个结点输入符号都存在，可以添加多一个非接受态结点用以作为输出（即黑洞结点，只进不出），如下右图所示。
 \begin{center}
 \begin{tabular}{cc}
 \begin{tikzpicture}
@@ -369,28 +369,53 @@ $move(T,a)$ & 从$s\in T$中的状态通过输入符号$a$进行转换\\\hline
 完整代码可见\verb'judge'函数。
 
 \section{实验结果}
-已在Sicily上验证通过。
+本实验代码已提交至Sicily，并测试通过全部样例。
+
+所有测试样例请见附录\ref{app:data}，具体实验结果如图\ref{fig:result}所示。
+\begin{figure}[H]
+\centering
+\begin{tabular}{c}
+\includegraphics[width=\linewidth]{fig/result1.jpg}\\
+\includegraphics[width=\linewidth]{fig/result2.jpg}
+\end{tabular}
+\caption{实验结果}
+\label{fig:result}
+\end{figure}
 
 \appendix
 \appendixconfig
 \section{完整源码}
-\lstinputlisting[language=c++,basicstyle=\footnotesize]{../main.cpp}
-\lstinputlisting[language=c++,basicstyle=\footnotesize]{../utils.h}
-\lstinputlisting[language={[gnu] make},basicstyle=\footnotesize]{../Makefile}
+源码分为三个文件，\verb'main.cpp'为核心算法文件，\verb'utils.h'内含调试输出设施，\verb'Makefile'则提供了自动化编译的脚本。
+
+{\centering\textcolor{gray}{\footnotesize main.cpp}
+\lstinputlisting[language=c++,basicstyle=\footnotesize]{../main.cpp}}
+
+{\centering\textcolor{gray}{\footnotesize utils.h}
+\lstinputlisting[language=c++,basicstyle=\footnotesize]{../utils.h}}
+
+{\centering\textcolor{gray}{\footnotesize Makefile}
+\lstinputlisting[language={[gnu] make},basicstyle=\footnotesize]{../Makefile}}
+
+在Linux环境下输入\verb'make'可自动编译，\verb'make NO_STDIN=1'则编译出直接从源码常量数组中读取输入数据的程序。
 
 \section{测试数据}
+\label{app:data}
 \begin{center}
-\begin{tabular}{|c|c|c|}\hline
-\textbf{regex1} & \textbf{regex2} & \textbf{output}\\\hline
-\verb'((E|a)b*)*' & \verb'(a|b)*' & \verb'='\\\hline
-\verb'b*a*b?a*' & \verb'b*a*ba*|b*a*' & \verb'='\\\hline
-\verb'b*a*b?a*' & \verb'(b*|a*)(b|E)a*' & \verb'>'\\\hline
-\verb'(c|d)*c(c|d)(c|d)' & \verb'(c|d)*d(c|d)(c|d)' & \verb'!'\\\hline
-\verb'x+y+z+' & \verb'x*y*z*' & \verb'<'\\\hline
-\verb'a' & \verb'a+' & \verb'<'\\\hline
-\verb'(a|b)*abb' & \verb'(a|b)*abbb*' & \verb'<'\\\hline
-\verb'(a|b)*c+(d|e)?' & \verb'(a|b)*cd' & \verb'>'\\\hline
-\verb'((x|y)+)+' & \verb'(x|y)+(y+b*)*' & \verb'<'\\\hline
+\begin{tabular}{|c|c|c|c|}\hline
+\textbf{regex1} & \textbf{regex2} & \textbf{output} & \textbf{描述}\\\hline
+\verb'((E|a)b*)*' & \verb'(a|b)*' & \verb'=' & 标准测试1\\\hline
+\verb'b*a*b?a*' & \verb'b*a*ba*|b*a*' & \verb'=' & 标准测试2\\\hline
+\verb'b*a*b?a*' & \verb'(b*|a*)(b|E)a*' & \verb'>' & 标准测试3\\\hline
+\verb'(c|d)*c(c|d)(c|d)' & \verb'(c|d)*d(c|d)(c|d)' & \verb'!' & 标准测试4\\\hline
+\verb'x+y+z+' & \verb'x*y*z*' & \verb'<' & 标准测试5\\\hline
+\verb'a' & \verb'a+' & \verb'<' & 最简测试\\\hline
+\verb'(a|b)*abb' & \verb'(a|b)*abbb*' & \verb'<' & 课本样例\\\hline
+\verb'(a|b)*c+(d|e)?' & \verb'(a|b)*cd' & \verb'>' & 混杂所有符号\\\hline
+\verb'((x|y)+)+' & \verb'(x|y)+(y+b*)*' & \verb'<' & 嵌套括号\\\hline
+\verb'(https|http)' & \verb'ht*ps' & \verb'!' & 彼此不含\\\hline
+\verb'ht+ps' & \verb'(htt*ps|http)+' & \verb'<' & 多种符号\\\hline
+\verb'a+b*c?' & \verb'a+b*c?' & \verb'=' & 完全等同\\\hline
+\verb'a*b*c' & \verb'a+b*c' & \verb'>' & 星号与加号比较\\\hline
 \end{tabular}
 \end{center}
 

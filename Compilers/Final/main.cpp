@@ -191,11 +191,11 @@ string infix2postfix(const string str) {
 
 string get_postfix(const string str) {
     string res;
-    cout << str << endl;
+    // cout << str << endl;
     res = substitute_plus(str);
     // cout << res << endl;
     res = insert_concat(res);
-    cout << res << endl;
+    // cout << res << endl;
     res = infix2postfix(res);
     // cout << res << endl;
     return res;
@@ -627,7 +627,11 @@ const vector<vector<string>> input_str = {
     {"a", "a+"}, // <
     {"(a|b)*abb", "(a|b)*abbb*"}, // <
     {"(a|b)*c+(d|e)?", "(a|b)*cd"}, // >
-    {"((x|y)+)+","(x|y)+(y+b*)*"} // <
+    {"((x|y)+)+","(x|y)+(y+b*)*"}, // <
+    {"(https|http)","ht*ps"}, // !
+    {"ht+ps","(htt*ps|http)+"}, // <
+    {"a+b*c?","a+b*c?"}, // =
+    {"a*b*c","a+b*c"}, // >
 };
 #endif
 
