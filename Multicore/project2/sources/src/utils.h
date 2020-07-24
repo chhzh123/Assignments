@@ -19,7 +19,7 @@ long getTime() {
     return (long)ts.tv_sec * 1000000000L + ts.tv_nsec;
 }
 
-// W_CHK macro is used to check if a file write is successful or not.
+// W_CHK macro is used to check if a file write is successfully or not.
 #define W_CHK(call)                                         \
 {                                                           \
     const int written = call;                               \

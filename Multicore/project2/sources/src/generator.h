@@ -23,7 +23,6 @@ bool isGeneratorReady = false;
 
 // setRandSeed should be called once and only once.
 void setRandSeed(int seed) {
-    assert(isGeneratorReady == false);
     srand(seed);
     isGeneratorReady = true;
 }

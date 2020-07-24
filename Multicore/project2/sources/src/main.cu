@@ -9,6 +9,9 @@
 #include "generator.h"
 #include "core.h"
 
+// func is a function pointer which is compatible with "cudaCallback"s.
+void (*func)(int, int, int, float*, float*, int**);
+
 // calcDistance is for calculating the precise Euclidean distance.
 float calcDistance(int k, int mInd, int nInd, float *searchPoints,
                    float *referencePoints) {
@@ -21,35 +24,39 @@ float calcDistance(int k, int mInd, int nInd, float *searchPoints,
     return sqrt(squareSum);
 }
 
-int main() {
-    // Timestamp variables for measuring running time
-    long st, et;
+// samplesConfig decides the scale of test samples.
+int samplesConfig[] = {
+    3,  1,      2,
+    3,  2,      8,
 
-    // Open a stream for writing out results in text
-    FILE *outStream = fopen("results.csv", "w");
-    if (outStream == NULL) {
-        printf("failed to open the output file\n");
-        return -1;
-    }
+    3,  1,      1024,
+    3,  1,      65536,
+    16, 1,      65536,
 
-    // Generate samples and invoke the provided callback in a one-by-one fashion
-    int seed = 1000;
+    3,  1024,   1024,
+    3,  1024,   65536,
+    16, 1024,   65536,
+};
+int numSamples = 0;
+
+// seed is used to control the sample generation.
+int seed = 1000;
+
+// Timestamp variables for measuring running time.
+long st, et;
+
+// baselineResults store the results of baseline for checking your algo
+// variants.
+int **baselineResults = NULL;
+
+// testCnt tracks the number of tests.
+int testCnt = 0;
+
+void test() {
+    testCnt++;
+
+    // Generate samples and invoke the provided callback in one-by-one.
     setRandSeed(seed);
-
-    int samplesConfig[] = {
-        3,  1,      2,
-        3,  2,      8,
-
-        3,  1,      1024,
-        3,  1,      65536,
-        16, 1,      65536,
-
-        3,  1024,   1024,
-        3,  1024,   65536,
-        16, 1024,   65536,
-    };
-    int numSamples = sizeof(samplesConfig) / (3 * sizeof(*samplesConfig));
-
     for (int i = 0; i < numSamples; i++) {
         int k = samplesConfig[3*i];
         int m = samplesConfig[3*i+1];
@@ -57,81 +64,116 @@ int main() {
         float *searchPoints, *referencePoints;
         getSample(k, m, n, &searchPoints, &referencePoints);
         
-        // Modify and print out some small samples for easy checking by hand
-        if (i < 2) {
-            printf("Small sample %d:\n---\n", i);
-
-            printf("Search points:\n");
-            for (int mInd = 0; mInd < m; mInd++) {
-                printf("- [ ");
-                for (int kInd = 0; kInd < k; kInd++) {
-                    if (i < 2) {
-                        // For hand checking only (protect in case you are
-                        // intending to inspect more samples)
-                        searchPoints[3*mInd+kInd] = 
-                            roundf(searchPoints[3*mInd+kInd] * 10) / 10;
-                    }
-                    printf("%.2f ", searchPoints[3*mInd+kInd]);
-                }
-                printf("]\n");
-            }
-
-            printf("Reference points:\n");
-            for (int nInd = 0; nInd < n; nInd++) {
-                printf("- %d: [ ", nInd);
-                for (int kInd = 0; kInd < k; kInd++) {
-                    if (i < 2) {
-                        // For hand checking only (protect in case you are
-                        // intending to inspect more samples)
-                        referencePoints[3*nInd+kInd] = 
-                            roundf(referencePoints[3*nInd+kInd] * 10) / 10;
-                    }
-                    printf("%.2f ", referencePoints[3*nInd+kInd]);
-                }
-                printf("]\n");
-            }
-        } else {
-            printf("Sample %d:\n---\n", i);
-        }
-
-        // Invoke the callback
+        // Invoke the callback.
         int *results;
         st = getTime();
-        cudaCallback(k, m, n, searchPoints, referencePoints, &results);
+        (*func)(k, m, n, searchPoints, referencePoints, &results);
         et = getTime();
+        printf("Callback%d, %2d, %4d, %5d, %10.3fms\n", testCnt, k, m, n,
+            (et - st) / 1e6);
 
-        if (i < 2) {
-            printf("Results:\n");
-            for (int mInd = 0; mInd < m; mInd++) {
-                printf("- %d (%.3f)\n", results[mInd], calcDistance(k, mInd,
-                    results[mInd], searchPoints, referencePoints));
-            }
-        }
-
-        printf("cudaCallback: %.3f ms\n\n", (et - st) / 1e6);
-
-        // Write the results out to the output stream
-        char buffer[128];
-        for (int mInd = 0; mInd < m; mInd++) {
-            sprintf(buffer, "%d,", results[mInd]);
-            W_CHK(fputs(buffer, outStream));
-        }
-        W_CHK(fputs("\n", outStream));
-        for (int mInd = 0; mInd < m; mInd++) {
-            sprintf(buffer, "%.3f,", calcDistance(k, mInd,
-                    results[mInd], searchPoints, referencePoints));
-            W_CHK(fputs(buffer, outStream));
-        }
-        W_CHK(fputs("\n", outStream));
-
-        printf("\n");
-        // De-allocate the memory spaces
+        // De-allocate the memory spaces.
         free(searchPoints);
         free(referencePoints);
-        free(results);
+
+        if (baselineResults[i] == NULL) {
+            baselineResults[i] = results;
+        } else {
+            // Check correctness.
+            int errors = 0;
+            for (int j = 0; j < m; j++) {
+                if (baselineResults[i][j] == results[j]) {
+                    continue;
+                } else {
+                    float d1 = calcDistance(k, j, baselineResults[i][j],
+                        searchPoints, referencePoints);
+                    float d2 = calcDistance(k, j, results[j],
+                        searchPoints, referencePoints);
+                    if (d1 - d2 < -1e-3 || d1 - d2 > 1e-3) {
+                        errors++;
+                    }
+                }
+            }
+            printf("errors/total w.r.t. baseline: %d/%d\n\n", errors, m);
+            free(results);
+        }
+    }
+}
+
+int main() {
+    // Get the number of samples.
+    numSamples = sizeof(samplesConfig) / (3 * sizeof(*samplesConfig));
+
+    // Initialize the baseline results list.
+    baselineResults = (int **)malloc(sizeof(int *) * numSamples);
+    for (int i = 0; i < numSamples; i++) {
+        baselineResults[i] = NULL;
     }
 
-    // Close the output stream
-    fclose(outStream);
-    return 0;
+#ifdef CALLBACK1
+    printf("\non running CALLBACK1...\n");
+    func = &CALLBACK1;
+    test();
+#endif
+
+#ifdef CALLBACK2
+    printf("\non running CALLBACK2...\n");
+    func = &CALLBACK2;
+    test();
+#endif
+
+#ifdef CALLBACK3
+    printf("\non running CALLBACK3...\n");
+    func = &CALLBACK3;
+    test();
+#endif
+
+#ifdef CALLBACK4
+    printf("\non running CALLBACK4...\n");
+    func = &CALLBACK4;
+    test();
+#endif
+
+#ifdef CALLBACK5
+    printf("\non running CALLBACK5...\n");
+    func = &CALLBACK5;
+    test();
+#endif
+
+#ifdef CALLBACK6
+    printf("\non running CALLBACK6...\n");
+    func = &CALLBACK6;
+    test();
+#endif
+
+#ifdef CALLBACK7
+    printf("\non running CALLBACK7...\n");
+    func = &CALLBACK7;
+    test();
+#endif
+
+#ifdef CALLBACK8
+    printf("\non running CALLBACK8...\n");
+    func = &CALLBACK8;
+    test();
+#endif
+
+#ifdef CALLBACK9
+    printf("\non running CALLBACK9...\n");
+    func = &CALLBACK9;
+    test();
+#endif
+
+#ifdef CALLBACK10
+    printf("\non running CALLBACK10...\n");
+    func = &CALLBACK10;
+    test();
+#endif
+
+    if (baselineResults != NULL) {
+        for (int i = 0; i < numSamples; i++) {
+            free(baselineResults[i]);
+        }
+        free(baselineResults);
+    }
 }
