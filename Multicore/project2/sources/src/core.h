@@ -8,7 +8,7 @@
 #define CALLBACK1 cudaCallbackCPU
 #define CALLBACK2 cudaCallbackGPU_baseline
 #define CALLBACK3 cudaCallbackGPU_sharedmem
-// #define CALLBACK4 ...
+#define CALLBACK4 cudaCallbackGPU_reduction
 // #define CALLBACK5 ...
 // #define CALLBACK6 ...
 // #define CALLBACK7 ...
@@ -26,9 +26,11 @@
 extern void cudaCallbackCPU(int k, int m, int n, float *searchPoints,
                             float *referencePoints, int **results);
 extern void cudaCallbackGPU_baseline(int k, int m, int n, float *searchPoints,
-                            float *referencePoints, int **results);
+                                     float *referencePoints, int **results);
 extern void cudaCallbackGPU_sharedmem(int k, int m, int n, float *searchPoints,
-                            float *referencePoints, int **results);
+                                      float *referencePoints, int **results);
+extern void cudaCallbackGPU_reduction(int k, int m, int n, float *searchPoints,
+                                      float *referencePoints, int **results);
 
 // divup calculates n / m and would round it up if the remainder is non-zero.
 extern int divup(int n, int m);
