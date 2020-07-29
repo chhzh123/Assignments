@@ -440,20 +440,19 @@ extern void cudaCallbackGPU_warp(int k, int m, int n, float *searchPoints,
 
 __inline__ __device__ void blockReduceMin(float& val, int& idx) 
 {
-
     static __shared__ float values[32];
     static __shared__ int indices[32];
     int lane = threadIdx.x % warpSize;
     int wid = threadIdx.x / warpSize;
 
-    warpReduceMin(val, idx); // Each warp performs partial reduction
+    warpReduceMin(val, idx); // partial reduction for each warp in a block
 
-    if (lane == 0) {
-        values[wid] = val; // Write reduced value to shared memory
-        indices[wid] = idx; // Write reduced value to shared memory
+    if (lane == 0) { // write back to shared mem
+        values[wid] = val;
+        indices[wid] = idx;
     }
 
-    __syncthreads(); // Wait for all partial reductions
+    __syncthreads();
 
     // read from shared memory only if that warp existed
     if (threadIdx.x < blockDim.x / warpSize) {
@@ -465,7 +464,7 @@ __inline__ __device__ void blockReduceMin(float& val, int& idx)
     }
 
     if (wid == 0) {
-        warpReduceMin(val, idx); // Final reduce within first warp
+        warpReduceMin(val, idx); // final reduce within first warp
     }
 }
 
