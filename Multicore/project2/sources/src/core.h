@@ -4,13 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#define FULL_MASK 0xffffffff
 
 #define CALLBACK1 cudaCallbackCPU
 #define CALLBACK2 cudaCallbackGPU_baseline
 #define CALLBACK3 cudaCallbackGPU_sharedmem
 #define CALLBACK4 cudaCallbackGPU_reduction
-// #define CALLBACK5 ...
-// #define CALLBACK6 ...
+#define CALLBACK5 cudaCallbackGPU_warp
+#define CALLBACK6 cudaCallbackGPU_primitive
 // #define CALLBACK7 ...
 // #define CALLBACK8 ...
 // #define CALLBACK9 ...
@@ -30,6 +31,10 @@ extern void cudaCallbackGPU_baseline(int k, int m, int n, float *searchPoints,
 extern void cudaCallbackGPU_sharedmem(int k, int m, int n, float *searchPoints,
                                       float *referencePoints, int **results);
 extern void cudaCallbackGPU_reduction(int k, int m, int n, float *searchPoints,
+                                      float *referencePoints, int **results);
+extern void cudaCallbackGPU_warp(int k, int m, int n, float *searchPoints,
+                                      float *referencePoints, int **results);
+extern void cudaCallbackGPU_primitive(int k, int m, int n, float *searchPoints,
                                       float *referencePoints, int **results);
 
 // divup calculates n / m and would round it up if the remainder is non-zero.
