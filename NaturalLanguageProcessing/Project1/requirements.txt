@@ -1,6 +1,6 @@
 torch==1.1.0
 numpy==1.14.2
-requests==2.20.0
+requests==2.31.0
 matplotlib==2.0.2
 beautifulsoup4==4.8.1
 jieba==0.39
